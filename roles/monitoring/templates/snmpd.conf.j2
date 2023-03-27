@@ -1,20 +1,8 @@
-# DO NOT TOUCH
-# Automatically deployed via Ansible
+# {{ ansible_managed }}
 
-{% for allowed_host in snmp_allowed_hosts %}
-com2sec readonly {{ allowed_host }} {{ community_string }}
-{% endfor %}
-
-group MyROGroup v1         readonly
-group MyROGroup v2c        readonly
-group MyROGroup usm        readonly
-view all    included  .1   80
-access MyROGroup ""      any       noauth    exact  all    none   none
-syslocation {{ server_location }}
-syscontact Rezoleo
-
-#This line allows Observium to detect the host OS if the distro script is installed
-extend .1.3.6.1.4.1.2021.7890.1 distro /usr/bin/distro
+sysLocation    {{ server_location }}
+sysContact     Rezoleo <contact@rezoleo.fr>
+rouser {{ snmp_user }} authpriv
 
 # We do not want annoying "Connection from UDP: " messages in syslog.
 # If the following option is commented out, snmpd will print each incoming

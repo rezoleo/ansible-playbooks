@@ -4,11 +4,29 @@
     name: snmpd
     state: present
 
-- name: "Retrieve SNMP community"
+- name: "Retrieve SNMPv3 password and passphrase"
   ansible.builtin.set_fact:
-    community_string: "{{ lookup('community.general.hashi_vault', 'secret=secret/data/infrastructure/celestia:community_string') }}"
+    snmp_authpass: "{{ lookup('community.general.hashi_vault', 'secret=secret/data/infrastructure/mercure:snmp_authpass') }}"
+    snmp_cryptopass: "{{ lookup('community.general.hashi_vault', 'secret=secret/data/infrastructure/mercure:snmp_cryptopass') }}"
+    librenms_api_token: "{{ lookup('community.general.hashi_vault', 'secret=secret/data/infrastructure/mercure:librenms_api_token') }}"
   run_once: true
   delegate_to: localhost
+  become: no
+
+- name: Gather facts using SNMP version 3
+  community.general.snmp_facts:
+    host: '{{ inventory_hostname }}'
+    version: v3
+    level: authPriv
+    integrity: sha
+    privacy: aes
+    username: '{{ snmp_user }}'
+    authkey: '{{ snmp_authpass }}'
+    privkey: '{{ snmp_cryptopass }}'
+  ignore_errors: yes
+  delegate_to: localhost
+  become: no
+  register: snmp_facts_results
 
 - name: "Configure SNMP"
   ansible.builtin.template:
@@ -20,15 +38,20 @@
     backup: yes
   notify: restart snmpd
 
-  # Script downloaded from https://gitlab.com/observium/distroscript
-- name: "Copy distro script from Observium"
-  ansible.builtin.copy:
-    src: distro
-    dest: /usr/bin/distro
-    owner: root
-    group: root
-    mode: "0755"
-  notify: restart snmpd
+- name: Setup SNMP v3 user
+  block:
+    - name: "Stop SNMP service"
+      ansible.builtin.systemd:
+        name: snmpd
+        state: stopped
+      
+    - name: CreateUser in /var/lib/snmp/snmpd.conf
+      ansible.builtin.lineinfile:
+        path: /var/lib/snmp/snmpd.conf
+        state: present
+        line: 'createUser {{ snmp_user }} SHA {{ snmp_authpass }} AES {{ snmp_cryptopass }}'
+
+  when: snmp_facts_results.failed
 
 - name: "Start SNMP service"
   ansible.builtin.systemd:
@@ -39,10 +62,59 @@
 - name: "Force handlers to restart snmpd for the configuration to be OK when adding in Observium"
   ansible.builtin.meta: flush_handlers
 
-- name: "Add servers to Observium"
-  ansible.builtin.command: "/opt/observium/add_device.php {{ ansible_hostname }} {{ community_string }} {{ snmp_version }}"
-  register: add_device
-  changed_when: '"Added device" in add_device.stdout'
-  failed_when: '"Devices failed" in add_device.stdout and "Already got device" not in add_device.stdout'
+- name: Check if device is on librenms
+  ansible.builtin.uri:
+    url: https://librenms.rezoleo.fr/api/v0/devices/{{ ansible_hostname }}
+    method: GET
+    return_content: yes
+    headers:
+      X-Auth-Token: "{{ librenms_api_token }}"
+  register: get_device_results
   ignore_errors: yes
-  delegate_to: argos
+
+- name: Add device to librenms
+  ansible.builtin.uri:
+    url: https://librenms.rezoleo.fr/api/v0/devices
+    method: POST
+    return_content: yes
+    headers:
+      X-Auth-Token: "{{ librenms_api_token }}"
+    body_format: json
+    body:
+      hostname: '{{ ansible_hostname }}'
+      overwrite_ip: '{{ inventory_hostname }}'
+      version: v3
+      authlevel: authPriv
+      authname: '{{ snmp_user }}'
+      authpass: '{{ snmp_authpass }}'
+      authalgo: SHA
+      cryptopass: '{{ snmp_cryptopass }}'
+      cryptoalgo: AES
+  when: get_device_results.json.status != 'ok'
+
+- name: Change SNMP version on librenms
+  ansible.builtin.uri:
+    url: https://librenms.rezoleo.fr/api/v0/devices/{{ ansible_hostname }}
+    method: PATCH
+    return_content: yes
+    headers:
+      X-Auth-Token: "{{ librenms_api_token }}"
+    body_format: json
+    body:
+      field:
+        - snmpver
+        - authlevel
+        - authname
+        - authpass
+        - authalgo
+        - cryptopass
+        - cryptoalgo
+      data:
+        - v3
+        - authPriv
+        - '{{ snmp_user }}'
+        - '{{ snmp_authpass }}'
+        - SHA
+        - '{{ snmp_cryptopass }}'
+        - AES
+  when: get_device_results.json.status == 'ok' and get_device_results.json.devices[0].snmpver != 'v3'

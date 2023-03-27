@@ -1,2 +1,3 @@
 ansible==2.10.5
 hvac==0.10.6
+pysnmp==4.4.12
