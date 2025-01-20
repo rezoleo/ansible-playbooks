@@ -5,3 +5,16 @@ mail_apache2_certificate_directory: /etc/apache2/certificates
 mail_db_host: mysql.rezoleo.fr
 
 mail_dovecot_conf_directory: /etc/dovecot/conf.d
+
+mail_rspamd_reject: 15
+
+mail_rspamd_add_header: 6
+
+mail_rspamd_greylist: 4
+
+mail_rspamd_train_on_ham: -5
+
+mail_rspamd_train_on_spam: 10
+
+# Number of days before spam and junk emails are automatically deleted
+mail_spam_and_junk_autoexpunge: 30

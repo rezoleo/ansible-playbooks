@@ -248,6 +248,104 @@
         line: '  mail_plugins = $mail_plugins sieve'
       notify: Restart Dovecot
 
+    - name: Create sieve-after directory
+      ansible.builtin.file:
+        path: /etc/dovecot/sieve-after
+        state: directory
+        mode: '0755'
+        owner: root
+        group: root
+
+    - name: Copy spam-to-folder.sieve
+      ansible.builtin.copy:
+        src: spam-to-folder.sieve
+        dest: /etc/dovecot/sieve-after/spam-to-folder.sieve
+        mode: '0600'
+        owner: vmail
+        group: vmail
+      notify: Restart Dovecot
+
+    - name: Add autoexpunge parameter
+      ansible.builtin.template:
+        src: 15-mailboxes.conf.j2
+        dest: '{{ mail_dovecot_conf_directory }}/15-mailboxes.conf'
+        mode: '0644'
+        owner: root
+        group: root
+      notify: Restart Dovecot
+
+    - name: Enable IMAPSieve
+      ansible.builtin.lineinfile:
+        path: '{{ mail_dovecot_conf_directory }}/20-imap.conf'
+        regexp: '^\s*#?\s*mail_plugins\s*='
+        line: '  mail_plugins = $mail_plugins quota imap_sieve'
+        state: present
+      notify: Restart Dovecot
+
+    - name: Create Sieve script directory
+      ansible.builtin.file:
+        path: /etc/dovecot/sieve
+        state: directory
+        mode: '0755'
+        owner: root
+        group: root
+
+    - name: Enable global Sieve filters
+      ansible.builtin.copy:
+        src: "90-sieve.conf"
+        dest: "{{ mail_dovecot_conf_directory }}/90-sieve.conf"
+        mode: '0644'
+        owner: root
+        group: root
+      notify: Restart Dovecot
+
+    - name: Copy Sieve scripts
+      ansible.builtin.copy:
+        src: "{{ item }}.sieve"
+        dest: "/etc/dovecot/sieve/{{ item }}.sieve"
+        mode: '0600'
+        owner: vmail
+        group: vmail
+      with_items:
+        - learn-spam
+        - learn-ham
+      notify: Restart Dovecot
+
+    - name: Compile Sieve scripts
+      ansible.builtin.command:
+        cmd: 'sievec /etc/dovecot/{{ item }}.sieve'
+        creates: '/etc/dovecot/{{ item }}.svbin'
+      with_items:
+        - sieve/learn-spam
+        - sieve/learn-ham
+        - sieve-after/spam-to-folder
+      notify: Restart Dovecot
+
+    - name: Ensure Sieve binary scripts permissions
+      ansible.builtin.file:
+        path: "/etc/dovecot/{{ item }}.svbin"
+        state: file
+        mode: '0600'
+        owner: vmail
+        group: vmail
+      with_items:
+        - sieve/learn-spam
+        - sieve/learn-ham
+        - sieve-after/spam-to-folder
+      notify: Restart Dovecot
+
+    - name: Copy rspamd scripts
+      ansible.builtin.copy:
+        src: "{{ item }}.sh"
+        dest: "/etc/dovecot/sieve/{{ item }}.sh"
+        mode: '0700'
+        owner: vmail
+        group: vmail
+      with_items:
+        - rspamd-learn-ham
+        - rspamd-learn-spam
+      notify: Restart Dovecot
+
 - name: Configure Roundcube
   block:
     - name: Copy Roundcube configuration
@@ -276,3 +374,32 @@
         regexp: '^\$config'
         line: "$config['managesieve_host'] = 'localhost';"
         state: present
+
+- name: Setup rspamd
+  block:
+    - name: Configure desired limits
+      ansible.builtin.template:
+        src: actions.conf.j2
+        dest: /etc/rspamd/local.d/actions.conf
+        mode: '0640'
+        owner: root
+        group: root
+      notify: Restart rspamd
+
+    - name: Add headers to filter spam
+      ansible.builtin.copy:
+        src: milter_headers.conf
+        dest: /etc/rspamd/override.d/milter_headers.conf
+        mode: '0640'
+        owner: root
+        group: root
+      notify: Restart rspamd
+
+    - name: Copy redis.conf
+      ansible.builtin.copy:
+        src: redis.conf
+        dest: /etc/rspamd/override.d/redis.conf
+        mode: '0644'
+        owner: root
+        group: root
+      notify: Restart rspamd

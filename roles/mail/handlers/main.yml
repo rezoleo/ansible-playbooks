@@ -12,3 +12,8 @@
   ansible.builtin.systemd:
     name: dovecot
     state: restarted
+
+- name: Restart rspamd
+  ansible.builtin.systemd:
+    name: rspamd
+    state: restarted
