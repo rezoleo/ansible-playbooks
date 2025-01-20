@@ -53,12 +53,12 @@ namespace inbox {
   mailbox Junk {
     special_use = \Junk
     auto = subscribe
-    autoexpunge = {{ mail_spam_and_junk_autoexpunge }}d
+    autoexpunge = {{ ispmail_spam_and_junk_autoexpunge }}d
   }
   mailbox Trash {
     special_use = \Trash
     auto = subscribe
-    autoexpunge = {{ mail_spam_and_junk_autoexpunge }}d
+    autoexpunge = {{ ispmail_spam_and_junk_autoexpunge }}d
   }
 
   # For \Sent mailboxes there are two widely used names. We'll mark both of

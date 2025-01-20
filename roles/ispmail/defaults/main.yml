@@ -1,0 +1,20 @@
+ispmail_web_server_name: mailadmin.rezoleo.fr
+
+ispmail_apache2_certificate_directory: /etc/apache2/certificates
+
+ispmail_db_host: mysql.rezoleo.fr
+
+ispmail_dovecot_conf_directory: /etc/dovecot/conf.d
+
+ispmail_rspamd_reject: 15
+
+ispmail_rspamd_add_header: 6
+
+ispmail_rspamd_greylist: 4
+
+ispmail_rspamd_train_on_ham: -5
+
+ispmail_rspamd_train_on_spam: 10
+
+# Number of days before spam and junk emails are automatically deleted
+ispmail_spam_and_junk_autoexpunge: 30

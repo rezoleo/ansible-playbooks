@@ -1,0 +1,210 @@
+- name: Create virtual mailboxer owner group
+  ansible.builtin.group:
+    name: vmail
+    gid: 5000
+    state: present
+
+- name: Create virtual mailboxes owner user
+  ansible.builtin.user:
+    name: vmail
+    uid: 5000
+    group: vmail
+    create_home: true
+    home: /var/vmail
+    state: present
+
+- name: Change vmail home mode
+  ansible.builtin.file:
+    path: /var/vmail
+    state: directory
+    mode: '0755'
+    owner: vmail
+    group: vmail
+
+- name: Ensure correct auth_mecanism for Outlook users
+  ansible.builtin.lineinfile:
+    path: "{{ ispmail_dovecot_conf_directory }}/10-auth.conf"
+    regexp: '^auth_mechanisms\s*='
+    line: 'auth_mechanisms = plain login'
+    state: present
+  notify: Restart Dovecot
+
+- name: Comment all !include lines except auth-sql.conf.ext
+  ansible.builtin.replace:
+    path: "{{ ispmail_dovecot_conf_directory }}/10-auth.conf"
+    regexp: '^(?!!include auth-sql\.conf\.ext)(?<!#)!include (.+)'
+    replace: '#!include \1'
+  notify: Restart Dovecot
+
+- name: Uncomment the auth-sql.conf.ext line if necessary
+  ansible.builtin.lineinfile:
+    path: "{{ ispmail_dovecot_conf_directory }}/10-auth.conf"
+    regexp: '^#?!include auth-sql\.conf\.ext'
+    line: '!include auth-sql.conf.ext'
+    state: present
+  notify: Restart Dovecot
+
+- name: Ensure mail_location is set to maildir:~/Maildir
+  ansible.builtin.lineinfile:
+    path: "{{ ispmail_dovecot_conf_directory }}/10-mail.conf"
+    regexp: '^#?mail_location =.*'
+    line: 'mail_location = maildir:~/Maildir'
+    state: present
+  notify: Restart Dovecot
+
+- name: Ensure mail_plugins is set to quota
+  ansible.builtin.lineinfile:
+    path: "{{ ispmail_dovecot_conf_directory }}/10-mail.conf"
+    regexp: '^#?mail_plugins =.*'
+    line: 'mail_plugins = quota'
+    state: present
+  notify: Restart Dovecot
+
+- name: Copy 10-master.conf
+  ansible.builtin.copy:
+    src: dovecot/10-master.conf
+    dest: "{{ ispmail_dovecot_conf_directory }}/10-master.conf"
+    mode: '0644'
+    owner: root
+    group: root
+  notify: Restart Dovecot
+
+- name: Ensure TLS encryption
+  ansible.builtin.lineinfile:
+    path: "{{ ispmail_dovecot_conf_directory }}/10-ssl.conf"
+    regexp: '^ssl\s*='
+    line: 'ssl = required'
+    state: present
+  notify: Restart Dovecot
+
+- name: Ensure SSL certificate is set
+  ansible.builtin.lineinfile:
+    path: "{{ ispmail_dovecot_conf_directory }}/10-ssl.conf"
+    regexp: '^ssl_cert\s*='
+    line: 'ssl_cert = <{{ ispmail_apache2_certificate_directory }}/fullchain.pem'
+    state: present
+  notify: Restart Dovecot
+
+- name: Ensure SSL key is set
+  ansible.builtin.lineinfile:
+    path: "{{ ispmail_dovecot_conf_directory }}/10-ssl.conf"
+    regexp: '^ssl_key\s*='
+    line: 'ssl_key = <{{ ispmail_apache2_certificate_directory }}/privkey.pem'
+    state: present
+  notify: Restart Dovecot
+
+- name: Copy dovecot-sql.conf.ext
+  vars:
+    ispmail_db_mailserver_password: "{{ password_secrets.secret.mailserver }}"
+  ansible.builtin.template:
+    src: dovecot/dovecot-sql.conf.ext.j2
+    dest: /etc/dovecot/dovecot-sql.conf.ext
+    mode: '0600'
+    owner: root
+    group: root
+  notify: Restart Dovecot
+
+- name: Ensure sieve plugin for LMTP
+  ansible.builtin.lineinfile:
+    path: "{{ ispmail_dovecot_conf_directory }}/20-lmtp.conf"
+    regexp: '^\s*?#?mail_plugins\s*='
+    line: '  mail_plugins = $mail_plugins sieve'
+  notify: Restart Dovecot
+
+- name: Create sieve-after directory
+  ansible.builtin.file:
+    path: /etc/dovecot/sieve-after
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Copy spam-to-folder.sieve
+  ansible.builtin.copy:
+    src: dovecot/spam-to-folder.sieve
+    dest: /etc/dovecot/sieve-after/spam-to-folder.sieve
+    mode: '0600'
+    owner: vmail
+    group: vmail
+  notify: Restart Dovecot
+
+- name: Add autoexpunge parameter
+  ansible.builtin.template:
+    src: dovecot/15-mailboxes.conf.j2
+    dest: '{{ ispmail_dovecot_conf_directory }}/15-mailboxes.conf'
+    mode: '0644'
+    owner: root
+    group: root
+  notify: Restart Dovecot
+
+- name: Enable IMAPSieve
+  ansible.builtin.lineinfile:
+    path: '{{ ispmail_dovecot_conf_directory }}/20-imap.conf'
+    regexp: '^\s*#?\s*mail_plugins\s*='
+    line: '  mail_plugins = $mail_plugins quota imap_sieve'
+    state: present
+  notify: Restart Dovecot
+
+- name: Create Sieve script directory
+  ansible.builtin.file:
+    path: /etc/dovecot/sieve
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Enable global Sieve filters
+  ansible.builtin.copy:
+    src: "dovecot/90-sieve.conf"
+    dest: "{{ ispmail_dovecot_conf_directory }}/90-sieve.conf"
+    mode: '0644'
+    owner: root
+    group: root
+  notify: Restart Dovecot
+
+- name: Copy Sieve scripts
+  ansible.builtin.copy:
+    src: "dovecot/{{ item }}.sieve"
+    dest: "/etc/dovecot/sieve/{{ item }}.sieve"
+    mode: '0600'
+    owner: vmail
+    group: vmail
+  with_items:
+    - learn-spam
+    - learn-ham
+  notify: Restart Dovecot
+
+- name: Compile Sieve scripts
+  ansible.builtin.command:
+    cmd: 'sievec /etc/dovecot/{{ item }}.sieve'
+    creates: '/etc/dovecot/{{ item }}.svbin'
+  with_items:
+    - sieve/learn-spam
+    - sieve/learn-ham
+    - sieve-after/spam-to-folder
+  notify: Restart Dovecot
+
+- name: Ensure Sieve binary scripts permissions
+  ansible.builtin.file:
+    path: "/etc/dovecot/{{ item }}.svbin"
+    state: file
+    mode: '0600'
+    owner: vmail
+    group: vmail
+  with_items:
+    - sieve/learn-spam
+    - sieve/learn-ham
+    - sieve-after/spam-to-folder
+  notify: Restart Dovecot
+
+- name: Copy rspamd scripts
+  ansible.builtin.copy:
+    src: "dovecot/{{ item }}.sh"
+    dest: "/etc/dovecot/sieve/{{ item }}.sh"
+    mode: '0700'
+    owner: vmail
+    group: vmail
+  with_items:
+    - rspamd-learn-ham
+    - rspamd-learn-spam
+  notify: Restart Dovecot

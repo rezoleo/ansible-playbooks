@@ -24,11 +24,11 @@ include("/etc/roundcube/debian-db-roundcube.php");
 
 // IMAP host chosen to perform the log-in.
 // See defaults.inc.php for the option description.
-$config['imap_host'] = "tls://{{ mail_web_server_name }}:143";
+$config['imap_host'] = "tls://{{ ispmail_web_server_name }}:143";
 
 // SMTP server host (for sending mails).
 // See defaults.inc.php for the option description.
-$config['smtp_host'] = 'tls://{{ mail_web_server_name }}:587';
+$config['smtp_host'] = 'tls://{{ ispmail_web_server_name }}:587';
 
 // SMTP username (if required) if you use %u as the username Roundcube
 // will use the current username for login
@@ -49,7 +49,7 @@ $config['product_name'] = 'Roundcube Webmail';
 // in the session record. For the default cipher method it must be
 // exactly 24 characters long.
 // YOUR KEY MUST BE DIFFERENT THAN THE SAMPLE VALUE FOR SECURITY REASONS
-$config['des_key'] = '{{ mail_roundcube_des_key }}';
+$config['des_key'] = '{{ ispmail_roundcube_des_key }}';
 
 // List of active plugins (in plugins/ directory)
 // Debian: install roundcube-plugins first to have any

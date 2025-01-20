@@ -1,0 +1,44 @@
+- name: Retrieve mailadmin and mailserver password from Vault
+  community.hashi_vault.vault_kv2_get:
+    # This secret should have the mailserver and mailadmin keys.
+    # The values of these keys should be the passwords of the users of the same name used in the database.
+    # example path: infrastructure/server_name
+    path: "{{ ispmail_vault_path_to_server }}"
+  register: password_secrets
+  run_once: true
+  delegate_to: localhost
+  become: false
+
+- name: Copy Postfix virtual mappings
+  vars:
+    ispmail_db_mailserver_password: "{{ password_secrets.secret.mailserver }}"
+  ansible.builtin.template:
+    src: "postfix/{{ item }}.j2"
+    dest: "/etc/postfix/{{ item }}"
+    mode: '0640'
+    owner: root
+    group: postfix
+  with_items:
+    - mysql-virtual-mailbox-domains.cf
+    - mysql-virtual-mailbox-maps.cf
+    - mysql-virtual-alias-maps.cf
+    - mysql-email2email.cf
+  notify: Restart Postfix
+
+- name: Copy Postfix main configuration
+  ansible.builtin.template:
+    src: postfix/main.cf.j2
+    dest: /etc/postfix/main.cf
+    mode: '0644'
+    owner: root
+    group: root
+  notify: Restart Postfix
+
+- name: Copy Postfix master configuration
+  ansible.builtin.template:
+    src: postfix/master.cf.j2
+    dest: /etc/postfix/master.cf
+    mode: '0644'
+    owner: root
+    group: root
+  notify: Restart Postfix

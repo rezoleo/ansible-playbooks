@@ -1,0 +1,53 @@
+---
+# Before running this playbook, it is needed to create a database on a remote server
+# as written here : https://workaround.org/ispmail-bookworm/prepare-the-database/.
+# If needed allow the host in the remote server's firewall.
+
+# Quotas are not implemented in this playbook. If one want to implement them,
+# one may look at https://workaround.org/ispmail-bookworm/quotas/ for the implementation.
+
+- name: Install essentials
+  ansible.builtin.apt:
+    update_cache: true
+    name:
+      # list available at https://workaround.org/ispmail-bookworm/install-the-software-packages/
+      - postfix
+      - postfix-mysql
+      - apache2
+      - php8.2
+      - rspamd
+      - redis-server
+      - swaks
+      - mutt
+      - dovecot-mysql
+      - dovecot-pop3d
+      - dovecot-imapd
+      - dovecot-managesieved
+      - dovecot-lmtpd
+      - ca-certificates
+      - roundcube
+      - roundcube-plugins
+      - roundcube-plugins-extra
+      - roundcube-mysql
+      - rsyslog
+    state: present
+
+- name: Import Apache2 and SSL tasks
+  ansible.builtin.import_tasks:
+    file: apache2.yml
+
+- name: Import Postfix tasks
+  ansible.builtin.import_tasks:
+    file: postfix.yml
+
+- name: Import Dovecot tasks
+  ansible.builtin.import_tasks:
+    file: dovecot.yml
+
+- name: Import Roundcube tasks
+  ansible.builtin.import_tasks:
+    file: roundcube.yml
+
+- name: Import rspamd tasks
+  ansible.builtin.import_tasks:
+    file: rspamd.yml

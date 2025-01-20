@@ -1,0 +1,35 @@
+- name: Configure desired limits
+  ansible.builtin.template:
+    src: rspamd/actions.conf.j2
+    dest: /etc/rspamd/local.d/actions.conf
+    mode: '0640'
+    owner: root
+    group: root
+  notify: Restart rspamd
+
+- name: Add headers to filter spam
+  ansible.builtin.copy:
+    src: rspamd/milter_headers.conf
+    dest: /etc/rspamd/override.d/milter_headers.conf
+    mode: '0640'
+    owner: root
+    group: root
+  notify: Restart rspamd
+
+- name: Copy redis.conf
+  ansible.builtin.copy:
+    src: rspamd/redis.conf
+    dest: /etc/rspamd/override.d/redis.conf
+    mode: '0644'
+    owner: root
+    group: root
+  notify: Restart rspamd
+
+- name: Copy classifier-bayes.conf
+  ansible.builtin.template:
+    src: rspamd/classifier-bayes.conf.j2
+    dest: /etc/rspamd/override.d/classifier-bayes.conf
+    mode: '0644'
+    owner: root
+    group: root
+  notify: Restart rspamd

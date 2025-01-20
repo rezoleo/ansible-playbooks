@@ -4,7 +4,7 @@ connect = \
 host=mysql.rezoleo.fr \
 dbname=mailserver \
 user=mailserver \
-password={{ mail_db_mailserver_password }}
+password={{ ispmail_db_mailserver_password }}
 
 user_query = SELECT email as user, \
 concat('*:bytes=', quota) AS quota_rule, \

@@ -1,8 +1,0 @@
-<VirtualHost *:443>
-    ServerName {{ mail_web_server_name }}
-    DocumentRoot /var/lib/roundcube/public_html
-    SSLEngine on
-    SSLCertificateFile {{ mail_apache2_certificate_directory }}/fullchain.pem
-    SSLCertificateKeyFile {{ mail_apache2_certificate_directory }}/privkey.pem
-    Include /etc/roundcube/apache.conf
-</VirtualHost>

@@ -1,0 +1,8 @@
+<VirtualHost *:443>
+    ServerName {{ ispmail_web_server_name }}
+    DocumentRoot /var/lib/roundcube/public_html
+    SSLEngine on
+    SSLCertificateFile {{ ispmail_apache2_certificate_directory }}/fullchain.pem
+    SSLCertificateKeyFile {{ ispmail_apache2_certificate_directory }}/privkey.pem
+    Include /etc/roundcube/apache.conf
+</VirtualHost>
