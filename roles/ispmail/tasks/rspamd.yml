@@ -2,7 +2,7 @@
   ansible.builtin.template:
     src: rspamd/actions.conf.j2
     dest: /etc/rspamd/local.d/actions.conf
-    mode: '0640'
+    mode: '0644'
     owner: root
     group: root
   notify: Restart rspamd
@@ -11,7 +11,7 @@
   ansible.builtin.copy:
     src: rspamd/milter_headers.conf
     dest: /etc/rspamd/override.d/milter_headers.conf
-    mode: '0640'
+    mode: '0644'
     owner: root
     group: root
   notify: Restart rspamd
@@ -29,6 +29,17 @@
   ansible.builtin.template:
     src: rspamd/classifier-bayes.conf.j2
     dest: /etc/rspamd/override.d/classifier-bayes.conf
+    mode: '0644'
+    owner: root
+    group: root
+  notify: Restart rspamd
+
+- name: Copy worker-controller.inc
+  vars:
+    ispmail_rspamd_worker_hashed_password: "{{ password_secrets.secret.rspamd_password | ansible.builtin.password_hash(hashtype='bcrypt') }}"
+  ansible.builtin.template:
+    src: rspamd/worker-controller.inc.j2
+    dest: /etc/rspamd/local.d/worker-controller.inc
     mode: '0644'
     owner: root
     group: root

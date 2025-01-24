@@ -1,4 +1,7 @@
 <VirtualHost *:80>
-    ServerName {{ ispmail_web_server_name }}
-    DocumentRoot /var/www/{{ ispmail_web_server_name }}
-  </VirtualHost>
+  ServerName {{ ispmail_web_server_name }}
+  DocumentRoot /var/www/{{ ispmail_web_server_name }}
+  
+  # Redirect all HTTP traffic to HTTPS
+  Redirect permanent / https://{{ ispmail_web_server_name }}/
+</VirtualHost>

@@ -20,6 +20,18 @@
     name: ssl
   notify: Restart apache2
 
+- name: Enable proxy_http module
+  community.general.apache2_module:
+    state: present
+    name: proxy_http
+  notify: Restart apache2
+
+- name: Enable rewrite module
+  community.general.apache2_module:
+    state: present
+    name: rewrite
+  notify: Restart apache2
+
 - name: Copy http.conf
   ansible.builtin.template:
     src: apache/http.conf.j2

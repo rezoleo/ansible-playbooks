@@ -5,4 +5,12 @@
     SSLCertificateFile {{ ispmail_apache2_certificate_directory }}/fullchain.pem
     SSLCertificateKeyFile {{ ispmail_apache2_certificate_directory }}/privkey.pem
     Include /etc/roundcube/apache.conf
+
+    <Location /rspamd>
+        Require all granted
+    </Location>
+    
+    RewriteEngine On
+    RewriteRule ^/rspamd$ /rspamd/ [R,L]
+    RewriteRule ^/rspamd/(.*) http://localhost:11334/$1 [P,L]
 </VirtualHost>
