@@ -30,6 +30,7 @@
       - roundcube-plugins-extra
       - roundcube-mysql
       - rsyslog
+      - dnsutils
     state: present
 
 - name: Import Apache2 and SSL tasks

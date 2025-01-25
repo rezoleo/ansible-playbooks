@@ -44,3 +44,42 @@
     owner: root
     group: root
   notify: Restart rspamd
+
+- name: Create DKIM folder
+  ansible.builtin.file:
+    path: /var/lib/rspamd/dkim
+    state: directory
+    mode: '0755'
+    owner: _rspamd
+    group: _rspamd
+
+- name: Enabling DKIM maps
+  ansible.builtin.template:
+    src: rspamd/dkim_signing.conf.j2
+    dest: /etc/rspamd/local.d/dkim_signing.conf
+    mode: '0644'
+    owner: root
+    group: root
+  notify: Restart rspamd
+
+- name: Copy dkim_selectors.map
+  vars:
+    ispmail_dkim_selector: "{{ password_secrets.secret.dkim_selector }}"
+  ansible.builtin.template:
+    src: rspamd/dkim_selectors.map.j2
+    dest: '{{ ispmail_dkim_selectors_map_path }}'
+    mode: '0644'
+    owner: root
+    group: root
+  notify: Restart rspamd
+
+- name: Copy DKIM private key
+  vars:
+    content: "{{ password_secrets.secret.dkim_private_key }}"
+    ispmail_dkim_selector: "{{ password_secrets.secret.dkim_selector }}"
+  ansible.builtin.template:
+    src: rspamd/dkim_private_key.j2
+    dest: '/var/lib/rspamd/dkim/rezoleo.fr.{{ ispmail_dkim_selector }}.key'
+    mode: '0400'
+    owner: _rspamd
+    group: _rspamd

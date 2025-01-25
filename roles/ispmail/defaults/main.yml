@@ -18,3 +18,5 @@ ispmail_rspamd_train_on_spam: 10
 
 # Number of days before spam and junk emails are automatically deleted
 ispmail_spam_and_junk_autoexpunge: 30
+
+ispmail_dkim_selectors_map_path: /etc/rspamd/dkim_selectors.map
