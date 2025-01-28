@@ -1,0 +1,11 @@
+<VirtualHost *:443>
+    ServerName {{ ispmail_admin_web_server_name }}
+    DocumentRoot /var/www/ispmailadmin-{{ ispmail_admin_version }}/htdocs
+    
+    SSLEngine on
+    SSLCertificateFile {{ ispmail_apache2_certificate_directory }}/fullchain.pem
+    SSLCertificateKeyFile {{ ispmail_apache2_certificate_directory }}/privkey.pem
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>

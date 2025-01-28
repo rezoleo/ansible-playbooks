@@ -109,7 +109,15 @@
     path: "{{ ispmail_dovecot_conf_directory }}/20-lmtp.conf"
     regexp: '^\s*?#?mail_plugins\s*='
     line: '  mail_plugins = $mail_plugins sieve'
-  notify: Restart Dovecot
+  register: enable_sieve_lmtp
+
+- name: Enable IMAPSieve
+  ansible.builtin.lineinfile:
+    path: '{{ ispmail_dovecot_conf_directory }}/20-imap.conf'
+    regexp: '^\s*#?\s*mail_plugins\s*='
+    line: '  mail_plugins = $mail_plugins quota imap_sieve'
+    state: present
+  register: enable_imapsieve
 
 - name: Create sieve-after directory
   ansible.builtin.file:
@@ -135,14 +143,6 @@
     mode: '0644'
     owner: root
     group: root
-  notify: Restart Dovecot
-
-- name: Enable IMAPSieve
-  ansible.builtin.lineinfile:
-    path: '{{ ispmail_dovecot_conf_directory }}/20-imap.conf'
-    regexp: '^\s*#?\s*mail_plugins\s*='
-    line: '  mail_plugins = $mail_plugins quota imap_sieve'
-    state: present
   notify: Restart Dovecot
 
 - name: Create Sieve script directory
@@ -173,6 +173,12 @@
     - learn-spam
     - learn-ham
   notify: Restart Dovecot
+
+- name: Restart Dovecot for Sieve changes
+  ansible.builtin.systemd_service:
+    name: dovecot
+    state: restarted
+  when: enable_imapsieve.changed or enable_sieve_lmtp.changed
 
 - name: Compile Sieve scripts
   ansible.builtin.command:

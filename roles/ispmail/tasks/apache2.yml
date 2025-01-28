@@ -61,3 +61,25 @@
     src: /etc/apache2/sites-available/{{ ispmail_web_server_name }}-https.conf
     dest: /etc/apache2/sites-enabled/{{ ispmail_web_server_name }}-https.conf
     state: link
+
+- name: Copy ISPMailAdmin HTTP/HTTPS configuration
+  ansible.builtin.template:
+    src: "apache/{{ item }}"
+    dest: "/etc/apache2/sites-available/{{ item | replace('.j2', '') }}"
+    mode: '0644'
+    owner: root
+    group: root
+  loop:
+    - ispmailadmin-http.conf.j2
+    - ispmailadmin-https.conf.j2
+  notify: Restart apache2
+
+- name: Enable ISPMailAdmin sites
+  ansible.builtin.file:
+    src: "/etc/apache2/sites-available/{{ item }}"
+    dest: "/etc/apache2/sites-enabled/{{ item }}"
+    state: link
+  loop:
+    - ispmailadmin-http.conf
+    - ispmailadmin-https.conf
+  notify: Restart apache2

@@ -20,3 +20,7 @@ ispmail_rspamd_train_on_spam: 10
 ispmail_spam_and_junk_autoexpunge: 30
 
 ispmail_dkim_selectors_map_path: /etc/rspamd/dkim_selectors.map
+
+ispmail_admin_version: 0.9.11
+
+ispmail_admin_web_server_name: mailadmin.rezoleo.fr

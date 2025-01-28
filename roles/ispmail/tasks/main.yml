@@ -52,3 +52,7 @@
 - name: Import rspamd tasks
   ansible.builtin.import_tasks:
     file: rspamd.yml
+
+- name: Import ISPMail Admin tasks
+  ansible.builtin.import_tasks:
+    file: ispmail_admin.yml
