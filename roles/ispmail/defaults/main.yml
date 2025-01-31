@@ -1,4 +1,4 @@
-ispmail_web_server_name: mailadmin.rezoleo.fr
+ispmail_web_server_name: mail.rezoleo.fr
 
 ispmail_apache2_certificate_directory: /etc/apache2/certificates
 
@@ -24,3 +24,5 @@ ispmail_dkim_selectors_map_path: /etc/rspamd/dkim_selectors.map
 ispmail_admin_version: 0.9.11
 
 ispmail_admin_web_server_name: mailadmin.rezoleo.fr
+
+ispmail_roundcube_db_user: roundcube

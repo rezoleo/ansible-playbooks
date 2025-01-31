@@ -1,12 +1,51 @@
+- name: Check if Roundcube DB Tables exist
+  community.mysql.mysql_query:
+    login_db: roundcube
+    login_user: "{{ ispmail_roundcube_db_user }}"
+    login_password: "{{ password_secrets.secret.roundcube_db }}"
+    login_host: "{{ ispmail_db_host }}"
+    query: "SHOW TABLES LIKE 'system';"
+  register: roundcube_db_tables
+
+- name: Create Roundcube DB Tables
+  community.mysql.mysql_db:
+    name: roundcube
+    state: import
+    target: /usr/share/roundcube/SQL/mysql.initial.sql
+    login_user: "{{ ispmail_roundcube_db_user }}"
+    login_password: "{{ password_secrets.secret.roundcube_db }}"
+    login_host: "{{ ispmail_db_host }}"
+  when: roundcube_db_tables.rowcount[0] == 0
+
+- name: Copy Roundcube dbconfig configuration
+  vars:
+    roundcube_db_password: "{{ password_secrets.secret.roundcube_db }}"
+  ansible.builtin.template:
+    src: roundcube/roundcube.conf.j2
+    dest: /etc/dbconfig-common/roundcube.conf
+    mode: '0600'
+    owner: root
+    group: root
+
+- name: Configure Roundcube database
+  vars:
+    roundcube_db_password: "{{ password_secrets.secret.roundcube_db }}"
+  ansible.builtin.template:
+    src: roundcube/debian-db.php.j2
+    dest: /etc/roundcube/debian-db.php
+    mode: '0640'
+    owner: root
+    group: www-data
+
 - name: Copy Roundcube configuration
   vars:
     ispmail_roundcube_des_key: "{{ password_secrets.secret.roundcube_des_key }}"
   ansible.builtin.template:
     src: roundcube/config.inc.php.j2
     dest: /etc/roundcube/config.inc.php
-    mode: '0644'
+    mode: '0640'
     owner: root
-    group: root
+    group: www-data
 
 - name: Copy Roundcube password plugin configuration
   vars:
@@ -24,3 +63,6 @@
     regexp: '^\$config'
     line: "$config['managesieve_host'] = 'localhost';"
     state: present
+    mode: '0640'
+    owner: root
+    group: www-data
