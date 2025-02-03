@@ -1,17 +1,49 @@
-- name: Retrieve mailadmin and mailserver password from Vault
+- name: Retrieve secrets from Vault
   community.hashi_vault.vault_kv2_get:
     # This secret should have the mailserver and mailadmin keys.
     # The values of these keys should be the passwords of the users of the same name used in the database.
     # example path: infrastructure/server_name
     path: "{{ ispmail_vault_path_to_server }}"
-  register: password_secrets
+  register: secrets
   run_once: true
   delegate_to: localhost
   become: false
 
+- name: Check if Mailserver DB Tables exist
+  community.mysql.mysql_query:
+    login_db: mailserver
+    login_user: "mailadmin"
+    login_password: "{{ secrets.secret.mailadmin }}"
+    login_host: "{{ ispmail_db_host }}"
+    query: "SHOW TABLES LIKE 'virtual_aliases';"
+  register: mailserver_db_tables
+
+- name: Copy MySQL mailserver schema to remote host
+  ansible.builtin.copy:
+    src: schema.sql
+    dest: /root/schema.sql
+    mode: '0644'
+    owner: root
+    group: root
+  when: mailserver_db_tables.rowcount[0] == 0
+
+- name: Debug mailserver DB tables row count
+  ansible.builtin.debug:
+    var: mailserver_db_tables.rowcount[0]
+
+- name: Create Mailserver DB Tables
+  community.mysql.mysql_db:
+    name: mailserver
+    state: import
+    target: /root/schema.sql
+    login_user: "mailadmin"
+    login_password: "{{ secrets.secret.mailadmin }}"
+    login_host: "{{ ispmail_db_host }}"
+  when: mailserver_db_tables.rowcount[0] == 0
+
 - name: Copy Postfix virtual mappings
   vars:
-    ispmail_db_mailserver_password: "{{ password_secrets.secret.mailserver }}"
+    ispmail_db_mailserver_password: "{{ secrets.secret.mailserver }}"
   ansible.builtin.template:
     src: "postfix/{{ item }}.j2"
     dest: "/etc/postfix/{{ item }}"

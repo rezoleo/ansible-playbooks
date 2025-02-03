@@ -2,7 +2,7 @@
   community.mysql.mysql_query:
     login_db: roundcube
     login_user: "{{ ispmail_roundcube_db_user }}"
-    login_password: "{{ password_secrets.secret.roundcube_db }}"
+    login_password: "{{ secrets.secret.roundcube_db }}"
     login_host: "{{ ispmail_db_host }}"
     query: "SHOW TABLES LIKE 'system';"
   register: roundcube_db_tables
@@ -13,13 +13,13 @@
     state: import
     target: /usr/share/roundcube/SQL/mysql.initial.sql
     login_user: "{{ ispmail_roundcube_db_user }}"
-    login_password: "{{ password_secrets.secret.roundcube_db }}"
+    login_password: "{{ secrets.secret.roundcube_db }}"
     login_host: "{{ ispmail_db_host }}"
   when: roundcube_db_tables.rowcount[0] == 0
 
 - name: Copy Roundcube dbconfig configuration
   vars:
-    roundcube_db_password: "{{ password_secrets.secret.roundcube_db }}"
+    roundcube_db_password: "{{ secrets.secret.roundcube_db }}"
   ansible.builtin.template:
     src: roundcube/roundcube.conf.j2
     dest: /etc/dbconfig-common/roundcube.conf
@@ -29,7 +29,7 @@
 
 - name: Configure Roundcube database
   vars:
-    roundcube_db_password: "{{ password_secrets.secret.roundcube_db }}"
+    roundcube_db_password: "{{ secrets.secret.roundcube_db }}"
   ansible.builtin.template:
     src: roundcube/debian-db.php.j2
     dest: /etc/roundcube/debian-db.php
@@ -39,7 +39,7 @@
 
 - name: Copy Roundcube configuration
   vars:
-    ispmail_roundcube_des_key: "{{ password_secrets.secret.roundcube_des_key }}"
+    ispmail_roundcube_des_key: "{{ secrets.secret.roundcube_des_key }}"
   ansible.builtin.template:
     src: roundcube/config.inc.php.j2
     dest: /etc/roundcube/config.inc.php
@@ -49,7 +49,7 @@
 
 - name: Copy Roundcube password plugin configuration
   vars:
-    ispmail_db_mailadmin_password: "{{ password_secrets.secret.mailadmin }}"
+    ispmail_db_mailadmin_password: "{{ secrets.secret.mailadmin }}"
   ansible.builtin.template:
     src: roundcube/password/config.inc.php.j2
     dest: /etc/roundcube/plugins/password/config.inc.php

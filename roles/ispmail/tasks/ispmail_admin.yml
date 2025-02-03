@@ -5,6 +5,7 @@
     mode: '0644'
     owner: root
     group: root
+    checksum: '{{ ispmail_admin_checksum }}'
 
 - name: Unarchive ISPMail Admin
   ansible.builtin.unarchive:
@@ -16,8 +17,7 @@
 
 - name: Copy ISPMail Admin configuration
   vars:
-    ispmail_db_mailserver_password: "{{ password_secrets.secret.mailserver }}"
-    ispmail_db_mailadmin_password: "{{ password_secrets.secret.mailadmin }}"
+    ispmail_db_mailadmin_password: "{{ secrets.secret.mailadmin }}"
   ansible.builtin.template:
     src: ispmail_admin/config.inc.php.j2
     dest: /var/www/ispmailadmin-{{ ispmail_admin_version }}/htdocs/cfg/config.inc.php

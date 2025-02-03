@@ -36,7 +36,7 @@
 
 - name: Copy worker-controller.inc
   vars:
-    ispmail_rspamd_worker_hashed_password: "{{ password_secrets.secret.rspamd_password | ansible.builtin.password_hash(hashtype='bcrypt') }}"
+    ispmail_rspamd_worker_hashed_password: "{{ secrets.secret.rspamd_password | ansible.builtin.password_hash(hashtype='bcrypt') }}"
   ansible.builtin.template:
     src: rspamd/worker-controller.inc.j2
     dest: /etc/rspamd/local.d/worker-controller.inc
@@ -64,7 +64,7 @@
 
 - name: Copy dkim_selectors.map
   vars:
-    ispmail_dkim_selector: "{{ password_secrets.secret.dkim_selector }}"
+    ispmail_dkim_selector: "{{ secrets.secret.dkim_selector }}"
   ansible.builtin.template:
     src: rspamd/dkim_selectors.map.j2
     dest: '{{ ispmail_dkim_selectors_map_path }}'
@@ -75,8 +75,8 @@
 
 - name: Copy DKIM private key
   vars:
-    content: "{{ password_secrets.secret.dkim_private_key }}"
-    ispmail_dkim_selector: "{{ password_secrets.secret.dkim_selector }}"
+    content: "{{ secrets.secret.dkim_private_key }}"
+    ispmail_dkim_selector: "{{ secrets.secret.dkim_selector }}"
   ansible.builtin.template:
     src: rspamd/dkim_private_key.j2
     dest: '/var/lib/rspamd/dkim/rezoleo.fr.{{ ispmail_dkim_selector }}.key'

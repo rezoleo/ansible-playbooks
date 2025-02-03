@@ -95,7 +95,7 @@
 
 - name: Copy dovecot-sql.conf.ext
   vars:
-    ispmail_db_mailserver_password: "{{ password_secrets.secret.mailserver }}"
+    ispmail_db_mailserver_password: "{{ secrets.secret.mailserver }}"
   ansible.builtin.template:
     src: dovecot/dovecot-sql.conf.ext.j2
     dest: /etc/dovecot/dovecot-sql.conf.ext

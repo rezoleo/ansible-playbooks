@@ -21,7 +21,9 @@ ispmail_spam_and_junk_autoexpunge: 30
 
 ispmail_dkim_selectors_map_path: /etc/rspamd/dkim_selectors.map
 
+# to change together
 ispmail_admin_version: 0.9.11
+ispmail_admin_checksum: 'sha256:e3061781b0777cb2e0a4ba4c9f58874ebffd70f5f99735a2beaa7579c7eb7937'
 
 ispmail_admin_web_server_name: mailadmin.rezoleo.fr
 
