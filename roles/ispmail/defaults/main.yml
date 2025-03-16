@@ -1,3 +1,5 @@
+ispmail_top_level_domain: rezoleo.fr
+
 ispmail_web_server_name: mail.rezoleo.fr
 
 ispmail_apache2_certificate_directory: /etc/apache2/certificates
@@ -28,3 +30,21 @@ ispmail_admin_checksum: 'sha256:e3061781b0777cb2e0a4ba4c9f58874ebffd70f5f99735a2
 ispmail_admin_web_server_name: mailadmin.rezoleo.fr
 
 ispmail_roundcube_db_user: roundcube
+
+ispmail_sympa_sysconfdir: /etc/sympa
+
+ispmail_sympa_expldir: /var/lib/sympa/list_data
+
+ispmail_sympa_libexecdir: /usr/lib/sympa/bin
+
+ispmail_sympa_piddir: /run/sympa
+
+ispmail_sympa_execcgidir: /usr/lib/cgi-bin/sympa
+
+ispmail_sympa_staticdir: /usr/share/sympa/static_content
+
+ispmail_sympa_cssdir: /var/lib/sympa/css
+
+ispmail_sympa_picturesdir: /var/lib/sympa/pictures
+
+ispmail_sympa_listmaster_email: "listmaster@{{ ispmail_web_server_name }}"

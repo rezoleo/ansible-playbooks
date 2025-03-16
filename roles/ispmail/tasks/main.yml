@@ -30,6 +30,8 @@
       - roundcube-plugins-extra
       - roundcube-mysql
       - rsyslog
+      - libdbd-mysql-perl
+      - sympa
       - python3-pymysql # needed for sql queries to create roundcube database
     state: present
 
@@ -56,3 +58,7 @@
 - name: Import ISPMail Admin tasks
   ansible.builtin.import_tasks:
     file: ispmail_admin.yml
+
+- name: Import Sympa tasks
+  ansible.builtin.import_tasks:
+    file: sympa.yml

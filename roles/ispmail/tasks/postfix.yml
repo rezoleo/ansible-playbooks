@@ -27,10 +27,6 @@
     group: root
   when: mailserver_db_tables.rowcount[0] == 0
 
-- name: Debug mailserver DB tables row count
-  ansible.builtin.debug:
-    var: mailserver_db_tables.rowcount[0]
-
 - name: Create Mailserver DB Tables
   community.mysql.mysql_db:
     name: mailserver

@@ -1,0 +1,103 @@
+###\\\\ Service description ////###
+
+## domain
+## Primary mail domain name
+## Example: domain	mail.example.org
+domain	{{ ispmail_web_server_name }}
+
+## listmaster
+## Email addresses of listmasters
+## Email addresses of the listmasters (users authorized to perform global
+## server commands). Some error reports may also be sent to these addresses.
+## Listmasters can be defined for each virtual host, however, the default
+## listmasters will have privileges to manage all virtual hosts.
+## Example: listmaster	your_email_address@domain.tld
+listmaster	{{ ispmail_sympa_listmaster_email }}
+
+###\\\\ Database related ////###
+
+## db_type
+## Type of the database
+## Possible types are "MySQL", "PostgreSQL", "Oracle" and "SQLite".
+db_type	MySQL
+
+## db_host
+## Hostname of the database server
+## With PostgreSQL, you can also use the path to Unix Socket Directory, e.g.
+## "/var/run/postgresql" for connection with Unix domain socket.
+## Example: db_host	localhost
+db_host	{{ ispmail_db_host }}
+
+## db_port
+## Port of the database server
+db_port	3306
+
+## db_name
+## Name of the database
+## With SQLite, this must be the full path to database file.
+## With Oracle Database, this must be SID, net service name or easy connection
+## identifier (to use net service name, db_host should be set to "none" and
+## HOST, PORT and SERVICE_NAME should be defined in tnsnames.ora file).
+db_name	sympa
+
+## db_user
+## User for the database connection
+## Example: db_user	sympa
+db_user	sympa
+
+## db_passwd
+## Password for the database connection
+## What ever you use a password or not, you must protect the SQL server (is it
+## not a public internet service ?)
+## Example: db_passwd	your_passwd
+db_passwd	{{ ispmail_sympa_db_password }}
+
+###\\\\ List definition ////###
+
+## lang
+## Language of the list
+## This parameter defines the language used for the list. It is used to
+## initialize a user's language preference; Sympa command reports are
+## extracted from the associated message catalog.
+lang	en
+
+###\\\\ Web interface parameters ////###
+
+## wwsympa_url
+## URL prefix of web interface
+## This is used to construct URLs of web interface. The protocol (either
+## https:// or http://) is required.
+## Example: wwsympa_url	https://web.example.org/sympa
+wwsympa_url	https://{{ ispmail_web_server_name }}/sympa
+
+## static_content_path
+## Directory for static contents
+static_content_path	{{ ispmail_sympa_staticdir }}
+
+## css_path
+## Directory for static style sheets (CSS)
+## After an upgrade, static CSS files are upgraded with the newly installed
+## "css.tt2" template. Therefore, this is not a good place to store customized
+## CSS files.
+css_path	{{ ispmail_sympa_cssdir }}
+
+## css_url
+## URL for style sheets (CSS)
+## To use auto-generated static CSS, HTTP server have to map it with
+## "css_path".
+css_url	/css-sympa
+
+## pictures_path
+## Directory for subscribers pictures
+pictures_path	/var/lib/sympa/pictures
+
+## pictures_url
+## URL for subscribers pictures
+## HTTP server have to map it with "pictures_path" directory.
+pictures_url	/pictures-sympa
+
+###\\\\ Mail parameters ////###
+
+sendmail_aliases {{ ispmail_sympa_sysconfdir }}/sympa_transport
+aliases_program postmap
+aliases_db_type hash

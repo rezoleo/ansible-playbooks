@@ -11,6 +11,7 @@ append_dot_mydomain = no
 
 alias_maps = hash:/etc/aliases
 alias_database = hash:/etc/aliases
+transport_maps = hash:{{ ispmail_sympa_sysconfdir }}/transport.sympa,hash:{{ ispmail_sympa_sysconfdir }}/sympa_transport
 mydestination = $myhostname, localhost.$mydomain, localhost
 relayhost = 
 mynetworks = 127.0.0.0/8
@@ -19,9 +20,9 @@ recipient_delimiter = +
 
 compatibility_level = 2
 
-virtual_mailbox_domains = mysql:/etc/postfix/mysql-virtual-mailbox-domains.cf
-virtual_mailbox_maps = mysql:/etc/postfix/mysql-virtual-mailbox-maps.cf
-virtual_alias_maps = mysql:/etc/postfix/mysql-virtual-alias-maps.cf,mysql:/etc/postfix/mysql-email2email.cf
+virtual_mailbox_domains = mysql:/etc/postfix/mysql-virtual-mailbox-domains.cf, hash:{{ ispmail_sympa_sysconfdir}}/transport.sympa
+virtual_mailbox_maps = mysql:/etc/postfix/mysql-virtual-mailbox-maps.cf,hash:{{ ispmail_sympa_sysconfdir }}/transport.sympa,hash:{{ ispmail_sympa_sysconfdir }}/sympa_transport,hash:{{ ispmail_sympa_sysconfdir }}/virtual.sympa
+virtual_alias_maps = mysql:/etc/postfix/mysql-virtual-alias-maps.cf,mysql:/etc/postfix/mysql-email2email.cf,hash:{{ ispmail_sympa_sysconfdir }}/virtual.sympa
 virtual_transport = lmtp:unix:private/dovecot-lmtp
 smtpd_sasl_type = dovecot
 smtpd_sasl_path = private/auth

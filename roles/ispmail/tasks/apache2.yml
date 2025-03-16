@@ -32,6 +32,12 @@
     name: rewrite
   notify: Restart apache2
 
+- name: Enable proxy_fcgi module
+  community.general.apache2_module:
+    state: present
+    name: proxy_fcgi
+  notify: Restart apache2
+
 - name: Copy http.conf
   ansible.builtin.template:
     src: apache/http.conf.j2
