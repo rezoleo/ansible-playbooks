@@ -47,4 +47,4 @@ ispmail_sympa_cssdir: /var/lib/sympa/css
 
 ispmail_sympa_picturesdir: /var/lib/sympa/pictures
 
-ispmail_sympa_listmaster_email: "listmaster@{{ ispmail_web_server_name }}"
+ispmail_sympa_listmaster_email: "listmaster@{{ ispmail_top_level_domain }}"

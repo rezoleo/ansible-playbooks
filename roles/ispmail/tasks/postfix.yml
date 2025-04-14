@@ -20,7 +20,7 @@
 
 - name: Copy MySQL mailserver schema to remote host
   ansible.builtin.copy:
-    src: schema.sql
+    src: postfix/schema.sql
     dest: /root/schema.sql
     mode: '0644'
     owner: root
