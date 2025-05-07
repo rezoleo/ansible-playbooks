@@ -97,7 +97,7 @@
   ansible.builtin.file:
     state: directory
     dest: "{{ vault_agent_certificate_directory }}"
-    mode: '0740'
+    mode: '0755'
     owner: root
     group: "{{ vault_agent_group_name }}"
 
