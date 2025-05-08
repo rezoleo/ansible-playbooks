@@ -19,7 +19,7 @@
     repo: "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.asc] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
     state: present
 
-- name: Intall Vault
+- name: Install Vault
   ansible.builtin.apt:
     update_cache: true
     name:
@@ -89,7 +89,7 @@
     owner: root
     group: root
 
-- name: Create read-acces group
+- name: Create read-access group
   ansible.builtin.group:
     name: "{{ vault_agent_group_name }}"
 
