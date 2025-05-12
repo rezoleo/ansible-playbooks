@@ -1,0 +1,40 @@
+- name: Install Java 17
+  ansible.builtin.apt:
+    name: openjdk-17-jdk
+    state: present
+    update_cache: true
+
+- name: Download Keycloak
+  ansible.builtin.get_url:
+    url: https://github.com/keycloak/keycloak/releases/download/26.2.4/keycloak-26.2.4.tar.gz
+    dest: /tmp/keycloak.tar.gz
+    mode: '0644'
+
+- name: Extract Keycloak
+  ansible.builtin.unarchive:
+    src: /tmp/keycloak.tar.gz
+    dest: /opt/
+    remote_src: true
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Create symlink to keycloak
+  ansible.builtin.file:
+    src: /opt/keycloak-26.2.4
+    dest: /opt/keycloak
+    state: link
+
+- name: Copy keycloak.service
+  ansible.builtin.copy:
+    src: keycloak.service
+    dest: /etc/systemd/system/keycloak.service
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: Start/Enable Keycloak service
+  ansible.builtin.systemd:
+    name: keycloak
+    state: started
+    enabled: true
