@@ -7,12 +7,12 @@
 - name: Download Keycloak
   ansible.builtin.get_url:
     url: https://github.com/keycloak/keycloak/releases/download/26.2.4/keycloak-26.2.4.tar.gz
-    dest: /tmp/keycloak.tar.gz
+    dest: /opt/keycloak-26.2.4.tar.gz
     mode: '0644'
 
 - name: Extract Keycloak
   ansible.builtin.unarchive:
-    src: /tmp/keycloak.tar.gz
+    src: /opt/keycloak-26.2.4.tar.gz
     dest: /opt/
     remote_src: true
     mode: '0755'
