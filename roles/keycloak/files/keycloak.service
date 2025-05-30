@@ -7,6 +7,5 @@ User=root
 Group=root
 ExecStart=/opt/keycloak/bin/kc.sh start-dev
 
- 
 [Install]
 WantedBy=multi-user.target

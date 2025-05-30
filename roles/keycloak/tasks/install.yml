@@ -1,0 +1,136 @@
+- name: Install Java 17
+  ansible.builtin.apt:
+    name: openjdk-17-jdk
+    state: present
+    update_cache: true
+
+- name: Download Keycloak
+  ansible.builtin.get_url:
+    url: https://github.com/keycloak/keycloak/releases/download/26.2.4/keycloak-26.2.4.tar.gz
+    dest: /opt/keycloak-26.2.4.tar.gz
+    mode: '0644'
+
+- name: Extract Keycloak
+  ansible.builtin.unarchive:
+    src: /opt/keycloak-26.2.4.tar.gz
+    dest: /opt/
+    remote_src: true
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Create symlink to keycloak
+  ansible.builtin.file:
+    src: /opt/keycloak-26.2.4
+    dest: /opt/keycloak
+    state: link
+
+- name: Copy keycloak.service
+  ansible.builtin.copy:
+    src: keycloak.service
+    dest: /etc/systemd/system/keycloak.service
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: Stop Keycloak service
+  ansible.builtin.systemd:
+    name: keycloak
+    state: stopped
+
+# Create temporary initial service account with bootstrap
+# Create the permanent service account
+
+- name: Create temporary service account random password
+  ansible.builtin.set_fact:
+    tmp_service_account_password: "{{ lookup('ansible.builtin.password', '/dev/null') }}"
+    tmp_service_account_name: "tmpclient"
+  delegate_to: localhost
+  become: false
+
+- name: Create temporary service account
+  ansible.builtin.command:
+    cmd: "/opt/keycloak/bin/kc.sh bootstrap-admin service --no-prompt --client-id {{ tmp_service_account_name | quote }} --client-secret:env=TMP_SERVICE_PASS"
+  environment:
+    TMP_SERVICE_PASS: "{{ tmp_service_account_password }}"
+  changed_when: true
+
+- name: Retrieve nyx vault params
+  community.hashi_vault.vault_kv2_get:
+    path: infrastructure/nyx
+  register: keycloak_secrets
+  run_once: true
+  delegate_to: localhost
+  become: false
+
+- name: Set necessary params as facts
+  ansible.builtin.set_fact:
+    ansible_perm_service_password: "{{ keycloak_secrets.secret.ansible_password }}"
+    perm_admin_password: "{{ keycloak_secrets.secret['Keycloak: admin'] }}"
+  run_once: true
+  delegate_to: localhost
+  become: false
+
+- name: Start/Enable Keycloak service
+  ansible.builtin.systemd:
+    name: keycloak
+    state: started
+    enabled: true
+    daemon_reload: true
+
+- name: Wait for Keycloak service to be started
+  ansible.builtin.wait_for:
+    port: 8080
+    delay: 10
+    timeout: 60
+    state: started
+
+- name: Create permanent service account
+  community.general.keycloak_client:
+    auth_keycloak_url: http://localhost:8080
+    auth_realm: master
+    auth_username: "{{ tmp_service_account_name }}"
+    auth_password: "{{ tmp_service_account_password }}"
+    client_id: ansible
+    name: ansible
+    secret: "{{ ansible_perm_service_password }}"
+    service_accounts_enabled: true
+    state: present
+
+- name: Add roles to ansible account
+  community.general.keycloak_user_rolemapping:
+    auth_keycloak_url: http://localhost:8080
+    auth_realm: master
+    auth_client_id: "{{ tmp_service_account_name }}"
+    auth_client_secret: "{{ tmp_service_account_password }}"
+    service_account_user_client_id: ansible
+    roles:
+      - name: admin
+      - name: default-roles-master
+    state: present
+
+
+- name: Create permanent admin account
+  community.general.keycloak_user:
+    auth_keycloak_url: http://localhost:8080
+    auth_realm: master
+    auth_client_id: "{{ tmp_service_account_name }}"
+    auth_client_secret: "{{ tmp_service_account_password }}"
+    username: admin
+    credentials:
+      - type: password
+        value: "{{ perm_admin_password }}"
+        temporary: false
+    state: present
+
+- name: Add roles to ansible account
+  community.general.keycloak_user_rolemapping:
+    auth_keycloak_url: http://localhost:8080
+    auth_realm: master
+    auth_client_id: "{{ tmp_service_account_name }}"
+    auth_client_secret: "{{ tmp_service_account_password }}"
+    target_username: admin
+    roles:
+      - name: admin
+      - name: default-roles-master
+    state: present
