@@ -1,8 +1,8 @@
 {{with secret "secret/certificat-web"}}
-{{ index .Data.data "privkey.pem" | writeToFile "<<vault_agent_certificate_directory>>/privkey.pem" "" "" "0400" }}
-{{ index .Data.data "chain.pem" | writeToFile "<<vault_agent_certificate_directory>>/chain.pem" "" "" "0400" }}
-{{ index .Data.data "cert.pem" | writeToFile "<<vault_agent_certificate_directory>>/cert.pem" "" "" "0400" }}
-{{ index .Data.data "fullchain.pem" | writeToFile "<<vault_agent_certificate_directory>>/fullchain.pem" "" "" "0400" }}
+{{ index .Data.data "privkey.pem" | writeToFile "<<vault_agent_certificate_directory>>/privkey.pem" "" "<<vault_agent_group_name>>" "0440" }}
+{{ index .Data.data "chain.pem" | writeToFile "<<vault_agent_certificate_directory>>/chain.pem" "" "<<vault_agent_group_name>>" "0440" }}
+{{ index .Data.data "cert.pem" | writeToFile "<<vault_agent_certificate_directory>>/cert.pem" "" "<<vault_agent_group_name>>" "0440" }}
+{{ index .Data.data "fullchain.pem" | writeToFile "<<vault_agent_certificate_directory>>/fullchain.pem" "" "<<vault_agent_group_name>>" "0440" }}
 {{ index .Data.data "privkey.pem" }}
 {{ index .Data.data "chain.pem" }}
 {{ index .Data.data "cert.pem" }}

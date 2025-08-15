@@ -1,3 +1,17 @@
+# Location of approle files
 vault_agent_working_directory: /root/vault_agent_certificates
 
+# Version of vault agent
 vault_agent_vault_version: 1.18.2
+
+# Location where the certificate will be stored
+vault_agent_certificate_directory: "/var/lib/vault_agent_certificates"
+
+# Name of the group that is allowed to read certificate
+vault_agent_group_name: "vault-certs"
+
+# Command to execute after certificate update
+# vault_agent_service_reload_command:
+#   - systemctl
+#   - restart
+#   - mon_super_service

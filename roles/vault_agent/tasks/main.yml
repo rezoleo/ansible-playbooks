@@ -19,7 +19,7 @@
     repo: "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.asc] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
     state: present
 
-- name: Intall Vault
+- name: Install Vault
   ansible.builtin.apt:
     update_cache: true
     name:
@@ -95,7 +95,7 @@
     dest: "{{ vault_agent_certificate_directory }}"
     mode: '0755'
     owner: root
-    group: root
+    group: "{{ vault_agent_group_name }}"
 
 - name: Start vault-agent-certificates service
   ansible.builtin.systemd:

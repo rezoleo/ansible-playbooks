@@ -33,6 +33,7 @@ vault username:
 # Setup a virtualenv and install dependencies
 [group('tooling')]
 venv:
+    #!/usr/bin/env bash 
     [[ -d .venv ]] || (python -m venv .venv --prompt rezoleo-ansible-playbooks && {{venv_bin}}/pip install -r requirements.txt)
 
 # Run ansible-lint
