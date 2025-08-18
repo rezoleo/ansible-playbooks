@@ -2,7 +2,7 @@
   ansible.builtin.get_url:
     url: https://apt.releases.hashicorp.com/gpg
     dest: /usr/share/keyrings/hashicorp-archive-keyring.asc
-    mode: "0644"
+    mode: '0644'
     owner: root
     checksum: sha256:cafb01beac341bf2a9ba89793e6dd2468110291adfbb6c62ed11a0cde6c09029
 
@@ -16,7 +16,7 @@
 
 - name: Add Vault repository
   ansible.builtin.apt_repository:
-    repo: "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.asc] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
+    repo: 'deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.asc] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main'
     state: present
 
 - name: Install Vault
@@ -35,7 +35,7 @@
 
 - name: Create vault agent workdir
   ansible.builtin.file:
-    path: "{{ vault_agent_working_directory }}"
+    path: '{{ vault_agent_working_directory }}'
     state: directory
     mode: '0755'
     owner: root
@@ -43,20 +43,20 @@
 
 - name: Create role_id file
   vars:
-    content: "{{ certificat_secrets.secret.role_id }}"
+    content: '{{ certificat_secrets.secret.role_id }}'
   ansible.builtin.template:
     src: content.j2
-    dest: "{{ vault_agent_working_directory }}/role_id"
+    dest: '{{ vault_agent_working_directory }}/role_id'
     mode: '0600'
     owner: root
     group: root
 
 - name: Create secret_id file
   vars:
-    content: "{{ certificat_secrets.secret.secret_id }}"
+    content: '{{ certificat_secrets.secret.secret_id }}'
   ansible.builtin.template:
     src: content.j2
-    dest: "{{ vault_agent_working_directory }}/secret_id"
+    dest: '{{ vault_agent_working_directory }}/secret_id'
     mode: '0600'
     owner: root
     group: root
@@ -64,7 +64,7 @@
 - name: Copy agent-config.hcl
   ansible.builtin.template:
     src: agent-config.hcl.j2
-    dest: "{{ vault_agent_working_directory }}/agent-config.hcl"
+    dest: '{{ vault_agent_working_directory }}/agent-config.hcl'
     mode: '0644'
     owner: root
     group: root
@@ -73,7 +73,7 @@
 - name: Copy retrieving_cert.tmpl
   ansible.builtin.template:
     src: retrieving_cert.tmpl.j2
-    dest: "{{ vault_agent_working_directory }}/retrieving_cert.tmpl"
+    dest: '{{ vault_agent_working_directory }}/retrieving_cert.tmpl'
     mode: '0644'
     owner: root
     group: root
@@ -89,13 +89,17 @@
     owner: root
     group: root
 
+- name: Create read-access group
+  ansible.builtin.group:
+    name: '{{ vault_agent_group_name }}'
+
 - name: Create directory for certificates
   ansible.builtin.file:
     state: directory
-    dest: "{{ vault_agent_certificate_directory }}"
+    dest: '{{ vault_agent_certificate_directory }}'
     mode: '0755'
     owner: root
-    group: "{{ vault_agent_group_name }}"
+    group: '{{ vault_agent_group_name }}'
 
 - name: Start vault-agent-certificates service
   ansible.builtin.systemd:
