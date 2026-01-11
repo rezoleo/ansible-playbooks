@@ -35,7 +35,7 @@
   ignore_errors: true
   delegate_to: localhost
   become: false
-  register: snmp_facts_results
+  register: monitoring_facts_results
 
 - name: Configure SNMP
   ansible.builtin.template:
@@ -58,7 +58,7 @@
   notify: Restart snmpd
 
 - name: Setup SNMP v3 user
-  when: snmp_facts_results.failed
+  when: monitoring_facts_results.failed
   block:
     - name: Stop SNMP service
       ansible.builtin.systemd:
@@ -95,7 +95,7 @@
     return_content: true
     headers:
       X-Auth-Token: "{{ monitoring_librenms_api_token }}"
-  register: get_device_results
+  register: monitoring_device_results
   ignore_errors: true
 
 - name: Add device to LibreNMS
@@ -118,7 +118,7 @@
       authalgo: SHA
       cryptopass: "{{ monitoring_snmp_cryptopass }}"
       cryptoalgo: AES
-  when: get_device_results.json.status != 'ok'
+  when: monitoring_device_results.json.status != 'ok'
 
 - name: Change SNMP version on LibreNMS
   delegate_to: localhost
@@ -147,4 +147,4 @@
         - SHA
         - "{{ monitoring_snmp_cryptopass }}"
         - AES
-  when: get_device_results.json.status == 'ok' and get_device_results.json.devices[0].snmpver != 'v3'
+  when: monitoring_device_results.json.status == 'ok' and monitoring_device_results.json.devices[0].snmpver != 'v3'
