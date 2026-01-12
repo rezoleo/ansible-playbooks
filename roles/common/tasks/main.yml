@@ -27,7 +27,7 @@
     line: export PS1='\[\033[00;31m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00;31m\]\$\[\033[00m\] '
 
 - name: Generate MOTD banner
-  ansible.builtin.shell: figlet {{ ansible_hostname | quote }} -f slant -w 120 | lolcat --force --seed {{ 65535 | random(seed=inventory_hostname) }}
+  ansible.builtin.shell: figlet {{ ansible_hostname | quote }} -f slant -w 120 | lolcat --force-color --seed {{ 65535 | random(seed=inventory_hostname) }}
   delegate_to: localhost
   become: false
   register: common_motd
