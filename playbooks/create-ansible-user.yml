@@ -17,10 +17,6 @@
       delegate_to: localhost
       become: false
 
-    # - name: Display ssh_credentials
-    #   ansible.builtin.debug:
-    #     msg: "{{ ssh_credentials }}"
-
     - name: Set public key as fact # noqa: run-once[task]
       ansible.builtin.set_fact:
         ssh_public_key: "{{ ssh_credentials.secret.ansible_pub_key }}"
