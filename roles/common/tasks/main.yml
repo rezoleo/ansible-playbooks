@@ -39,4 +39,4 @@
     src: 00-banner.j2
     dest: /etc/update-motd.d/00-banner
     mode: "755"
-  when: not motd.failed
+  when: not common_motd.failed
