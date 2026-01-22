@@ -1,0 +1,29 @@
+{%- for rule in item.value -%}
+
+{%- set final_rule = [] -%}
+
+{%- set final_rule = final_rule + ["-A", rule.chain] -%}
+
+{%- set final_rule = final_rule + ["--protocol", rule.protocol] -%}
+
+{%- if "source" in rule -%}
+    {%- set final_rule = final_rule + ["--source", rule.source] -%}
+{%- endif -%}
+
+{%- if "destination_port" in rule -%}
+    {%- set final_rule = final_rule + ["--destination-port", rule.destination_port] -%}
+{%- endif -%}
+
+{%- set final_rule = final_rule + ["--jump", rule.target] -%}
+
+{%- if "comment" in rule -%}
+    {%- set final_rule = final_rule + ["-m comment --comment", "\"" + rule.comment + "\""] -%}
+{%- endif -%}
+
+{%- if "raw_extras" in rule -%}
+    {%- set final_rule = final_rule + rule.raw_extras -%}
+{%- endif -%}
+
+{{- final_rule|join(' ') -}}
+
+{%- endfor -%}

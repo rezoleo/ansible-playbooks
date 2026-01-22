@@ -8,8 +8,12 @@
     - role: ntp
       when: ansible_facts['virtualization_type'] != "lxc"
     - ssh
+<<<<<<< HEAD
     # - podman
     # - hestia
+=======
+    - firewall
+>>>>>>> 3dd3265 (feat(firewall): Creation of firewall role, add firewall rule when configuring monitoring)
 
 - name: Deploy UPS monitoring
   hosts: ups
