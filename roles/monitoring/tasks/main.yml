@@ -94,7 +94,7 @@
     firewall_rules:
       050-snmp:
         - chain: INPUT
-          source: 10.12.1.4/32
+          source: 10.12.1.4/32 # TODO: Source IP should depend on the inventory
           protocol: udp
           destination_port: 161
           target: ACCEPT
