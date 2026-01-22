@@ -1,0 +1,17 @@
+---
+
+- name: Create fragment folder
+  ansible.builtin.file:
+    path: /etc/iptables/rules.d
+    state: directory
+    mode: '0755'
+
+- name: Add rule
+  ansible.builtin.template:
+    src: rule.j2
+    dest: /etc/iptables/rules.d/{{ item.key }}.iptables
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Apply firewall rules
+  loop: "{{ firewall_rules | dict2items }}"

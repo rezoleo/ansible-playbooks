@@ -1,0 +1,43 @@
+---
+
+- name: Install firewall packages
+  ansible.builtin.apt:
+    package:
+      - iptables
+      - ipset
+      - iptables-persistent
+      - ipset-persistent # Even though we do not use the service we need the netfilter-persistent ipset plugin to be installed
+    state: present
+
+- name: Create fragment folder
+  ansible.builtin.file:
+    path: /etc/iptables/rules.d
+    state: directory
+    mode: '0755'
+
+- name: Copy all rules fragments
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: /etc/iptables/rules.d/
+    owner: root
+    group: root
+    mode: '0644'
+  with_fileglob:
+    - "*.iptables"
+  notify: Apply firewall rules
+
+# - name: Add rule from role
+#   ansible.builtin.import_role:
+#     name: firewall
+#     tasks_from: create_rule.yml
+#   vars:
+#     firewall_rules:
+#       100-test:
+#         - chain: INPUT
+#           source: 10.0.0.0/8
+#           protocol: tcp
+#           # destination_port: 22
+#           target: ACCEPT
+#           comment: "Allow SSH from inside the network"
+#           raw_extras:
+#             - "--syn"

@@ -86,6 +86,20 @@
         state: present
         line: createUser {{ monitoring_snmp_user }} SHA {{ monitoring_snmp_authpass }} AES {{ monitoring_snmp_cryptopass }}
 
+- name: Add firewall rule for SNMP
+  ansible.builtin.import_role:
+    name: firewall
+    tasks_from: create_rule.yml
+  vars:
+    firewall_rules:
+      050-snmp:
+        - chain: INPUT
+          source: 10.12.1.4/32
+          protocol: udp
+          destination_port: 161
+          target: ACCEPT
+          comment: "Allow SNMP from polling server"
+
 - name: Start SNMP service
   ansible.builtin.systemd:
     name: snmpd
