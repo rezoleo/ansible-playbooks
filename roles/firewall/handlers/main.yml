@@ -1,0 +1,15 @@
+---
+
+- name: Merge files
+  ansible.builtin.assemble:
+    src: /etc/iptables/rules.d/
+    dest: /etc/iptables/rules.v4
+    backup: true
+    mode: "0600"
+  listen: Apply firewall rules
+
+- name: Restart iptables
+  ansible.builtin.systemd:
+    name: iptables
+    state: restarted
+  listen: Apply firewall rules
