@@ -1,4 +1,4 @@
-{%- for rule in item.value -%}
+{% for rule in item.value %}
 
 {%- set final_rule = [] -%}
 
@@ -24,6 +24,5 @@
     {%- set final_rule = final_rule + rule.raw_extras -%}
 {%- endif -%}
 
-{{- final_rule|join(' ') -}}
-
-{%- endfor -%}
+{{ final_rule|join(' ') }}
+{% endfor %}
