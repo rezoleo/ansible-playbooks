@@ -41,3 +41,11 @@
 #           comment: "Allow SSH from inside the network"
 #           raw_extras:
 #             - "--syn"
+#         - chain: INPUT
+#           source: 10.12.0.0/16
+#           protocol: udp
+#           # destination_port: 22
+#           target: DROP
+#           comment: "Allow SSH from inside the network"
+#           raw_extras:
+#             - "--syn"
