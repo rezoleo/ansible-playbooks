@@ -25,27 +25,3 @@
   with_fileglob:
     - "*.iptables"
   notify: Apply firewall rules
-
-# - name: Add rule from role
-#   ansible.builtin.import_role:
-#     name: firewall
-#     tasks_from: create_rule.yml
-#   vars:
-#     firewall_rules:
-#       100-test:
-#         - chain: INPUT
-#           source: 10.0.0.0/8
-#           protocol: tcp
-#           # destination_port: 22
-#           target: ACCEPT
-#           comment: "Allow SSH from inside the network"
-#           raw_extras:
-#             - "--syn"
-#         - chain: INPUT
-#           source: 10.12.0.0/16
-#           protocol: udp
-#           # destination_port: 22
-#           target: DROP
-#           comment: "Allow SSH from inside the network"
-#           raw_extras:
-#             - "--syn"
