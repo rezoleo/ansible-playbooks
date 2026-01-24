@@ -8,12 +8,16 @@
       - iptables-persistent
       - ipset-persistent # Even though we do not use the service we need the netfilter-persistent ipset plugin to be installed
     state: present
+  become: true
 
 - name: Create fragment folder
   ansible.builtin.file:
     path: /etc/iptables/rules.d
     state: directory
     mode: '0755'
+    owner: root
+    group: root
+  become: true
 
 - name: Copy all rules fragments
   ansible.builtin.copy:
@@ -25,3 +29,4 @@
   with_fileglob:
     - "*.iptables"
   notify: Apply firewall rules
+  become: true
