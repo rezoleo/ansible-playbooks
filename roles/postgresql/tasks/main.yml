@@ -1,0 +1,55 @@
+---
+# TODO if non existant, create users and databases
+- name: Install postgresql
+  ansible.builtin.apt:
+    package:
+      - postgresql
+      - python3-psycopg2
+    state: present
+  become: true
+
+- name: Create ipset of authorized servers
+  ansible.builtin.template:
+    src: ipsets.j2
+    dest: /etc/iptables/ipsets
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+  notify: Restart iptables
+
+- name: Create firewall rule
+  ansible.builtin.import_role:
+    role: firewall
+    tasks_from: create_rule.yml
+  vars:
+    firewall_rules:
+      200-postgresql:
+        - chain: INPUT
+          protocol: tcp
+          destination_port: 5432
+          target: ACCEPT
+          raw_extras:
+            - "--match set"
+            - "--match-set pg-authorized src"
+            - "--syn"
+          comment: "Allow authorized hosts to access postgresql"
+  when: postgresql_listent_interfaces != 'localhost'
+
+- name: Configure postgres to listen to all interfaces
+  community.postgresql.postgresql_alter_system:
+    param: listen_addresses
+    value: "{{ postgresql_listent_interfaces }}"
+  become: true
+  become_user: postgres
+  notify: Restart postgresql
+
+- name: Add authorized servers to pg_hba
+  ansible.builtin.template:
+    dest: /etc/postgresql/17/main/pg_hba.conf # TODO: Change that to not hardcoded
+    src: pg_hba.conf.j2
+    owner: postgres
+    group: postgres
+    mode: '0644'
+  notify: Restart postgresql
+  become: true
