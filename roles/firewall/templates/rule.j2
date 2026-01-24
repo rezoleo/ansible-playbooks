@@ -1,16 +1,22 @@
-{% for rule in item.value %}
+{% for rule in item.value -%}
+
+{% if "raw_rule" in rule %}
+{{ rule.raw_rule }}
+{% else %}
 
 {%- set final_rule = [] -%}
 
 {%- set final_rule = final_rule + ["-A", rule.chain] -%}
 
-{%- set final_rule = final_rule + ["--protocol", rule.protocol] -%}
+{%- if "protocol" in rule -%}
+    {%- set final_rule = final_rule + ["--protocol", rule.protocol] -%}
+{%- endif -%}
 
 {%- if "source" in rule -%}
     {%- set final_rule = final_rule + ["--source", rule.source] -%}
 {%- endif -%}
 
-{%- if "destination_port" in rule -%}
+{%- if "destination_port" in rule -%} {# ONLY IF THERE IS A PROTOCOL #}
     {%- set final_rule = final_rule + ["--destination-port", rule.destination_port] -%}
 {%- endif -%}
 
@@ -25,4 +31,5 @@
 {%- endif -%}
 
 {{ final_rule|join(' ') }}
-{% endfor %}
+{% endif -%}
+{%- endfor %}
