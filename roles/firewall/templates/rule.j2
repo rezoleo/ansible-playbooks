@@ -1,4 +1,4 @@
-{% for rule in item.value -%}
+{%- for rule in item.value -%}
 
 {% if "raw_rule" in rule %}
 {{ rule.raw_rule }}
@@ -16,14 +16,27 @@
     {%- set final_rule = final_rule + ["--source", rule.source] -%}
 {%- endif -%}
 
-{%- if "destination_port" in rule -%} {# ONLY IF THERE IS A PROTOCOL #}
+{%- if "destination" in rule -%}
+    {%- set final_rule = final_rule + ["--destination", rule.destination] -%}
+{%- endif -%}
+
+{%- if "source_ipset" in rule -%}
+    {%- set final_rule = final_rule + ["--match set --set", rule.source_ipset, "src"] -%}
+{%- endif -%}
+
+{%- if "destination_ipset" in rule -%}
+    {% set final_rule = final_rule + ["--match set --set", rule.destination_ipset, "dst"] %}
+{%- endif -%}
+
+{%- if "destination_port" in rule -%}
+    {{ ("" if "protocol" in rule and rule.protocol.lower() in ["tcp", "udp"]) | mandatory("Destination port should be used with a valid protocol!") }}
     {%- set final_rule = final_rule + ["--destination-port", rule.destination_port] -%}
 {%- endif -%}
 
 {%- set final_rule = final_rule + ["--jump", rule.target] -%}
 
 {%- if "comment" in rule -%}
-    {%- set final_rule = final_rule + ["-m comment --comment", "\"" + rule.comment + "\""] -%}
+    {%- set final_rule = final_rule + ["--match comment --comment", "\"" + rule.comment + "\""] -%}
 {%- endif -%}
 
 {%- if "raw_extras" in rule -%}
