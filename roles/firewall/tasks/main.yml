@@ -59,7 +59,5 @@
           destination_port: 22
           target: ACCEPT
           comment: "Authorize connection to ssh from 10.0/8 subnet"
-          raw_extras:
-            - "--syn"
       999-end:
         - raw_rule: "COMMIT"
