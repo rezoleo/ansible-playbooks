@@ -8,6 +8,7 @@
     - role: ntp
       when: ansible_virtualization_type != "lxc"
     - ssh
+    - firewall
 
 - name: Deploy UPS monitoring
   become: true
