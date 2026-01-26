@@ -1,0 +1,4 @@
+create pg-authorized hash:ip family inet hashsize 1024 maxelem 65536 bucketsize 12 initval 0xebea1780
+{% for ip in postgresql_authorization.keys() %}
+add pg-authorized {{ ip }}
+{% endfor %}
