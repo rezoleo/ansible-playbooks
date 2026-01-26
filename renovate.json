@@ -6,5 +6,16 @@
   "dependencyDashboard": true,
   "prHourlyLimit": 3,
   "timezone": "Europe/Paris",
-  "osvVulnerabilityAlerts": true
+  "osvVulnerabilityAlerts": true,
+  "labels": ["dependencies", "{{updateType}}"],
+  "packageRules": [
+    {
+      "matchPackageNames": ["ansible-lint", "ansible-cmdb"],
+      "labels": ["development"]
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "labels": ["security", "{{vulnerabilitySeverity}}"],
+    "enabled": true
+  }
 }
