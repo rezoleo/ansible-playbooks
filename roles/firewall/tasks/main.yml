@@ -10,6 +10,11 @@
     state: present
   become: true
 
+- name: Clean directory
+  ansible.builtin.file:
+    state: absent
+    path: /etc/iptables/rules.d/
+
 - name: Create base rules
   ansible.builtin.include_tasks:
     file: create_rule.yml
