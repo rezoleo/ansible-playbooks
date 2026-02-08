@@ -11,7 +11,7 @@
 
 - name: Add rule
   ansible.builtin.template:
-    src: rule.j2
+    src: rule.iptables.j2
     dest: /etc/iptables/rules.d/{{ item.key }}.iptables
     owner: root
     group: root
