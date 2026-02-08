@@ -1,0 +1,21 @@
+---
+
+- name: Merge files
+  ansible.builtin.assemble:
+    src: /etc/iptables/rules.d
+    dest: /etc/iptables/rules.v4
+    regexp: "[a-zA-Z0-9\\-_]+\\.iptables"
+    backup: true
+    mode: "0600"
+    owner: root
+    group: root
+    validate: "iptables-restore --test %s"
+  become: true
+  listen: Apply firewall rules
+
+- name: Restart iptables
+  ansible.builtin.systemd:
+    name: iptables
+    state: restarted
+  become: true
+  listen: Apply firewall rules

@@ -4,6 +4,7 @@
   become: true
   roles:
     - common
+    - firewall
     - monitoring
     - role: ntp
       when: ansible_virtualization_type != "lxc"
