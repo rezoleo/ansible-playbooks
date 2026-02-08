@@ -28,7 +28,7 @@
 - name: Retrieve role_id and secret_id from Vault
   community.hashi_vault.vault_kv2_get:
     path: certificat-web-id
-  register: certificat_secrets
+  register: vault_agent_certificates_secrets
   run_once: true
   delegate_to: localhost
   become: false
@@ -43,7 +43,7 @@
 
 - name: Create role_id file
   vars:
-    content: "{{ certificat_secrets.secret.role_id }}"
+    content: "{{ vault_agent_certificates_secrets.secret.role_id }}"
   ansible.builtin.template:
     src: content.j2
     dest: "{{ vault_agent_working_directory }}/role_id"
@@ -53,7 +53,7 @@
 
 - name: Create secret_id file
   vars:
-    content: "{{ certificat_secrets.secret.secret_id }}"
+    content: "{{ vault_agent_certificates_secrets.secret.secret_id }}"
   ansible.builtin.template:
     src: content.j2
     dest: "{{ vault_agent_working_directory }}/secret_id"
