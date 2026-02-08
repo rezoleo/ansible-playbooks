@@ -11,7 +11,7 @@
   "packageRules": [
     {
       "matchPackageNames": ["ansible-lint", "ansible-cmdb"],
-      "labels": ["development"]
+      "addLabels": ["development"]
     }
   ],
   "vulnerabilityAlerts": {
