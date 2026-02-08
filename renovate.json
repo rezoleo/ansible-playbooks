@@ -1,0 +1,21 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:best-practices"
+  ],
+  "dependencyDashboard": true,
+  "prHourlyLimit": 3,
+  "timezone": "Europe/Paris",
+  "osvVulnerabilityAlerts": true,
+  "labels": ["dependencies", "{{updateType}}"],
+  "packageRules": [
+    {
+      "matchPackageNames": ["ansible-lint", "ansible-cmdb"],
+      "addLabels": ["development"]
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "labels": ["security", "{{vulnerabilitySeverity}}"],
+    "enabled": true
+  }
+}
