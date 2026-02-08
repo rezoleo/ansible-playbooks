@@ -1,7 +1,7 @@
 ---
 monitoring_server_location: Residence Leonard de Vinci
 
-firewall_rules:
+monitoring_firewall_rules:
   050-snmp:
     - chain: INPUT
       source: 10.12.1.4/32 # TODO: Source IP should depend on the inventory
