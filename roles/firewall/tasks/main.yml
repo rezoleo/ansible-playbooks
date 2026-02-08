@@ -1,0 +1,78 @@
+---
+
+- name: Install firewall packages
+  ansible.builtin.apt:
+    package:
+      - iptables
+      - ipset
+      - iptables-persistent
+      - ipset-persistent # Even though we do not use the service we need the netfilter-persistent ipset plugin to be installed
+    state: present
+  become: true
+
+- name: Clean directory
+  ansible.builtin.file:
+    state: absent
+    path: /etc/iptables/rules.d/
+  become: true
+
+- name: Create fragment folder
+  ansible.builtin.file:
+    path: /etc/iptables/rules.d/
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+  become: true
+
+- name: Create README file
+  ansible.builtin.copy:
+    src: README
+    dest: /etc/iptables/rules.d/README
+    mode: '0755'
+    owner: root
+    group: root
+  become: true
+
+- name: Create base rules
+  ansible.builtin.include_tasks:
+    file: create_rule.yml
+  vars:
+    firewall_rules:
+      000-base:
+        - raw_rule: "*filter"
+        - raw_rule: ":INPUT DROP [0:0]"
+        - raw_rule: ":FORWARD DROP [0:0]"
+        - raw_rule: ":OUTPUT ACCEPT [0:0]"
+        - chain: INPUT
+          target: ACCEPT
+          comment: "Authorize all established connection"
+          raw_extras:
+            - "--match conntrack"
+            - "--ctstate RELATED,ESTABLISHED"
+        - chain: INPUT
+          target: ACCEPT
+          comment: "Authorize loopback connections"
+          raw_extras:
+            - "--in-interface lo"
+        - chain: INPUT
+          target: DROP
+          comment: "Drop invalid packets"
+          raw_extras:
+            - "--match conntrack"
+            - "--ctstate INVALID"
+        - chain: INPUT
+          target: ACCEPT
+          protocol: icmp
+          comment: "Authorize ping requests"
+          raw_extras:
+            - "--icmp-type echo-request"
+      600-ssh:
+        - chain: INPUT
+          source: 10.0.0.0/8
+          protocol: tcp
+          destination_port: 22
+          target: ACCEPT
+          comment: "Authorize connection to ssh from 10.0/8 subnet"
+      999-end:
+        - raw_rule: "COMMIT"
