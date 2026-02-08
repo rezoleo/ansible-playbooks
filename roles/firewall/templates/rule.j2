@@ -1,4 +1,11 @@
-{%- for rule in item.value -%}
+{{ ansible_managed | comment }}
+{% if ansible_parent_role_names is defined %}
+# Roles: {{ ansible_parent_role_names | reverse | join(" -> ") }}
+{% elif ansible_role_name is defined %}
+# Role: {{ ansible_role_name }}
+{% endif %}
+# Rule: {{ item.key }}
+{% for rule in item.value -%}
 
 {% if "raw_rule" in rule %}
 {{ rule.raw_rule }}

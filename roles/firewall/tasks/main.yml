@@ -11,7 +11,7 @@
   become: true
 
 - name: Create base rules
-  ansible.builtin.import_tasks:
+  ansible.builtin.include_tasks:
     file: create_rule.yml
   vars:
     firewall_rules:
