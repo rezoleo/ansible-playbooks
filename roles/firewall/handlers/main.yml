@@ -8,6 +8,7 @@
     mode: "0600"
     owner: root
     group: root
+    validate: "iptables-restore --test %s"
   become: true
   listen: Apply firewall rules
 
