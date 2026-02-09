@@ -15,7 +15,7 @@
     },
     {
       "matchPackageNames": ["python"],
-      "allowedVersions": "<3.14" // Match debian 13 supported version
+      "allowedVersions": "3.13" // Match debian 13 supported version
     },
     {
       "matchPackageNames": ["pysnmp"],
