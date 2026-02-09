@@ -1,0 +1,26 @@
+- name: Download ISPMail Admin
+  ansible.builtin.get_url:
+    url: 'https://www.ima.jungclaussen.com/dwn/dwn.php?v={{ ispmail_admin_version }}&f=.tar.gz'
+    dest: '/root/ispmailadmin{{ ispmail_admin_version }}.tar.gz'
+    mode: '0644'
+    owner: root
+    group: root
+    checksum: '{{ ispmail_admin_checksum }}'
+
+- name: Unarchive ISPMail Admin
+  ansible.builtin.unarchive:
+    src: '/root/ispmailadmin{{ ispmail_admin_version }}.tar.gz'
+    dest: /var/www
+    remote_src: true
+    owner: www-data
+    group: www-data
+
+- name: Copy ISPMail Admin configuration
+  vars:
+    ispmail_db_mailadmin_password: "{{ secrets.secret.mailadmin }}"
+  ansible.builtin.template:
+    src: ispmail_admin/config.inc.php.j2
+    dest: /var/www/ispmailadmin-{{ ispmail_admin_version }}/htdocs/cfg/config.inc.php
+    mode: '0600'
+    owner: www-data
+    group: www-data

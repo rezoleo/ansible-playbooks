@@ -1,0 +1,43 @@
+<?php
+/**
+** DATABASE ACCESS
+**/
+define('IMA_CFG_DB_HOST',     '{{ ispmail_db_host }}');
+define('IMA_CFG_DB_PORT',     '3306');
+/// optional, can be faster
+define('IMA_CFG_DB_SOCKET',   null); //no Unix socket
+define('IMA_CFG_DB_USER',     'mailadmin');
+define('IMA_CFG_DB_PASSWORD', '{{ ispmail_db_mailadmin_password }}');
+define('IMA_CFG_DB_DATABASE', 'mailserver');
+
+/**
+** ACCESS CONTROL
+** uncomment the type you want to use.
+**/
+define('IMA_CFG_LOGIN', IMA_LOGINTYPE_ACCOUNT);  
+// define('IMA_CFG_LOGIN', IMA_LOGINTYPE_ADM);  
+// define('IMA_CFG_LOGIN', IMA_LOGINTYPE_ADMAUTO);  
+
+/// Define the administrator's name and password.
+define('IMA_CFG_ADM_USER',  'mailadmin');     // admin username
+define('IMA_CFG_ADM_PASS',  '{{ ispmail_db_mailadmin_password }}');     // admin password
+
+/**
+** PASSWORD HASHES
+** Enable only *one* of the following
+**/
+define('IMA_CFG_USE_BCRYPT_HASHES', true);
+// define('IMA_CFG_USE_SHA256_HASHES', true);
+// define('IMA_CFG_USE_MD5_HASHES', true);
+
+/**
+** QUOTAS
+**/
+/// Enable or disable quotas
+/// true or false
+define('IMA_CFG_USE_QUOTAS', false);
+/// in bytes. 0 is unlimited, 1GB = 2^30 Bytes = 1073741824
+// define('IMA_CFG_DEFAULT_QUOTA', 0);
+/// convenience for input field
+// define('IMA_CFG_QUOTA_STEP', 1073741824);
+?>

@@ -1,0 +1,50 @@
+ispmail_top_level_domain: rezoleo.fr
+
+ispmail_web_server_name: mail.rezoleo.fr
+
+ispmail_apache2_certificate_directory: /etc/apache2/certificates
+
+ispmail_db_host: mysql.rezoleo.fr
+
+ispmail_dovecot_conf_directory: /etc/dovecot/conf.d
+
+ispmail_rspamd_reject: 15
+
+ispmail_rspamd_add_header: 6
+
+ispmail_rspamd_greylist: 4
+
+ispmail_rspamd_train_on_ham: -5
+
+ispmail_rspamd_train_on_spam: 10
+
+# Number of days before spam and junk emails are automatically deleted
+ispmail_spam_and_junk_autoexpunge: 30
+
+ispmail_dkim_selectors_map_path: /etc/rspamd/dkim_selectors.map
+
+# to change together
+ispmail_admin_version: 0.9.11
+ispmail_admin_checksum: 'sha256:e3061781b0777cb2e0a4ba4c9f58874ebffd70f5f99735a2beaa7579c7eb7937'
+
+ispmail_admin_web_server_name: mailadmin.rezoleo.fr
+
+ispmail_roundcube_db_user: roundcube
+
+ispmail_sympa_sysconfdir: /etc/sympa
+
+ispmail_sympa_expldir: /var/lib/sympa/list_data
+
+ispmail_sympa_libexecdir: /usr/lib/sympa/bin
+
+ispmail_sympa_piddir: /run/sympa
+
+ispmail_sympa_execcgidir: /usr/lib/cgi-bin/sympa
+
+ispmail_sympa_staticdir: /usr/share/sympa/static_content
+
+ispmail_sympa_cssdir: /var/lib/sympa/css
+
+ispmail_sympa_picturesdir: /var/lib/sympa/pictures
+
+ispmail_sympa_listmaster_email: "listmaster@{{ ispmail_top_level_domain }}"

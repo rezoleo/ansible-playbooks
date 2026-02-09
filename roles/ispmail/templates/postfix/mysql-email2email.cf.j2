@@ -1,0 +1,5 @@
+user = mailserver
+password = {{ ispmail_db_mailserver_password }}
+hosts = {{ ispmail_db_host }}
+dbname = mailserver
+query = SELECT email FROM virtual_users WHERE email='%s'

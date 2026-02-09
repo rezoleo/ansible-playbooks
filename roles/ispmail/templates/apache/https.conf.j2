@@ -1,0 +1,31 @@
+<VirtualHost *:443>
+    ServerName {{ ispmail_web_server_name }}
+    DocumentRoot /var/www/
+    SSLEngine on
+    SSLCertificateFile {{ ispmail_apache2_certificate_directory }}/fullchain.pem
+    SSLCertificateKeyFile {{ ispmail_apache2_certificate_directory }}/privkey.pem
+    
+    # Redirect root URL to Roundcube
+    RedirectMatch ^/$ /roundcube/
+    
+    Include /etc/roundcube/apache.conf
+    Alias /roundcube /var/lib/roundcube/public_html
+    <Directory /var/lib/roundcube/public_html>
+        Require all granted
+        AllowOverride All
+    </Directory>
+
+    <Location /rspamd>
+        Require all granted
+    </Location>
+    
+    Include /etc/apache2/conf-available/sympa.conf
+    <Location /sympa>
+       SetHandler "proxy:unix:{{ ispmail_sympa_piddir }}/wwsympa.socket|fcgi://localhost/"
+       Require all granted
+    </Location>
+
+    RewriteEngine On
+    RewriteRule ^/rspamd$ /rspamd/ [R,L]
+    RewriteRule ^/rspamd/(.*) http://localhost:11334/$1 [P,L]
+</VirtualHost>

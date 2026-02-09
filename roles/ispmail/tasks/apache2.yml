@@ -1,0 +1,91 @@
+- name: Make web root directory
+  ansible.builtin.file:
+    path: /var/www/{{ ispmail_web_server_name }}
+    state: directory
+    mode: '0755'
+    owner: www-data
+    group: www-data
+
+- name: Make Apache2 certificate directory
+  ansible.builtin.file:
+    path: "{{ ispmail_apache2_certificate_directory }}"
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Enable SSL module
+  community.general.apache2_module:
+    state: present
+    name: ssl
+  notify: Restart apache2
+
+- name: Enable proxy_http module
+  community.general.apache2_module:
+    state: present
+    name: proxy_http
+  notify: Restart apache2
+
+- name: Enable rewrite module
+  community.general.apache2_module:
+    state: present
+    name: rewrite
+  notify: Restart apache2
+
+- name: Enable proxy_fcgi module
+  community.general.apache2_module:
+    state: present
+    name: proxy_fcgi
+  notify: Restart apache2
+
+- name: Copy http.conf
+  ansible.builtin.template:
+    src: apache/http.conf.j2
+    dest: /etc/apache2/sites-available/{{ ispmail_web_server_name }}-http.conf
+    mode: '0644'
+    owner: root
+    group: root
+  notify: Restart apache2
+
+- name: Enable http site
+  ansible.builtin.file:
+    src: /etc/apache2/sites-available/{{ ispmail_web_server_name }}-http.conf
+    dest: /etc/apache2/sites-enabled/{{ ispmail_web_server_name }}-http.conf
+    state: link
+
+- name: Copy https.conf
+  ansible.builtin.template:
+    src: apache/https.conf.j2
+    dest: /etc/apache2/sites-available/{{ ispmail_web_server_name }}-https.conf
+    mode: '0644'
+    owner: root
+    group: root
+  notify: Restart apache2
+
+- name: Enable https site
+  ansible.builtin.file:
+    src: /etc/apache2/sites-available/{{ ispmail_web_server_name }}-https.conf
+    dest: /etc/apache2/sites-enabled/{{ ispmail_web_server_name }}-https.conf
+    state: link
+
+- name: Copy ISPMailAdmin HTTP/HTTPS configuration
+  ansible.builtin.template:
+    src: "apache/{{ item }}"
+    dest: "/etc/apache2/sites-available/{{ item | replace('.j2', '') }}"
+    mode: '0644'
+    owner: root
+    group: root
+  loop:
+    - ispmailadmin-http.conf.j2
+    - ispmailadmin-https.conf.j2
+  notify: Restart apache2
+
+- name: Enable ISPMailAdmin sites
+  ansible.builtin.file:
+    src: "/etc/apache2/sites-available/{{ item }}"
+    dest: "/etc/apache2/sites-enabled/{{ item }}"
+    state: link
+  loop:
+    - ispmailadmin-http.conf
+    - ispmailadmin-https.conf
+  notify: Restart apache2

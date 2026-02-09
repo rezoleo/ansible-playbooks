@@ -1,0 +1,38 @@
+- name: Restart apache2
+  ansible.builtin.systemd:
+    name: apache2
+    state: restarted
+
+- name: Restart Postfix
+  ansible.builtin.systemd:
+    name: postfix
+    state: restarted
+
+- name: Restart Dovecot
+  ansible.builtin.systemd:
+    name: dovecot
+    state: restarted
+
+- name: Restart rspamd
+  ansible.builtin.systemd:
+    name: rspamd
+    state: restarted
+
+- name: Restart sympa
+  ansible.builtin.systemd:
+    name: sympa
+    state: restarted
+
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart wwsympa.socket
+  ansible.builtin.systemd:
+    name: wwsympa.socket
+    state: restarted
+
+- name: Restart wwsympa.service
+  ansible.builtin.systemd:
+    name: wwsympa.service
+    state: restarted
