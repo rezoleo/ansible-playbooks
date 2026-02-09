@@ -1,4 +1,4 @@
-ansible==10.4.0
+ansible==12.2.0
 hvac==2.4.0
 # community.general.snmp_facts doesn't support pysnmp 6.0+
 # https://github.com/ansible-collections/community.general/issues/8852
