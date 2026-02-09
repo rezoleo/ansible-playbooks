@@ -39,5 +39,5 @@ jobs:
           category: ansible-lint
 
       - name: Check if ansible_lint step has failed
-        if: steps.ansible_lint.outcome == "failure"
+        if: steps.ansible_lint.outcome == 'failure'
         run: exit 1
