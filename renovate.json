@@ -12,6 +12,16 @@
     {
       "matchPackageNames": ["ansible-lint", "ansible-cmdb"],
       "addLabels": ["development"]
+    },
+    {
+      "matchPackageNames": ["python"],
+      "allowedVersions": "<3.14" // Match debian 13 supported version
+    },
+    {
+      "matchPackageNames": ["pysnmp"],
+      // Match requirements for snmp_facts module (cf.
+      // docs.ansible.com/projects/ansible/latest/collections/community/general/snmp_facts_module.html)
+      "allowedVersions": "<6.2.4"
     }
   ],
   "vulnerabilityAlerts": {
