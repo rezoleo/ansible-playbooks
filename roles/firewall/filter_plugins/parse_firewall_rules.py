@@ -35,7 +35,7 @@ def parse_rule(rule: Dict[str, any]) -> str:
         builder.extend(["--match set --set", rule["destination_ipset"], "dst"])
     if "destination_port" in rule:
         if "protocol" in rule and rule["protocol"].lower() in ["tcp", "udp"]:
-            builder.extend(["--destination_port", str(rule["destination_port"])])
+            builder.extend(["--destination-port", str(rule["destination_port"])])
         else:
             raise AnsibleFilterError("\"destination_port\" should be used with tcp or udp!")
     builder.extend(["--jump", rule["target"]])
