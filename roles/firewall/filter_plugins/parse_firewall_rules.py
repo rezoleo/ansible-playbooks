@@ -31,8 +31,8 @@ def parse_rule(rule: Dict[str, any]) -> str:
         builder.extend(["--destination", rule["destination"]])
     if "source-ipset" in rule:
         builder.extend(["--match set --set", rule["source-ipset"], "src"])
-    if "destination-port" in rule:
-        builder.extend(["--match set --set", rule["destination-port"], "dst"])
+    if "destination-ipset" in rule:
+        builder.extend(["--match set --set", rule["destination-ipset"], "dst"])
     if "destination-port" in rule:
         if "protocol" in rule and rule["protocol"].lower() in ["tcp", "udp"]:
             builder.extend(["--destination-port", str(rule["destination-port"])])
