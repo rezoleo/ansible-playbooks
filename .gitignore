@@ -15,3 +15,6 @@ ansible-lint.sarif.json
 
 # VSCode
 .vscode/settings.json
+
+# Python pycache
+**/__pycache__

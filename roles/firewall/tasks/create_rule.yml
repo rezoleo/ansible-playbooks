@@ -7,6 +7,6 @@
     owner: root
     group: root
     mode: '0644'
-  notify: Apply firewall rules
-  loop: "{{ firewall_rules | dict2items }}"
+  notify: Merge firewall rules fragment files
+  loop: "{{ firewall_rules | parse_firewall_rules | dict2items }}"
   become: true
