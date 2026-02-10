@@ -96,7 +96,7 @@
         - chain: INPUT
           source: 10.12.1.4/32 # TODO: Source IP should depend on the inventory
           protocol: udp
-          destination_port: 161
+          destination-port: 161
           target: ACCEPT
           comment: "Allow SNMP from polling server"
 

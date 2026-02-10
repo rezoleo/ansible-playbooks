@@ -11,9 +11,9 @@ def parse_rule(rule: Dict[str, any]) -> str:
     # Check that the rule is a dict
     if type(rule) != dict:
         raise AnsibleFilterError("Rules should be a dictionary!")
-    # If the argument raw_rule is present it defines completely the rule
-    if "raw_rule" in rule:
-        return rule["raw_rule"]
+    # If the argument raw-rule is present it defines completely the rule
+    if "raw-rule" in rule:
+        return rule["raw-rule"]
     builder = []
     if "chain" not in rule:
         raise AnsibleFilterError("The rule does not have a 'chain' key!")
@@ -29,25 +29,25 @@ def parse_rule(rule: Dict[str, any]) -> str:
         builder.extend(["--source", rule["source"]])
     if "destination" in rule:
         builder.extend(["--destination", rule["destination"]])
-    if "source_ipset" in rule:
-        builder.extend(["--match set --set", rule["source_ipset"], "src"])
-    if "destination_ipset" in rule:
-        builder.extend(["--match set --set", rule["destination_ipset"], "dst"])
-    if "destination_port" in rule:
+    if "source-ipset" in rule:
+        builder.extend(["--match set --set", rule["source-ipset"], "src"])
+    if "destination-port" in rule:
+        builder.extend(["--match set --set", rule["destination-port"], "dst"])
+    if "destination-port" in rule:
         if "protocol" in rule and rule["protocol"].lower() in ["tcp", "udp"]:
-            builder.extend(["--destination-port", str(rule["destination_port"])])
+            builder.extend(["--destination-port", str(rule["destination-port"])])
         else:
-            raise AnsibleFilterError("\"destination_port\" should be used with tcp or udp!")
+            raise AnsibleFilterError("\"destination-port\" should be used with tcp or udp!")
     builder.extend(["--jump", rule["target"]])
     if "comment" in rule:
         builder.extend(["--match comment --comment", "\"" + rule["comment"] + "\""])
     else:
         Display().warning("There are no comment present on the rule \"%s\"!" % rule)
-    if "raw_extras" in rule:
-        if type(rule["raw_extras"]) == list:
-            builder.extend(rule["raw_extras"])
-        elif type(rule["raw_extras"]) == str:
-            builder.append(rule["raw_extras"])
+    if "raw-extras" in rule:
+        if type(rule["raw-extras"]) == list:
+            builder.extend(rule["raw-extras"])
+        elif type(rule["raw-extras"]) == str:
+            builder.append(rule["raw-extras"])
         else:
             raise AnsibleFilterError("The extras should be a list or a string!")
 
