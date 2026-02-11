@@ -6,5 +6,5 @@
 {% endif %}
 # Rule: {{ item.key }}
 {% for rule in item.value %}
-{{ rule }}
+{{ rule | parse_firewall_rule }}
 {% endfor %}
