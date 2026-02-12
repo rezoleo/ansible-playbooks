@@ -13,24 +13,25 @@ jobs:
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Setup Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: "3.12"
-          cache: pip
 
-      - name: Create virtual environment and install dependencies
-        run: |
-          python -m venv .venv
-          source ./.venv/bin/activate
-          pip install -r requirements.txt
-          echo "PATH=$(pwd)/.venv/bin:${PATH}" >> "${GITHUB_ENV}"
-          echo "VIRTUAL_ENV=$(pwd)/.venv" >> "${GITHUB_ENV}"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Install the project
+        run: uv sync --locked --all-extras --dev
+
+      - name: Run Ruff
+        run: uv run ruff check
 
       - name: Run Ansible-Lint
         id: ansible_lint
         continue-on-error: true # Allow uploading SARIF report if ansible-lint is not happy
-        run: ansible-lint --offline --sarif-file ansible-lint.sarif.json # TODO: Reuse just lint
+        run: uv run ansible-lint --offline --sarif-file ansible-lint.sarif.json # TODO: Reuse just lint
 
       - name: Upload Ansible-Lint SARIF
         uses: github/codeql-action/upload-sarif@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4.32.2
