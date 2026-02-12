@@ -36,17 +36,11 @@ venv:
     #!/usr/bin/env bash 
     [[ -d .venv ]] || (python -m venv .venv --prompt rezoleo-ansible-playbooks && {{venv_bin}}/pip install -r requirements.txt)
 
-# Run ansible-lint
+# Run ruff and ansible-lint
 [group('tooling')]
 lint *ARGS:
+    {{venv_bin}}/ruff check
     {{venv_bin}}/ansible-lint {{ARGS}}
-
-# Export information about all hosts, as gathered by Ansible (including variables)
-[group('tooling')]
-cmdb:
-    {{venv_bin}}/ansible --inventory {{inventory}} --module-name ansible.builtin.setup --tree out/ all 2>/dev/null
-    {{venv_bin}}/ansible-cmdb --inventory {{inventory}} out/ > overview.html
-    @echo "Open overview.html in your browser"
 
 # Find TODOs and comments silencing lints
 [group('tooling')]
