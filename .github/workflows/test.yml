@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
         with:
           enable-cache: true
 
@@ -26,12 +26,14 @@ jobs:
         run: uv sync --locked --all-extras --dev
 
       - name: Run Ruff
+        id: ruff
+        continue-on-error: true # Allow other tasks to continue if ruff fails
         run: uv run ruff check
 
       - name: Run Ansible-Lint
         id: ansible_lint
-        continue-on-error: true # Allow uploading SARIF report if ansible-lint is not happy
-        run: uv run ansible-lint --offline --sarif-file ansible-lint.sarif.json # TODO: Reuse just lint
+        continue-on-error: true # Allow uploading SARIF report if ansible-lint fails
+        run: uv run ansible-lint --offline --sarif-file ansible-lint.sarif.json
 
       - name: Upload Ansible-Lint SARIF
         uses: github/codeql-action/upload-sarif@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4.32.2
@@ -39,8 +41,8 @@ jobs:
           sarif_file: ansible-lint.sarif.json
           category: ansible-lint
 
-      - name: Check if ansible_lint step has failed
-        if: steps.ansible_lint.outcome == 'failure'
+      - name: Fail job if any lint failed
+        if: steps.ruff.outcome == 'failure' || steps.ansible_lint.outcome == 'failure'
         run: |
-          echo "::error title=Ansible-lint::Error during the ansible-lint step"
+          echo "::error::One or more linters failed"
           exit 1
