@@ -6,5 +6,5 @@ pysnmp<6.0.0
 
 # Development dependencies
 # Included here for now, could be moved to a requirements-dev.txt
-ansible-lint==26.1.1
+ansible-lint==26.3.0
 ansible-cmdb==1.31
