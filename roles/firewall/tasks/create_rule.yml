@@ -9,4 +9,6 @@
     mode: '0644'
   notify: Merge firewall rules fragment files
   loop: "{{ firewall_rules | validate_firewall_rules | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
   become: true

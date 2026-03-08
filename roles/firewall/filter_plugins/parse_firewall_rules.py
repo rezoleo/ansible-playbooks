@@ -7,43 +7,55 @@ from ansible.utils.display import Display
 
 rule_name = re.compile(r'\d{3}-\w+')
 
+allowed_protocols = ["tcp", "udp", "icmp", "all"]
+
 # Build a single rule
 def parse_firewall_rule(rule: dict[str, Any]) -> str:
     # Check that the rule is a dict
     if not isinstance(rule, dict):
         raise AnsibleFilterError(f"The rule \"{rule}\" should be a dictionary!")
+
     # If the argument raw_rule is present it defines completely the rule
     if "raw_rule" in rule:
         return rule["raw_rule"]
-    builder = []
+
     if "chain" not in rule:
         raise AnsibleFilterError(f"The rule \"{rule}\" must have a 'chain' key!")
     if "target" not in rule:
         raise AnsibleFilterError(f"The rule \"{rule}\" must have a 'target' key!")
-    builder.extend(["-A", rule["chain"]])
+    builder = ["-A", rule["chain"]]
+
     if "protocol" in rule:
-        if rule["protocol"].lower() in ["tcp", "udp", "icmp", "all"]:
+        if rule["protocol"].lower() in allowed_protocols:
             builder.extend(["--protocol", rule["protocol"]])
         else:
-            raise AnsibleFilterError(f"The protocol \"{rule["protocol"]}\" in rule \"{rule}\" is not a valid protocol!")
+            raise AnsibleFilterError(f"The protocol \"{rule["protocol"]}\" in rule \"{rule}\" is not a valid protocol! Allowed protocols are {", ".join(allowed_protocols)}.")
+
     if "source" in rule:
         builder.extend(["--source", rule["source"]])
+
     if "destination" in rule:
         builder.extend(["--destination", rule["destination"]])
+
     if "source_ipset" in rule:
         builder.extend(["--match set --set", rule["source_ipset"], "src"])
+
     if "destination_ipset" in rule:
         builder.extend(["--match set --set", rule["destination_ipset"], "dst"])
+
     if "destination_port" in rule:
         if "protocol" in rule and rule["protocol"].lower() in ["tcp", "udp"]:
             builder.extend(["--destination-port", str(rule["destination_port"])])
         else:
             raise AnsibleFilterError(f"The rule \"{rule}\" should not contain a 'destination_port' key. 'destination_port' should be used with tcp or udp!")
+
     builder.extend(["--jump", rule["target"]])
+
     if "comment" in rule:
         builder.extend(["--match comment --comment", json.dumps(rule["comment"])])
     else:
         Display().warning(f"There are no comment present on the rule \"{rule}\"! Commenting your rules is recommended.")
+
     if "raw_extras" in rule:
         if isinstance(rule["raw_extras"], list):
             builder.extend(rule["raw_extras"])
