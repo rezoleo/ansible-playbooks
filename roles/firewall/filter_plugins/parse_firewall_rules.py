@@ -20,51 +20,51 @@ def parse_firewall_rule(rule: dict[str, Any]) -> str:
     if "raw_rule" in rule:
         return rule["raw_rule"]
 
+    if not "rule_name" in rule:
+        raise AnsibleFilterError(f"The rule  \"{rule}\" must have a name (a \"rule_name\" key)!")
+    rule_name = rule["rule_name"]
+    rule.pop("rule_name")
+
     if "chain" not in rule:
-        raise AnsibleFilterError(f"The rule \"{rule}\" must have a 'chain' key!")
+        raise AnsibleFilterError(f"The rule \"{rule_name}\" must have a 'chain' key!")
     if "target" not in rule:
-        raise AnsibleFilterError(f"The rule \"{rule}\" must have a 'target' key!")
+        raise AnsibleFilterError(f"The rule \"{rule_name}\" must have a 'target' key!")
     builder = ["-A", rule["chain"]]
-    keys.remove("chain")
+    rule.pop("chain")
 
     if "protocol" in rule:
         if rule["protocol"].lower() in allowed_protocols:
             builder.extend(["--protocol", rule["protocol"]])
-            keys.remove("protocol")
+            if "destination_port" in rule:
+                if rule["protocol"].lower() in ["tcp", "udp"]:
+                    builder.extend(["--destination-port", str(rule["destination_port"])])
+                    rule.pop("destination_port")
+                else:
+                    raise AnsibleFilterError(f"The rule \"{rule_name}\" should not contain a 'destination_port' key. 'destination_port' should be used with tcp or udp!")
+            rule.pop("protocol")
         else:
-            raise AnsibleFilterError(f"The protocol \"{rule["protocol"]}\" in rule \"{rule}\" is not a valid protocol! Allowed protocols are {", ".join(allowed_protocols)}.")
+            raise AnsibleFilterError(f"The protocol \"{rule["protocol"]}\" in rule \"{rule_name}\" is not a valid protocol! Allowed protocols are {", ".join(allowed_protocols)}.")
 
     if "source" in rule:
         builder.extend(["--source", rule["source"]])
-        keys.remove("source")
+        rule.pop("source")
 
     if "destination" in rule:
         builder.extend(["--destination", rule["destination"]])
-        keys.remove("destination")
+        rule.pop("destination")
 
     if "source_ipset" in rule:
         builder.extend(["--match set --set", rule["source_ipset"], "src"])
-        keys.remove("source_ipset")
+        rule.pop("source_ipset")
 
     if "destination_ipset" in rule:
         builder.extend(["--match set --set", rule["destination_ipset"], "dst"])
-        keys.remove("destination_ipset")
-
-    if "destination_port" in rule:
-        if "protocol" in rule and rule["protocol"].lower() in ["tcp", "udp"]:
-            builder.extend(["--destination-port", str(rule["destination_port"])])
-            keys.remove("destination_port")
-        else:
-            raise AnsibleFilterError(f"The rule \"{rule}\" should not contain a 'destination_port' key. 'destination_port' should be used with tcp or udp!")
+        rule.pop("destination_ipset")
 
     builder.extend(["--jump", rule["target"]])
-    keys.remove("target")
+    rule.pop("target")
 
-    if "comment" in rule:
-        builder.extend(["--match comment --comment", json.dumps(rule["comment"])])
-        keys.remove("comment")
-    else:
-        Display().warning(f"There are no comment present on the rule \"{rule}\"! Commenting your rules is recommended.")
+    builder.extend(["--match comment --comment", json.dumps(rule_name)])
 
     if "raw_extras" in rule:
         if isinstance(rule["raw_extras"], list):
@@ -72,11 +72,11 @@ def parse_firewall_rule(rule: dict[str, Any]) -> str:
         elif isinstance(rule["raw_extras"], str):
             builder.append(rule["raw_extras"])
         else:
-            raise AnsibleFilterError(f"The extras in rule \"{rule}\" should be a list or a string!")
-        keys.remove("raw_extras")
+            raise AnsibleFilterError(f"The extras in rule \"{rule_name}\" should be a list or a string!")
+        rule.pop("raw_extras")
 
-    if len(keys) !=0:
-        raise AnsibleFilterError(f"Unrecognized {"property" if len(keys) == 1 else "properties"}: {", ".join(list(keys))}.")
+    if len(rule) != 0:
+        raise AnsibleFilterError(f"Unrecognized {"property" if len(rule) == 1 else "properties"} in rule \"{rule_name}\": {", ".join(list(rule.keys()))}.")
 
     return " ".join(builder)
 
