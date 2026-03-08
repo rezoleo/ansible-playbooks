@@ -4,7 +4,7 @@ description = "Rézoléo Ansible Playbooks"
 version = "0.1.0"
 requires-python = ">=3.13, <4"
 dependencies = [
-    "ansible==12.3.0",
+    "ansible==13.4.0",
     "hvac==2.4.0",
     # community.general.snmp_facts doesn't support pysnmp 6.0+
     # https://github.com/ansible-collections/community.general/issues/8852
