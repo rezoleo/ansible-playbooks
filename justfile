@@ -5,7 +5,24 @@ inventory := "hosts"
 
 export VIRTUAL_ENV := absolute_path(venv_path)
 export VAULT_ADDR := "https://vault.rezoleo.fr/"
-export PATH := venv_bin + ":" + env_var('PATH')
+export PATH := venv_bin + ":" + env('PATH')
+
+uv_path := which("uv")
+poetry_path := which("poetry")
+venv_command := if uv_path != "" {
+    "uv venv --prompt rezoleo-ansible-playbooks"
+} else {
+    "python -m venv .venv --prompt rezoleo-ansible-playbooks"
+}
+install_command := if uv_path != "" {
+    "uv sync --locked"
+} else if poetry_path != "" {
+    "poetry install --no-root"
+} else {
+    f"{{venv_bin}}/pip install --upgrade pip && {{venv_bin}}/pip install . --group dev"
+}
+
+set unstable
 
 [private]
 default:
@@ -33,20 +50,18 @@ vault username:
 # Setup a virtualenv and install dependencies
 [group('tooling')]
 venv:
-    #!/usr/bin/env bash 
-    [[ -d .venv ]] || (python -m venv .venv --prompt rezoleo-ansible-playbooks && {{venv_bin}}/pip install -r requirements.txt)
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ ! -d .venv ]]; then
+      {{ venv_command }}
+      {{ install_command }}
+    fi
 
-# Run ansible-lint
+# Run ruff and ansible-lint
 [group('tooling')]
 lint *ARGS:
+    {{venv_bin}}/ruff check
     {{venv_bin}}/ansible-lint {{ARGS}}
-
-# Export information about all hosts, as gathered by Ansible (including variables)
-[group('tooling')]
-cmdb:
-    {{venv_bin}}/ansible --inventory {{inventory}} --module-name ansible.builtin.setup --tree out/ all 2>/dev/null
-    {{venv_bin}}/ansible-cmdb --inventory {{inventory}} out/ > overview.html
-    @echo "Open overview.html in your browser"
 
 # Find TODOs and comments silencing lints
 [group('tooling')]
