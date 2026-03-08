@@ -99,7 +99,7 @@ dev = [
 requires-dist = [
     { name = "ansible", specifier = "==12.3.0" },
     { name = "hvac", specifier = "==2.4.0" },
-    { name = "pysnmp", specifier = "<6.0.0" },
+    { name = "pysnmp", specifier = "<6.2.4" },
 ]
 
 [package.metadata.requires-dev]
@@ -508,15 +508,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pyasyncore"
-version = "1.0.5"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/4e/43/035dfe0cb01687c1940fdc008f46a43c41067e226e862df49327469764a0/pyasyncore-1.0.5.tar.gz", hash = "sha256:dd483d5103a6d59b66b86e0ca2334ad43dca732ff23a0ac5d63c88c52510542e", size = 15854, upload-time = "2026-01-05T19:59:31.893Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/1f/ab/b10cee56269ae150763f3f83b3e9305a11f42f50b3dcd58eeb8f7988f0bb/pyasyncore-1.0.5-py3-none-any.whl", hash = "sha256:269bbc5252671827387636822841a1fb721ec6e858b23a3e12cf92eb1f97da2a", size = 10237, upload-time = "2026-01-05T19:59:30.824Z" },
-]
-
-[[package]]
 name = "pycparser"
 version = "3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -527,30 +518,30 @@ wheels = [
 
 [[package]]
 name = "pysmi"
-version = "1.2.1"
+version = "1.6.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "jinja2" },
     { name = "ply" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/82/36/5555ac1437d0e4159c0a7f7ce5b996e1aa56002b0c96f9a3d4fc6f39fd08/pysmi-1.2.1.tar.gz", hash = "sha256:4fc5a47279098f2fd79bbdfe51eedf5f078488ffad91604c2d4af5667a0f520c", size = 103707, upload-time = "2024-07-17T01:29:24.137Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e0/9c/ba0465dcbcbf93bec4e408b164cde7258cd3e77be4fcde5e835796cfb39f/pysmi-1.6.3.tar.gz", hash = "sha256:5d2eeb9e98bc149dee8f9256899d13789206769aab1637e33ac5f0dacaaf51fb", size = 62800, upload-time = "2026-01-23T00:30:19.919Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/72/94/44c4c52a407c8241a8aaefe62acc9a5ad00a28a2c0339c22805b85a6272b/pysmi-1.2.1-py3-none-any.whl", hash = "sha256:d97c60de9f81d33ab2899124d95a94fa7fefacc86ab6e00cbfec543a073e6d33", size = 79980, upload-time = "2024-07-17T01:29:22.674Z" },
+    { url = "https://files.pythonhosted.org/packages/b3/ec/b336b8fe0134077a3d07e3732c33398e7d2eed8410571e063cbd2c89d8e0/pysmi-1.6.3-py3-none-any.whl", hash = "sha256:fc2d796c252379e1b47aeea2e547ff339ca6df504cf6196cb3adad8054f41e7d", size = 87797, upload-time = "2026-01-23T00:30:18.823Z" },
 ]
 
 [[package]]
 name = "pysnmp"
-version = "5.1.0"
+version = "6.2.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyasn1" },
-    { name = "pyasyncore" },
     { name = "pysmi" },
     { name = "pysnmpcrypto" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0d/91/8f9f41255a994f424432ff6808653699deaad843511f22342e6c03e9fac9/pysnmp-5.1.0.tar.gz", hash = "sha256:0285c1c87cdd56e63698138ccdf626308ee27c11129c1879a998f16f41551071", size = 403695, upload-time = "2024-07-17T01:44:33.421Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/bd/7a/60bc7df6e49f1480e0a9231e77fdc10793b9e1fb5fb3d60b8edc5b5605d9/pysnmp-6.2.3.tar.gz", hash = "sha256:418ccff8933395e1f1e9a21426cc55603a63393c8721093e5e4fc75ff3062ef2", size = 415590, upload-time = "2024-07-18T01:08:54.233Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/40/c0/701d1f43862245982e207bd28eca7c0889c62ca90012b23a64bb0f3eb9b4/pysnmp-5.1.0-py3-none-any.whl", hash = "sha256:375a8adfc6820faf24ace6761a6d20544e60580d714ff7266df272850c39b439", size = 290090, upload-time = "2024-07-17T01:44:31.323Z" },
+    { url = "https://files.pythonhosted.org/packages/fd/5f/20e965b1ada368081789f911862138db6b8e1862358046ef5e1e88c4a1dd/pysnmp-6.2.3-py3-none-any.whl", hash = "sha256:fcecaeaa5881b1749388723a518a1ebbb58a97d4e54cc867fe28dfe7cfb13914", size = 272423, upload-time = "2024-07-18T01:08:52.26Z" },
 ]
 
 [[package]]
