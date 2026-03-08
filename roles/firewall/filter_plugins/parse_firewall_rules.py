@@ -11,6 +11,7 @@ allowed_protocols = ["tcp", "udp", "icmp", "all"]
 
 # Build a single rule
 def parse_firewall_rule(rule: dict[str, Any]) -> str:
+    keys = list(rule.keys())
     # Check that the rule is a dict
     if not isinstance(rule, dict):
         raise AnsibleFilterError(f"The rule \"{rule}\" should be a dictionary!")
@@ -24,35 +25,44 @@ def parse_firewall_rule(rule: dict[str, Any]) -> str:
     if "target" not in rule:
         raise AnsibleFilterError(f"The rule \"{rule}\" must have a 'target' key!")
     builder = ["-A", rule["chain"]]
+    keys.remove("chain")
 
     if "protocol" in rule:
         if rule["protocol"].lower() in allowed_protocols:
             builder.extend(["--protocol", rule["protocol"]])
+            keys.remove("protocol")
         else:
             raise AnsibleFilterError(f"The protocol \"{rule["protocol"]}\" in rule \"{rule}\" is not a valid protocol! Allowed protocols are {", ".join(allowed_protocols)}.")
 
     if "source" in rule:
         builder.extend(["--source", rule["source"]])
+        keys.remove("source")
 
     if "destination" in rule:
         builder.extend(["--destination", rule["destination"]])
+        keys.remove("destination")
 
     if "source_ipset" in rule:
         builder.extend(["--match set --set", rule["source_ipset"], "src"])
+        keys.remove("source_ipset")
 
     if "destination_ipset" in rule:
         builder.extend(["--match set --set", rule["destination_ipset"], "dst"])
+        keys.remove("destination_ipset")
 
     if "destination_port" in rule:
         if "protocol" in rule and rule["protocol"].lower() in ["tcp", "udp"]:
             builder.extend(["--destination-port", str(rule["destination_port"])])
+            keys.remove("destination_port")
         else:
             raise AnsibleFilterError(f"The rule \"{rule}\" should not contain a 'destination_port' key. 'destination_port' should be used with tcp or udp!")
 
     builder.extend(["--jump", rule["target"]])
+    keys.remove("target")
 
     if "comment" in rule:
         builder.extend(["--match comment --comment", json.dumps(rule["comment"])])
+        keys.remove("comment")
     else:
         Display().warning(f"There are no comment present on the rule \"{rule}\"! Commenting your rules is recommended.")
 
@@ -63,6 +73,10 @@ def parse_firewall_rule(rule: dict[str, Any]) -> str:
             builder.append(rule["raw_extras"])
         else:
             raise AnsibleFilterError(f"The extras in rule \"{rule}\" should be a list or a string!")
+        keys.remove("raw_extras")
+
+    if len(keys) !=0:
+        raise AnsibleFilterError(f"Unrecognized {"property" if len(keys) == 1 else "properties"}: {", ".join(list(keys))}.")
 
     return " ".join(builder)
 
