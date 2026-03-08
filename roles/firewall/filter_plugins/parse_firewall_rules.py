@@ -4,7 +4,7 @@ from typing import Any
 
 from ansible.errors import AnsibleFilterError
 
-rule_name = re.compile(r"\d{3}-\w+")
+rule_set_name_pattern = re.compile(r"\d{3}-\w+")
 
 allowed_protocols = ["tcp", "udp", "icmp", "all"]
 
@@ -23,8 +23,7 @@ def parse_firewall_rule(rule: dict[str, Any]) -> str:
         raise AnsibleFilterError(
             f'The rule  "{rule}" must have a name (a "rule_name" key)!'
         )
-    rule_name = rule["rule_name"]
-    rule.pop("rule_name")
+    rule_name = rule.pop("rule_name")
 
     if "chain" not in rule:
         raise AnsibleFilterError(f"The rule \"{rule_name}\" must have a 'chain' key!")
@@ -102,9 +101,9 @@ def validate_firewall_rules(rule_set: dict[str, list]) -> dict[str, list]:
                 f"The rule set {name} should contain a list of rules!"
             )
         # Check that the name of the rule set is formated correctly. Should be like 000-base.
-        if not rule_name.match(name):
+        if not rule_set_name_pattern.match(name):
             raise AnsibleFilterError(
-                f"{name} is not a valid rule set name! Rule set name should match pattern {rule_name.pattern}!"
+                f"{name} is not a valid rule set name! Rule set name should match pattern {rule_set_name_pattern.pattern}!"
             )
         for rule in rules:
             if not isinstance(rule, dict):
