@@ -44,35 +44,35 @@
         - raw_rule: ":INPUT DROP [0:0]"
         - raw_rule: ":FORWARD DROP [0:0]"
         - raw_rule: ":OUTPUT ACCEPT [0:0]"
-        - chain: INPUT
+        - rule_name: "Authorize all established connection"
+          chain: INPUT
           target: ACCEPT
-          comment: "Authorize all established connection"
           raw_extras:
             - "--match conntrack"
             - "--ctstate RELATED,ESTABLISHED"
-        - chain: INPUT
+        - rule_name: "Authorize loopback connections"
+          chain: INPUT
           target: ACCEPT
-          comment: "Authorize loopback connections"
           raw_extras:
             - "--in-interface lo"
-        - chain: INPUT
+        - rule_name: "Drop invalid packets"
+          chain: INPUT
           target: DROP
-          comment: "Drop invalid packets"
           raw_extras:
             - "--match conntrack"
             - "--ctstate INVALID"
-        - chain: INPUT
+        - rule_name: "Authorize ping requests"
+          chain: INPUT
           target: ACCEPT
           protocol: icmp
-          comment: "Authorize ping requests"
           raw_extras:
             - "--icmp-type echo-request"
       600-ssh:
-        - chain: INPUT
+        - rule_name: "Authorize connection to ssh from 10.0/8 subnet"
+          chain: INPUT
           source: 10.0.0.0/8
           protocol: tcp
           destination_port: 22
           target: ACCEPT
-          comment: "Authorize connection to ssh from 10.0/8 subnet"
       999-end:
         - raw_rule: "COMMIT"
