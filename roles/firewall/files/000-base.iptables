@@ -1,8 +1,0 @@
-*filter
-:INPUT DROP [0:0]
-:FORWARD DROP [0:0]
-:OUTPUT ACCEPT [0:0]
--A INPUT --match conntrack --ctstate RELATED,ESTABLISHED --jump ACCEPT --match comment --comment "Authorize all established connection"
--A INPUT --in-interface lo --jump ACCEPT --match comment --comment "Authorize loopback connections"
--A INPUT --match conntrack --ctstate INVALID --jump DROP --match comment --comment "Drop invalid packets"
--A INPUT --protocol icmp --icmp-type echo-request --jump ACCEPT --match comment --comment "Authorize ping requests"
