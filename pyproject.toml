@@ -17,3 +17,6 @@ dev = [
     "ruff>=0.15.0",
     "ty>=0.0.16",
 ]
+
+[tool.setuptools]
+packages = []
