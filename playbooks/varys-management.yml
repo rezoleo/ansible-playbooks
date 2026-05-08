@@ -1,0 +1,6 @@
+- name: "Create user ansible"
+  hosts: localhost
+  connection: local
+  roles:
+    - common
+    - ansible-deploy-user
