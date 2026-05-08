@@ -1,0 +1,24 @@
+- name: "Install sudo"
+  ansible.builtin.apt:
+    name: sudo
+    state: present
+    update_cache: yes
+    autoclean: yes
+- name: "Create User Deploy"
+  ansible.builtin.user:
+    name: "{{ user-ansible-name }}"
+- name: "Remove Need for Password"
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    state: present
+    line: "ansible-deploy ALL=(ALL) NOPASSWD: ALL"
+    validate: /usr/sbin/visudo -cf %s
+- name: "Create ssh directory"
+  ansible.builtin.file:
+    owner: "{{ user-ansible-name }}"
+    path: "/home/ansible-deploy/.ssh/"
+    state: directory
+- name: "Share ssh key with Root"
+  ansible.posix.authorized_key:
+    user: "{{ user-ansible-name }}"
+    key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_ed25519.pub') }}"
