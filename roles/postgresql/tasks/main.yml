@@ -18,7 +18,7 @@
   become: true
   notify: Restart iptables
 
-- name: Create firewall rule
+- name: Create firewall rule # Makes this for postgresql interfaces if not 'localhost'
   ansible.builtin.import_role:
     role: firewall
     tasks_from: create_rule.yml
@@ -34,12 +34,12 @@
             - "--match-set pg-authorized src"
             - "--syn"
           comment: "Allow authorized hosts to access postgresql"
-  when: postgresql_listent_interfaces != 'localhost'
+  when: postgresql_listen_interfaces != 'localhost'
 
 - name: Configure postgres to listen to all interfaces
   community.postgresql.postgresql_alter_system:
     param: listen_addresses
-    value: "{{ postgresql_listent_interfaces }}"
+    value: "{{ postgresql_listen_interfaces }}"
   become: true
   become_user: postgres
   notify: Restart postgresql
