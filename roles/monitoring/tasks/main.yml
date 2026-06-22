@@ -99,6 +99,7 @@
           protocol: udp
           destination_port: 161
           target: ACCEPT
+  when: not firewall
 
 - name: Start SNMP service
   ansible.builtin.systemd:

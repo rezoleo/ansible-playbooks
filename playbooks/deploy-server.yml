@@ -4,11 +4,14 @@
   become: true
   roles:
     - common
-    - firewall
-    - monitoring
+    # - firewall
+    # - monitoring
     - role: ntp
       when: ansible_virtualization_type != "lxc"
     - ssh
+    - docker
+    # - index
+    - bentopdf
 
 - name: Deploy UPS monitoring
   become: true

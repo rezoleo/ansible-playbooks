@@ -1,0 +1,11 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/configs/info-widgets/
+
+- logo:
+    icon: /icons/rezoleo.png
+    
+- search:
+    provider: custom
+    target: _blank
+    url: https://poly.rezoleo.fr/doku.php?do=search&id=start&q=

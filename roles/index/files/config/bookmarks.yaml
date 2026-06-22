@@ -1,0 +1,26 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/configs/bookmarks
+
+- Autre ressources :
+
+    - Résidence:
+        - icon: /icons/centrale.png
+          href: https://www.residence-vinci.fr/
+          description: Site de la Résidence.
+
+    - Framasoft:
+        - icon: https://framasoft.org/img/logo-white.svg
+          href: https://framasoft.org/
+          description: Services de Framasoft
+
+    - Rezoleo:
+        - icon: /icons/rezoleo.png
+          href: https://rezoleo.fr
+          description: Notre site !
+
+    - Discord de Rezoleo:
+        - icon: si-discord
+          href: https://discord.rezoleo.fr
+          description: Notre discord.
+    

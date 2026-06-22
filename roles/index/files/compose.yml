@@ -1,0 +1,14 @@
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: index
+    ports:
+      - 3000:3000
+    volumes:
+      - ./config:/app/config # Make sure your local config directory exists
+      - ./icons:/app/public/icons
+    environment:
+      HOMEPAGE_ALLOWED_HOSTS: index.rezoleo.fr,10.12.2.14:3000 # required, may need port. See gethomepage.dev/installation/#homepage_allowed_hosts
+      PUID: 1001
+      PGID: 1001
+    restart: always

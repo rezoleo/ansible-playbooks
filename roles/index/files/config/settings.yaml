@@ -1,0 +1,37 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/configs/settings/
+
+title: Index Rézoléo
+description: Liste de services et d'associations pour les étudiants de Centrale Lille
+language: fr
+favicon: /icons/rezoleo.ico
+statusStyle: "dot"
+theme: dark
+color: slate
+
+layout:
+  Associations:
+    style: row
+    "Services à la résidence":
+      style: row
+      columns: 3
+      useEqualHeights: true
+    Autres:
+      style: row
+      columns: 3
+      useEqualHeights: true
+  Rézoléo:
+    style: row
+    Services:
+      style: row
+      columns: 2
+      useEqualHeights: true
+    Infrastructure rézo:
+      style: row
+      columns: 3
+      useEqualHeights: true
+  Centrale Lille:
+    style: row
+    columns: 3
+    useEqualHeights: true

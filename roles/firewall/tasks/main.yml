@@ -1,4 +1,6 @@
 ---
+- vars:
+    firewall: true
 
 - name: Install firewall packages
   ansible.builtin.apt:
