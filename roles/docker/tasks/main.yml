@@ -3,8 +3,8 @@
 - name: Install ca-certificates
   ansible.builtin.apt:
     update_cache: true
-    name: 
-      - ca-certificates 
+    name:
+      - ca-certificates
     state: present
 
 - name: Create keyrings directory
@@ -38,10 +38,10 @@
   ansible.builtin.apt:
     update_cache: true
     name:
-      - docker-ce 
-      - docker-ce-cli 
-      - containerd.io 
-      - docker-buildx-plugin 
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
       - docker-compose-plugin
     state: present
 

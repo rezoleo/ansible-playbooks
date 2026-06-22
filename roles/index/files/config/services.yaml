@@ -54,7 +54,7 @@
 - Rézoléo:
     - Services:
         - Drive:
-            icon: nextcloud 
+            icon: nextcloud
             siteMonitor: https://nextcloud.rezoleo.fr/login
             href: https://nextcloud.rezoleo.fr
             description: Votre nouveau Google Drive où vos données sont en lieu sûr, édition de documents, classeurs, présentations, ...
@@ -115,7 +115,7 @@
     - Syllabus:
         icon: /icons/centrale.png
         siteMonitor: https://syllabus.centralelille.fr
-        description: Banque d'information sur les cursus de Centrale Lille 
+        description: Banque d'information sur les cursus de Centrale Lille
         href: https://syllabus.centralelille.fr
 
     - Impression:

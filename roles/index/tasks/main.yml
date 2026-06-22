@@ -4,6 +4,7 @@
     dest: /home/docker/compose.yml
     owner: docker
     group: docker
+    mode: "0644"
 
 - name: Create gethomepage config directory
   ansible.builtin.copy:
@@ -11,18 +12,21 @@
     dest: /home/docker/config
     owner: docker
     group: docker
+    mode: "0755"
 
 - name: Create gethomepage icons directory
   ansible.builtin.copy:
     src: icons/
     dest: /home/docker/icons
     owner: docker
-    group: docker  
+    group: docker
+    mode: "0755"
 
 - name: Start gethomepage
   ansible.builtin.command:
     cmd: docker compose up -d
     chdir: /home/docker
+  changed_when: true
 
 - name: Add firewall rule for port 3000
   ansible.builtin.import_role:

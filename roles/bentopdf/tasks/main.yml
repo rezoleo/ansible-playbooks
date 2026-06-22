@@ -5,8 +5,10 @@
     dest: /home/docker/compose.yml
     owner: docker
     group: docker
+    mode: "0644"
 
 - name: Start docker compose
   ansible.builtin.command:
     cmd: docker compose up -d
     chdir: /home/docker
+  changed_when: true

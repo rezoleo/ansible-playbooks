@@ -2,7 +2,7 @@
 # For configuration options and examples, please see:
 # https://gethomepage.dev/configs/bookmarks
 
-- Autre ressources :
+- Autre ressources:
 
     - Résidence:
         - icon: /icons/centrale.png
@@ -23,4 +23,3 @@
         - icon: si-discord
           href: https://discord.rezoleo.fr
           description: Notre discord.
-    

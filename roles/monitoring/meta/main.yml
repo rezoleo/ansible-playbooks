@@ -2,4 +2,3 @@
 
 dependencies:
   - role: firewall
-    when: not firewall 
