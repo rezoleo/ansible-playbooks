@@ -2,6 +2,7 @@ services:
   homepage:
     image: ghcr.io/gethomepage/homepage:latest
     container_name: index
+    user: "1001:1001"
     ports:
       - 3000:3000
     volumes:

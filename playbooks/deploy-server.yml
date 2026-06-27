@@ -10,7 +10,7 @@
       when: ansible_virtualization_type != "lxc"
     - ssh
     - docker
-    # - index
+    - index
     - bentopdf
 
 - name: Deploy UPS monitoring
