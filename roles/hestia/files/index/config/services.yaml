@@ -53,28 +53,27 @@
 
 - Rézoléo:
     - Services:
-        - Drive:
-            icon: nextcloud
-            siteMonitor: https://nextcloud.rezoleo.fr/login
-            href: https://nextcloud.rezoleo.fr
-            description: Votre nouveau Google Drive où vos données sont en lieu sûr, édition de documents, classeurs, présentations, ...
+        # - Drive:
+        #     icon: nextcloud
+        #     siteMonitor: https://nextcloud.rezoleo.fr/login
+        #     href: https://nextcloud.rezoleo.fr
+        #     description: Votre nouveau Google Drive où vos données sont en lieu sûr, édition de documents, classeurs, présentations, ...
         - PDF:
             icon: bentopdf
             siteMonitor: https://pdf.rezoleo.fr
             href: https://pdf.rezoleo.fr
             description: Tous les outils dont vous avez besoin pour éditer vos PDFs.
-
+        - re2o:
+            icon: /icons/re2o.svg
+            siteMonitor: https://re2o.rezoleo.fr
+            href: https://re2o.rezoleo.fr
+            description: Gérez votre profil internet.
     - Infrastructure rézo:
         - Wiki:
             icon: dokuwiki
             siteMonitor: https://poly.rezoleo.fr
             href: https://poly.rezoleo.fr
             description: Guides de connexion à l'internet et au wifi.
-        - re2o:
-            icon: /icons/re2o.svg
-            siteMonitor: https://re2o.rezoleo.fr
-            href: https://re2o.rezoleo.fr
-            description: Gérez votre profil internet.
         - "État du réseau":
             icon: uptime-kuma.png
             siteMonitor: https://status.rezoleo.fr/

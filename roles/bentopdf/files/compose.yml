@@ -1,8 +1,0 @@
-services:
-  bentopdf:
-    image: ghcr.io/alam00000/bentopdf-simple:latest # Self-Hosted build (recommended)
-    container_name: bentopdf
-    user: "1001:1001"
-    ports:
-      - '3000:8080'
-    restart: unless-stopped

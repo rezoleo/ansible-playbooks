@@ -29,7 +29,7 @@ layout:
       useEqualHeights: true
     Infrastructure rézo:
       style: row
-      columns: 3
+      columns: 2
       useEqualHeights: true
   Centrale Lille:
     style: row
