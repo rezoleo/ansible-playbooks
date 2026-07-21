@@ -7,6 +7,8 @@ export VIRTUAL_ENV := absolute_path(venv_path)
 export VAULT_ADDR := "https://vault.rezoleo.fr/"
 export PATH := venv_bin + ":" + env('PATH')
 
+set lists
+
 uv_path := which("uv")
 poetry_path := which("poetry")
 venv_command := if uv_path != "" {
