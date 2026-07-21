@@ -3,12 +3,13 @@
   hosts: all
   become: true
   roles:
-    - common
-    - firewall
+    # - common
+    # - firewall
     # - monitoring
-    # - role: ntp
-    #   when: ansible_virtualization_type != "lxc"
-    - ssh
+    - role: ntp
+      when: ansible_virtualization_type != "lxc"
+    # - ssh
+    # - podman
     - hestia
 
 - name: Deploy UPS monitoring

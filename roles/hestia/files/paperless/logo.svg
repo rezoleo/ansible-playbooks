@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 2897.4 896.6"
+   class="d-md-block d-none logo mt-n2"
+   style="height:3.5rem"
+   version="1.1"
+   id="svg11"
+   sodipodi:docname="logo.svg"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   inkscape:export-filename="logo.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs11">
+    <rect
+       x="791.13282"
+       y="89.321448"
+       width="998.48619"
+       height="175.45284"
+       id="rect12" />
+    <rect
+       x="880.45427"
+       y="140.36228"
+       width="1748.1483"
+       height="98.891603"
+       id="rect11" />
+  </defs>
+  <sodipodi:namedview
+     id="namedview11"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.26097368"
+     inkscape:cx="2226.2781"
+     inkscape:cy="697.38833"
+     inkscape:window-width="1536"
+     inkscape:window-height="891"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg11" />
+  <g
+     class="text"
+     style="fill:#000000"
+     id="g11"
+     transform="matrix(0.86952151,0,0,0.79824,24.8172,122.90347)">
+    <text
+       xml:space="preserve"
+       id="text11"
+       style="writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect11);display:inline;fill:#000000" />
+    <text
+       xml:space="preserve"
+       id="text12"
+       style="font-size:66.6667px;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect12);display:inline;fill:#000000" />
+    <text
+       xml:space="preserve"
+       style="font-size:800px;writing-mode:lr-tb;direction:ltr;fill:#000000"
+       x="159.50249"
+       y="736.90192"
+       id="text13"><tspan
+         sodipodi:role="line"
+         id="tspan13"
+         x="159.50249"
+         y="736.90192"
+         style="font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:800px;font-family:'Oceanic Drift Laser Italic';-inkscape-font-specification:'Oceanic Drift Laser Italic,  Italic';fill:#002060;fill-opacity:1">Vanadis</tspan></text>
+  </g>
+  <path
+     d="m 146.55023,692.60736 c -2.95639,-13.09114 -8.95608,-39.19359 -9.73865,-39.19359 C 10.12229,583.88706 25.16502,463.43265 67.075945,394.62436 c 9.043023,86.68886 176.165075,146.55686 78.691705,252.56314 -0.78257,1.35701 4.52151,17.88058 8.95608,33.04714 19.47728,-30.2533 48.6932,-66.73287 47.21501,-70.1653 C 82.118666,341.5414 456.88245,320.94681 534.87853,154.35412 c 35.21562,161.08483 -17.9991,410.21554 -319.2883,473.51598 -1.47819,0.71841 -54.6929,86.68886 -56.95366,87.40727 0,-1.35701 -22.52061,-0.71841 -19.47728,-7.58328 1.39124,-4.15084 4.43455,-9.57887 7.39094,-15.08673 z m -3.73895,-64.73726 c 38.25894,-40.63042 -6.78226,-110.0773 -33.73743,-132.82714 45.73682,72.24072 42.6935,114.22814 33.73743,132.82714 z"
+     class="leaf"
+     style="fill:#17541f;stroke-width:0.833118"
+     id="path1" />
+</svg>

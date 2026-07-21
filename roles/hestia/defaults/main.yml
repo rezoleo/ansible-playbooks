@@ -12,5 +12,5 @@ hestia_paperless_db_user: paperless
 hestia_paperless_superadmin_mail: rezoleo@rezoleo.fr
 hestia_paperless_superadmin_name: rezoleo
 
-hestia_paperless_url: https://paperless.rezoleo.fr
-hestia_paperless_service_name: "Paperless"
+hestia_paperless_url: https://vanadis.rezoleo.fr
+hestia_paperless_service_name: "Vanadis"

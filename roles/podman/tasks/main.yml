@@ -57,9 +57,49 @@
     cmd: "loginctl enable-linger podman"
     creates: "/var/lib/systemd/linger/podman"
 
+- name: Create containers config directory for podman user
+  ansible.builtin.file:
+    path: "/home/podman/.config/containers"
+    state: directory
+    owner: podman
+    group: podman
+    mode: '0755'
+
+- name: Configure podman log rotation
+  ansible.builtin.copy:
+    src: containers.conf
+    dest: "/home/podman/.config/containers/containers.conf"
+    owner: podman
+    group: podman
+    mode: '0644'
+
 - name: Enable rootless mode for podman
   ansible.builtin.command:
     cmd: podman system migrate
   become: true
   become_user: podman
   changed_when: true
+
+- name: Get podman user uid
+  ansible.builtin.command: id -u podman
+  register: podman_uid
+  changed_when: false
+
+- name: Ensure systemd user manager is running for podman
+  become: true
+  ansible.builtin.systemd:
+    name: "user@{{ podman_uid.stdout }}.service"
+    state: started
+    enabled: true
+
+- name: Enable podman-restart.service for the podman user
+  become: true
+  become_user: podman
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ podman_uid.stdout }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ podman_uid.stdout }}/bus"
+  ansible.builtin.systemd:
+    name: podman-restart.service
+    scope: user
+    state: started
+    enabled: true

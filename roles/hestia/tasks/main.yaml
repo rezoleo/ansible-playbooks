@@ -108,6 +108,38 @@
     group: podman
     mode: "0600"
 
+- name: Create paperless media directory
+  ansible.builtin.file:
+    path: /home/podman/paperless/media
+    state: directory
+    owner: podman
+    group: podman
+    mode: "0755"
+
+- name: Create paperless data directory
+  ansible.builtin.file:
+    path: /home/podman/paperless/data
+    state: directory
+    owner: podman
+    group: podman
+    mode: "0755"
+
+- name: Create paperless logo directory
+  ansible.builtin.file:
+    path: /home/podman/paperless/media/logo
+    state: directory
+    owner: podman
+    group: podman
+    mode: "0755"
+
+- name: Copy logo for paperless
+  ansible.builtin.copy:
+    src: paperless/logo.png
+    dest: /home/podman/paperless/media/logo/logo.png
+    owner: podman
+    group: podman
+    mode: "0600"
+
 - name: Create paperless export directory
   ansible.builtin.file:
     path: /home/podman/paperless/export
@@ -152,18 +184,18 @@
         - rule_name: "Allow traffic from Equestria to port 3000"
           chain: INPUT
           protocol: tcp
-          source: 192.168.122.1/32
+          source: 10.12.2.2/32 # TODO: Source IP should depend on the inventory
           destination_port: 3000
           target: ACCEPT
         - rule_name: "Allow traffic from Equestria to port 3001"
           chain: INPUT
           protocol: tcp
-          source: 192.168.122.1/32
+          source: 10.12.2.2/32 # TODO: Source IP should depend on the inventory
           destination_port: 3001
           target: ACCEPT
         - rule_name: "Allow traffic from Equestria to port 3002"
           chain: INPUT
           protocol: tcp
-          source: 192.168.122.1/32
+          source: 10.12.2.2/32 # TODO: Source IP should depend on the inventory
           destination_port: 3002
           target: ACCEPT
