@@ -2,6 +2,8 @@
 - name: Deploy a new server
   hosts: all
   become: true
+  gather_facts: false
+
   roles:
     - common
     - firewall
@@ -9,6 +11,51 @@
     - role: ntp
       when: ansible_virtualization_type != "lxc"
     - ssh
+  vars:
+    temp_key_file: "/tmp/ansible_vault_ssh.pem"
+
+  pre_tasks:
+    - name: Retrieve SSH credentials from Vault # noqa: run-once[task]
+      community.hashi_vault.vault_kv2_get:
+        path: test/baptiste/secrets
+      register: ssh_credentials
+      run_once: true
+      delegate_to: localhost
+      become: false
+
+    - name: Set private key as fact # noqa: run-once[task]
+      ansible.builtin.set_fact:
+        ssh_private_key: "{{ ssh_credentials.secret.ansible_priv_key }}"
+      delegate_to: localhost
+      run_once: true
+      no_log: true
+
+    - name: Write private key to temporary file # noqa: run-once[task]
+      ansible.builtin.copy:
+        content: "{{ ssh_private_key }}"
+        dest: "{{ temp_key_file }}"
+        mode: '0600'
+      delegate_to: localhost
+      run_once: true
+      become: false
+      # no_log: true
+
+    - name: Set SSH key for this playbook run
+      ansible.builtin.set_fact:
+        ansible_ssh_private_key_file: "{{ temp_key_file }}"
+
+    - name: Gather facts
+      ansible.builtin.gather_facts:
+
+
+  post_tasks:
+    - name: Remove temporary SSH key file # noqa: run-once[task]
+      ansible.builtin.file:
+        path: "{{ temp_key_file }}"
+        state: absent
+      delegate_to: localhost
+      run_once: true
+      failed_when: false
 
 - name: Deploy UPS monitoring
   become: true
