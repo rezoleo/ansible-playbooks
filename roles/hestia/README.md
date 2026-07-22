@@ -14,11 +14,11 @@ The following services run on Hestia :
 - https://pdf.rezoleo.fr (port 3001)
 - https://vanadis.rezoleo.fr (port 3002)
 
-A description of the services is written below, more information in [our internal documentation is available]().
+A description of the services is written below, more information in [our internal documentation is available](https://poly.rezoleo.fr/doku.php?id=private:serveurs:vm:hestia).
 
 ### Index
 
-Nouvelle entrée dans la sage *Rézoléo remplace le BDE*, et idée piquée au [Rezel](https://index.rezel.net), ce
+Nouvelle entrée dans la saga *Rézoléo remplace le BDE*, et idée piquée au [Rezel](https://index.rezel.net), ce
 service vise à référencer les sites utiles à la communauté centralienne.
 
 Ce projet est basé sur [GetHomepage](https://gethomepage.dev/).

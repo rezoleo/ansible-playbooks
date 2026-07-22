@@ -1,0 +1,15 @@
+- name: Create bentokae directory
+  ansible.builtin.file:
+    path: /home/podman/bentokae
+    state: directory
+    owner: podman
+    group: podman
+    mode: "0755"
+
+- name: Copy compose file for bentopdf
+  ansible.builtin.copy:
+    src: bentokae/compose.yml
+    dest: /home/podman/bentokae/compose.yml
+    owner: podman
+    group: podman
+    mode: "0644"

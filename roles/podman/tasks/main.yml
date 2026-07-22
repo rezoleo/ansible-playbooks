@@ -4,7 +4,6 @@
     name:
       - podman
       - podman-compose
-      - uidmap
     state: present
 
 - name: Create podman group
@@ -12,31 +11,19 @@
     name: "podman"
     system: true
 
-- name: Add ansible user to podman group
-  ansible.builtin.user:
-    name: "{{ ansible_user_id }}"
-    groups: "podman"
-    append: true
-
 - name: Create podman user
   ansible.builtin.user:
     name: "podman"
     group: "podman"
     system: true
     create_home: true
-
-- name: Add podman user to systemd-journal group
-  ansible.builtin.user:
-    name: "podman"
-    groups: systemd-journal
-    append: true
-
+  register: podman_user
 
 - name: Add podman user to subuid file
   ansible.builtin.lineinfile:
     path: /etc/subuid
     regexp: "^podman:.*"
-    line: "podman:10000:55536"
+    line: "podman:10000:65536"
     create: true
     mode: '0644'
     owner: root
@@ -46,7 +33,7 @@
   ansible.builtin.lineinfile:
     path: /etc/subgid
     regexp: "^podman:.*"
-    line: "podman:10000:55536"
+    line: "podman:10000:65536"
     create: true
     mode: '0644'
     owner: root
@@ -63,7 +50,7 @@
     state: directory
     owner: podman
     group: podman
-    mode: '0755'
+    mode: '0644'
 
 - name: Configure podman log rotation
   ansible.builtin.copy:
@@ -80,15 +67,10 @@
   become_user: podman
   changed_when: true
 
-- name: Get podman user uid
-  ansible.builtin.command: id -u podman
-  register: podman_uid
-  changed_when: false
-
 - name: Ensure systemd user manager is running for podman
   become: true
   ansible.builtin.systemd:
-    name: "user@{{ podman_uid.stdout }}.service"
+    name: "user@{{ podman_user.uid }}.service"
     state: started
     enabled: true
 

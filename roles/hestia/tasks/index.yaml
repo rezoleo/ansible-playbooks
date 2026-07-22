@@ -1,0 +1,33 @@
+- name: Create index directory
+  ansible.builtin.file:
+    path: /home/podman/index
+    state: directory
+    owner: podman
+    group: podman
+    mode: "0755"
+
+- name: Create gethomepage config directory
+  ansible.builtin.copy:
+    src: index/config/
+    dest: /home/podman/index/config
+    owner: podman
+    group: podman
+    mode: "0644"
+    directory_mode: "0755"
+
+- name: Create gethomepage icons directory
+  ansible.builtin.copy:
+    src: index/icons/
+    dest: /home/podman/index/icons
+    owner: podman
+    group: podman
+    mode: "0644"
+    directory_mode: "0755"
+
+- name: Copy compose file for index
+  ansible.builtin.copy:
+    src: index/compose.yml
+    dest: /home/podman/index/compose.yml
+    owner: podman
+    group: podman
+    mode: "0644"

@@ -49,6 +49,12 @@ services:
       PAPERLESS_REDIS: redis://broker:6379
     networks:
       - paperless_net
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 750M
+          pids: 1
 
 volumes:
   redisdata:
