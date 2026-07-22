@@ -18,7 +18,7 @@ A description of the services is written below, more information in [our interna
 
 ### Index
 
-Nouvelle entrée dans la sage *Rézoléo remplace le BDE*, et idée piquée au [Rezel](https://index.rezel.net), ce
+Nouvelle entrée dans la saga *Rézoléo remplace le BDE*, et idée piquée au [Rezel](https://index.rezel.net), ce
 service vise à référencer les sites utiles à la communauté centralienne.
 
 Ce projet est basé sur [GetHomepage](https://gethomepage.dev/).
