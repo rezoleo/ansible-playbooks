@@ -5,6 +5,7 @@
     owner: podman
     group: podman
     mode: "0755"
+  become: true
 
 - name: Create gethomepage config directory
   ansible.builtin.copy:
@@ -14,6 +15,7 @@
     group: podman
     mode: "0644"
     directory_mode: "0755"
+  become: true
 
 - name: Create gethomepage icons directory
   ansible.builtin.copy:
@@ -23,6 +25,7 @@
     group: podman
     mode: "0644"
     directory_mode: "0755"
+  become: true
 
 - name: Copy compose file for index
   ansible.builtin.copy:
@@ -31,3 +34,4 @@
     owner: podman
     group: podman
     mode: "0644"
+  become: true

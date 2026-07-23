@@ -37,6 +37,7 @@
     owner: podman
     group: podman
     mode: "0755"
+  become: true
 
 - name: Copy compose file for paperless
   ansible.builtin.copy:
@@ -45,6 +46,7 @@
     owner: podman
     group: podman
     mode: "0644"
+  become: true
 
 - name: Copy and fill .env file for paperless
   ansible.builtin.template:
@@ -53,6 +55,7 @@
     owner: podman
     group: podman
     mode: "0600"
+  become: true
 
 - name: Create paperless media directory
   ansible.builtin.file:
@@ -61,6 +64,7 @@
     owner: podman
     group: podman
     mode: "0755"
+  become: true
 
 - name: Create paperless data directory
   ansible.builtin.file:
@@ -69,6 +73,7 @@
     owner: podman
     group: podman
     mode: "0755"
+  become: true
 
 - name: Create paperless logo directory
   ansible.builtin.file:
@@ -77,14 +82,16 @@
     owner: podman
     group: podman
     mode: "0755"
+  become: true
 
 - name: Copy logo for paperless
   ansible.builtin.copy:
-    src: paperless/logo.png
-    dest: /home/podman/paperless/media/logo/logo.png
+    src: paperless/logo.svg
+    dest: /home/podman/paperless/media/logo/logo.svg
     owner: podman
     group: podman
     mode: "0600"
+  become: true
 
 - name: Create paperless export directory
   ansible.builtin.file:
@@ -93,3 +100,4 @@
     owner: podman
     group: podman
     mode: "0755"
+  become: true

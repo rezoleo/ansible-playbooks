@@ -32,7 +32,9 @@ services:
       - redisdata:/data
     networks:
       - paperless_net
-
+    mem_limit: 250M
+    cpus: 0.50
+    
   webserver:
     image: ghcr.io/paperless-ngx/paperless-ngx:latest
     restart: always
@@ -49,12 +51,8 @@ services:
       PAPERLESS_REDIS: redis://broker:6379
     networks:
       - paperless_net
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 750M
-          pids: 1
+    mem_limit: 750M
+    cpus: 1
 
 volumes:
   redisdata:

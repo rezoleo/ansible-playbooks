@@ -8,6 +8,7 @@
       - htop
       - iftop
     state: present
+  become: true
 
 - name: Color ls
   ansible.builtin.blockinfile:
@@ -19,12 +20,14 @@
       alias ls='ls $LS_OPTIONS'
       alias ll='ls $LS_OPTIONS -l'
       alias l='ls $LS_OPTIONS -lA'
+  become: true
 
 - name: Color root shell
   ansible.builtin.lineinfile:
     path: /root/.bashrc
     regexp: ^export PS1=
     line: export PS1='\[\033[00;31m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00;31m\]\$\[\033[00m\] '
+  become: true
 
 - name: Generate MOTD banner
   ansible.builtin.shell: figlet {{ ansible_hostname | quote }} -f slant -w 120 | lolcat --force-color --seed {{ 65535 | random(seed=inventory_hostname) }}
@@ -40,3 +43,4 @@
     dest: /etc/update-motd.d/00-banner
     mode: "755"
   when: not common_motd.failed
+  become: true

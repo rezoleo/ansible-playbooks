@@ -107,6 +107,7 @@
 
     - FileSender:
         icon: /icons/filesender.png
+        siteMonitor: https://filesender.renater.fr
         description: Transfert de fichier volumineux.
         href: https://filesender.renater.fr/index.php?s=upload
 

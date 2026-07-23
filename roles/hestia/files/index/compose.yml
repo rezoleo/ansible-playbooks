@@ -10,9 +10,5 @@ services:
     environment:
       HOMEPAGE_ALLOWED_HOSTS: index.rezoleo.fr # required, may need port. See gethomepage.dev/installation/#homepage_allowed_hosts
     restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 250M
-          pids: 1
+    mem_limit: 250M
+    cpus: 0.50
