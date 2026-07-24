@@ -2,14 +2,14 @@
 - name: Deploy a new server
   hosts: all
   roles:
-    # - common
+    - common
     - firewall
     - monitoring
     - role: ntp
       when: ansible_virtualization_type != "lxc"
     - ssh
-    - podman
-    - hestia
+    # - podman
+    # - hestia
 
 - name: Deploy UPS monitoring
   hosts: ups
