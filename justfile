@@ -49,6 +49,11 @@ playbook-deploy-infra *ARGS: (run_playbook "playbooks/deploy-server.yml" ARGS)
 vault username:
     vault login -method=userpass username={{username}}
 
+# Login to Vault using SSO
+[group('tooling')]
+vault-sso:
+    vault login -method=oidc -path=zitadel
+
 # Setup a virtualenv and install dependencies
 [group('tooling')]
 venv:
