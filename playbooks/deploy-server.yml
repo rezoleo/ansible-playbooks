@@ -1,16 +1,17 @@
 ---
 - name: Deploy a new server
   hosts: all
-  become: true
   roles:
     - common
     - monitoring
     - role: ntp
       when: ansible_virtualization_type != "lxc"
     - ssh
+    # - podman
+    # - hestia
 
 - name: Deploy UPS monitoring
-  become: true
   hosts: ups
+  become: true
   roles:
     - nut

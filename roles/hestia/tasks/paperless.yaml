@@ -1,0 +1,103 @@
+- name: Retrieve Paperless secrets from Vault
+  community.hashi_vault.vault_kv2_get:
+    path: services/paperless
+  register: hestia_paperless_vault_secrets
+  run_once: true
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+- name: Retrieve db secrets from Vault
+  community.hashi_vault.vault_kv2_get:
+    path: databases/paperless@pg.rezoleo.fr
+  register: hestia_paperless_db_secret
+  run_once: true
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+
+- name: Set Paperless secrets to facts
+  ansible.builtin.set_fact:
+    hestia_paperless_secret_key: "{{ hestia_paperless_vault_secrets.secret.paperless_default_key }}"
+    hestia_paperless_db_password: "{{ hestia_paperless_db_secret.secret.paperless }}"
+    hestia_paperless_superadmin_password: "{{ hestia_paperless_vault_secrets.secret.rezoleo }}"
+    hestia_paperless_sso_client_id: "{{ hestia_paperless_vault_secrets.secret.sso_id }}"
+    hestia_paperless_sso_client_secret: "{{ hestia_paperless_vault_secrets.secret.sso_secret }}"
+  run_once: true
+  delegate_to: localhost
+  become: false
+
+- name: Create paperless directory
+  ansible.builtin.file:
+    path: /home/podman/paperless
+    state: directory
+    owner: podman
+    group: podman
+    mode: "0755"
+  become: true
+
+- name: Copy compose file for paperless
+  ansible.builtin.copy:
+    src: paperless/compose.yml
+    dest: /home/podman/paperless/compose.yml
+    owner: podman
+    group: podman
+    mode: "0644"
+  become: true
+
+- name: Copy and fill .env file for paperless
+  ansible.builtin.template:
+    src: paperless.env.j2
+    dest: /home/podman/paperless/paperless.env
+    owner: podman
+    group: podman
+    mode: "0600"
+  become: true
+
+- name: Create paperless media directory
+  ansible.builtin.file:
+    path: /home/podman/paperless/media
+    state: directory
+    owner: podman
+    group: podman
+    mode: "0755"
+  become: true
+
+- name: Create paperless data directory
+  ansible.builtin.file:
+    path: /home/podman/paperless/data
+    state: directory
+    owner: podman
+    group: podman
+    mode: "0755"
+  become: true
+
+- name: Create paperless logo directory
+  ansible.builtin.file:
+    path: /home/podman/paperless/media/logo
+    state: directory
+    owner: podman
+    group: podman
+    mode: "0755"
+  become: true
+
+- name: Copy logo for paperless
+  ansible.builtin.copy:
+    src: paperless/logo.svg
+    dest: /home/podman/paperless/media/logo/logo.svg
+    owner: podman
+    group: podman
+    mode: "0600"
+  become: true
+
+- name: Create paperless export directory
+  ansible.builtin.file:
+    path: /home/podman/paperless/export
+    state: directory
+    owner: podman
+    group: podman
+    mode: "0755"
+  become: true

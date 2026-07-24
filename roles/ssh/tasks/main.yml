@@ -4,6 +4,7 @@
     name:
       - ssh
     state: present
+  become: true
 
 - name: Download CA file from Vault
   ansible.builtin.get_url:
@@ -12,6 +13,7 @@
     mode: "0644"
     owner: root
     force: true
+  become: true
 
 - name: Add CA to sshd config file
   ansible.builtin.lineinfile:
@@ -21,3 +23,4 @@
     line: TrustedUserCAKeys /etc/ssh/trusted-user-ca-keys.pem
     validate: /usr/sbin/sshd -t -f %s
   notify: Restart sshd
+  become: true

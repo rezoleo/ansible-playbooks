@@ -4,6 +4,7 @@
     update_cache: true
     name: snmpd
     state: present
+  become: true
 
 - name: Retrieve SNMPv3 credentials from Vault
   community.hashi_vault.vault_kv2_get:
@@ -55,6 +56,7 @@
     mode: "0600"
     backup: true
   notify: Restart snmpd
+  become: true
 
 # Script downloaded from https://github.com/librenms/librenms-agent/blob/master/snmp/distro
 - name: Copy distro script from LibreNMS
@@ -73,18 +75,21 @@
       ansible.builtin.systemd:
         name: snmpd
         state: stopped
+      become: true
 
     - name: Remove existing SNMPv3 user(s)
       ansible.builtin.lineinfile:
         path: /var/lib/snmp/snmpd.conf
         state: absent
         regexp: ^usmUser
+      become: true
 
     - name: CreateUser in /var/lib/snmp/snmpd.conf
       ansible.builtin.lineinfile:
         path: /var/lib/snmp/snmpd.conf
         state: present
         line: createUser {{ monitoring_snmp_user }} SHA {{ monitoring_snmp_authpass }} AES {{ monitoring_snmp_cryptopass }}
+      become: true
 
 - name: Add firewall rule for SNMP
   ansible.builtin.import_role:
@@ -93,18 +98,19 @@
   vars:
     firewall_rules:
       050-snmp:
-        - chain: INPUT
+        - rule_name: "Allow SNMP from polling server"
+          chain: INPUT
           source: 10.12.1.4/32 # TODO: Source IP should depend on the inventory
           protocol: udp
           destination_port: 161
           target: ACCEPT
-          comment: "Allow SNMP from polling server"
 
 - name: Start SNMP service
   ansible.builtin.systemd:
     name: snmpd
     state: started
     enabled: true
+  become: true
 
 - name: Force handlers to restart snmpd for the configuration to be OK when adding in LibreNMS
   ansible.builtin.meta: flush_handlers
