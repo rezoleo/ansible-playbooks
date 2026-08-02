@@ -3,7 +3,7 @@
   hosts: all
   roles:
     - common
-    # - monitoring
+    - monitoring
     - role: ntp
       when: ansible_virtualization_type != "lxc"
     - ssh
