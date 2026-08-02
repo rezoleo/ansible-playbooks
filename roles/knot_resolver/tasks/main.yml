@@ -4,6 +4,7 @@
     update_cache: true
     name: knot-resolver
     state: present
+  become: true
 
 - name: Create cache directory
   ansible.builtin.file:
@@ -12,6 +13,7 @@
     owner: knot-resolver
     group: knot-resolver
     mode: "0750"
+  become: true
 
 - name: Configure Knot Resolver
   ansible.builtin.template:
@@ -20,6 +22,7 @@
     owner: root
     group: root
     mode: "0644"
+  become: true
   notify: Restart kresd
 
 - name: Open DNS ports in firewall
@@ -47,3 +50,4 @@
     name: kresd@1
     enabled: true
     state: started
+  become: true

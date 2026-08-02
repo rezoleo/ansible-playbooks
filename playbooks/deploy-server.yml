@@ -3,12 +3,17 @@
   hosts: all
   roles:
     - common
-    - monitoring
+    # - monitoring
     - role: ntp
       when: ansible_virtualization_type != "lxc"
     - ssh
     # - podman
     # - hestia
+
+- name: Deploy DNS resolver
+  hosts: dns_resolvers
+  roles:
+    - knot_resolver
 
 - name: Deploy UPS monitoring
   hosts: ups
