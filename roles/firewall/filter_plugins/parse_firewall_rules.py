@@ -113,7 +113,7 @@ def validate_firewall_rules(rule_set: dict[str, list]) -> dict[str, list]:
     return rule_set
 
 
-class FilterModule(object):
+class FilterModule:
     def filters(self):
         return {
             "validate_firewall_rules": validate_firewall_rules,
