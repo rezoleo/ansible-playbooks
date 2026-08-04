@@ -10,7 +10,7 @@ dependencies = [
     # https://github.com/ansible-collections/community.general/issues/8852
     "pysnmp<6.0.0",
     "lolcat==1.4",
-    "pyfiglet==1.0.4"
+    "pyfiglet==1.0.4",
 ]
 
 [dependency-groups]
