@@ -1,0 +1,14 @@
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:v1@sha256:a0b71c8e757298d02560186bab9fbe3fc2d375c523a62cc1019177b37e48aa28
+    container_name: index
+    ports:
+      - 3000:3000
+    volumes:
+      - ./config:/app/config # Make sure your local config directory exists
+      - ./icons:/app/public/icons
+    environment:
+      HOMEPAGE_ALLOWED_HOSTS: index.rezoleo.fr # required, may need port. See gethomepage.dev/installation/#homepage_allowed_hosts
+    restart: always
+    mem_limit: 250M
+    cpus: 0.50

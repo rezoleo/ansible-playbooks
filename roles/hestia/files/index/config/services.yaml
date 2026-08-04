@@ -1,0 +1,136 @@
+- Associations:
+    - "Services à la résidence":
+        - Bioscool:
+            icon: /icons/bioscool.png
+            siteMonitor: https://eclosion.rezoleo.fr
+            href: https://eclosion.rezoleo.fr
+            description: Des fruits et légumes bios et locaux livrés directement à la résidence !
+        - Pain'gouin:
+            icon: /icons/paingouin.png
+            siteMonitor: https://paingouin.rezoleo.fr/
+            href: https://paingouin.rezoleo.fr/
+            description: Du pain frais à la Rez tous les matins (ou presque...).
+        - CentrallGames:
+            icon: /icons/cag.png
+            siteMonitor: https://centrallgames.rezoleo.fr/
+            href: https://centrallgames.rezoleo.fr/
+            description: Emprunter des jeux de société chez CAG.
+
+    - Autres:
+        - Absinthe:
+            icon: paperless-ngx.png
+            siteMonitor: https://absinthe.rezoleo.fr
+            href: https://absinthe.rezoleo.fr
+            description: Annales, corrigés et cours pour les cotisants CLA (Centrale Lille Associations).
+        - CLA:
+            icon: /icons/cla.png
+            siteMonitor: https://centralelilleassos.fr/
+            href: https://centralelilleassos.fr/
+            description: Site de Centrale Lille Associations (CLA).
+        - MyIteem:
+            icon: /icons/myiteem.png
+            siteMonitor: https://myiteem.fr
+            href: https://myiteem.fr
+            description: Annales, corrigés et cours pour les Iteemiens.
+
+        - Centraliens de Lille:
+            icon: /icons/centrale.png
+            siteMonitor: https://www.centraliens-lille.org
+            description: Site Internet des alumni de Centrale Lille.
+            href: https://www.centraliens-lille.org
+
+        - Annuaire des Écoles Centrales:
+            icon: /icons/gec.png
+            siteMonitor: https://www.centrale-carrieres.com
+            description: Annuaire centralisé des Écoles Centrales.
+            href: https://www.centrale-carrieres.com
+
+        - My CLAP:
+            icon: /icons/myclap.png
+            siteMonitor: https://my.le-clap.fr/
+            href: https://my.le-clap.fr/
+            description: Plateforme hébergeant les films de la vie centralienne.
+
+- Rézoléo:
+    - Services:
+        # - Drive:
+        #     icon: nextcloud
+        #     siteMonitor: https://nextcloud.rezoleo.fr/login
+        #     href: https://nextcloud.rezoleo.fr
+        #     description: Votre nouveau Google Drive où vos données sont en lieu sûr, édition de documents, classeurs, présentations, ...
+        - PDF:
+            icon: bentopdf
+            siteMonitor: https://pdf.rezoleo.fr
+            href: https://pdf.rezoleo.fr
+            description: Tous les outils dont vous avez besoin pour éditer vos PDFs.
+        - re2o:
+            icon: /icons/re2o.svg
+            siteMonitor: https://re2o.rezoleo.fr
+            href: https://re2o.rezoleo.fr
+            description: Gérez votre profil internet.
+    - Infrastructure rézo:
+        - Wiki:
+            icon: dokuwiki
+            siteMonitor: https://poly.rezoleo.fr
+            href: https://poly.rezoleo.fr
+            description: Guides de connexion à l'internet et au wifi.
+        - "État du réseau":
+            icon: uptime-kuma.png
+            siteMonitor: https://status.rezoleo.fr/
+            href: https://status.rezoleo.fr/
+            description: Statut actuel des services de Rézoléo.
+
+
+- Centrale Lille:
+    - Moodle:
+        icon: moodle.png
+        siteMonitor: https://moodle.centralelille.fr
+        href: https://moodle.centralelille.fr
+        description: Supports de cours.
+
+    - Hyperplanning:
+        icon: /icons/hyperplanning.png
+        siteMonitor: https://planning.centralelille.fr/
+        href: https://planning.centralelille.fr/
+        description: Emploi du temps.
+
+    - Zimbra:
+        icon: zimbra.png
+        siteMonitor: https://mail.centralelille.fr
+        href: https://mail.centralelille.fr
+        description: Mails.
+
+    - Webaurion:
+        icon: /icons/webaurion.png
+        description: Plateforme administrative pour les stages et les notes.
+        href: https://webaurion.centralelille.fr
+
+    - FileSender:
+        icon: /icons/filesender.png
+        siteMonitor: https://filesender.renater.fr
+        description: Transfert de fichier volumineux.
+        href: https://filesender.renater.fr/index.php?s=upload
+
+    - GED:
+        icon: /icons/ged.png
+        siteMonitor: https://ecm.centralelille.fr/nuxeo/view_documents.faces?conversationId=0NXMAIN
+        description: Documents d'informations administratifs.
+        href: https://ecm.centralelille.fr/nuxeo/view_documents.faces?conversationId=0NXMAIN
+
+    - Syllabus:
+        icon: /icons/centrale.png
+        siteMonitor: https://syllabus.centralelille.fr
+        description: Banque d'information sur les cursus de Centrale Lille.
+        href: https://syllabus.centralelille.fr
+
+    - Impression:
+        icon: printer.webp
+        # Pas de monitoring, il faut être sur Eduroam
+        href: https://print.centralelille.fr
+        description: Impression à l'école.
+
+    - SOS:
+        icon: glpi.webp
+        siteMonitor: https://glpi.centralelille.fr
+        href: https://glpi.centralelille.fr/
+        description: Tickets informatiques de Centrale.

@@ -7,6 +7,8 @@ export VIRTUAL_ENV := absolute_path(venv_path)
 export VAULT_ADDR := "https://vault.rezoleo.fr/"
 export PATH := venv_bin + ":" + env('PATH')
 
+set lists
+
 uv_path := which("uv")
 poetry_path := which("poetry")
 venv_command := if uv_path != "" {
@@ -46,6 +48,11 @@ playbook-deploy-infra *ARGS: (run_playbook "playbooks/deploy-server.yml" ARGS)
 [group('tooling')]
 vault username:
     vault login -method=userpass username={{username}}
+
+# Login to Vault using SSO
+[group('tooling')]
+vault-sso:
+    vault login -method=oidc -path=zitadel
 
 # Setup a virtualenv and install dependencies
 [group('tooling')]

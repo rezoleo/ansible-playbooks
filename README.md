@@ -3,17 +3,17 @@
 ## Prerequisites
 
 On the computer running the playbooks:
-  - A Python virtualenv with the [requirements](./requirements.txt) installed
-  - `figlet` and `lolcat-c` installed, to generate the ASCII art used in the MOTD banner
+  - A Python virtualenv with the [requirements](./pyproject.toml) installed
 
 On the managed servers:
   - An `ansible` user account with passwordless sudo (run the
     [`create-ansible-user`](./playbooks/create-ansible-user.yml) playbook for this)
 
 To develop on your computer:
-  - A Python virtualenv with the [requirements](./requirements.txt) installed
-  - Recommended: the [`just`][just-manual] command runner, to simplify running commands
+  - A Python virtualenv with the [requirements](./pyproject.toml) installed
+  - Recommended: the [`just`][just-manual] command runner, to simplify running commands (see [Usage](#usage) below)
   - Recommended: Visual Studio Code with the [`Ansible` extension][ansible-vscode-extension] (you should be prompted to install it when opening the project)
+  - Recommended : the Vault CLI [installed](https://developer.hashicorp.com/vault/install).
 
 ## Usage
 
@@ -24,7 +24,6 @@ A `justfile` is provided, to help you run the most common commands. Once you hav
   - `just todo`: search all files for `# TODO` and `# noqa` comments (they silence linter errors)
   - `just vault <username>`: login to Vault using the `userpass` method
   - `just venv`: create a local virtualenv using the currently available Python (in [`.venv`](./venv)) and install dependencies using `pip`
-  - `just cmdb`: generate an HTML overview of all hosts in the inventory with information gathered by Ansible, including variables (using [`ansible-cmdb`][ansible-cmdb])
   - ...and more, see `just` for the updated list
 
 If you want to run a playbook manually, you will need to:
