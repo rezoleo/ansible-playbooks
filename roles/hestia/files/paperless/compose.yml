@@ -36,7 +36,7 @@ services:
     cpus: 0.50
 
   webserver:
-    image: ghcr.io/paperless-ngx/paperless-ngx:latest@sha256:65a4cabf0169ea7fbd90ab7bb28ba3f8b5909613635acda1a03ad606f34b456b
+    image: ghcr.io/paperless-ngx/paperless-ngx:3@sha256:65a4cabf0169ea7fbd90ab7bb28ba3f8b5909613635acda1a03ad606f34b456b
     restart: always
     depends_on:
       - broker
