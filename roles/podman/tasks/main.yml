@@ -1,4 +1,4 @@
-# Podman rooltess requires lingering, this is not usually available using CT
+# Podman rootless requires lingering, this is not usually available using CT
 # thus this structure catches this issue and prevent the role from failing without explanations.
 
 - name: Fail if run on CT
