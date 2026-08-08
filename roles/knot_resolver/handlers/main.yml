@@ -1,6 +1,6 @@
 ---
-- name: Restart timesyncd
+- name: Restart kresd
   ansible.builtin.systemd:
-    name: systemd-timesyncd
+    name: kresd@1
     state: restarted
   become: true

@@ -1,0 +1,19 @@
+---
+knot_resolver_listen_ip: "{{ ansible_default_ipv4.address }}"
+
+knot_resolver_cache_size_mb: 300
+
+knot_resolver_cache_path: "/var/cache/knot-resolver"
+
+knot_resolver_authoritative_ip: "10.12.0.11"
+
+knot_resolver_internal_zones:
+  - "rezoleo.fr."
+
+knot_resolver_reverse_zones:
+  - "0.12.10.in-addr.arpa."
+
+knot_resolver_cache_min_ttl: 60
+knot_resolver_cache_max_ttl: 86400
+
+knot_resolver_log_level: "notice"

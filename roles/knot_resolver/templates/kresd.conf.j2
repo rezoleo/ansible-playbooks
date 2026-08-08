@@ -1,0 +1,58 @@
+-- {{ ansible_managed }}
+
+-- Network interface configuration
+net.listen('{{ knot_resolver_listen_ip }}', 53, { kind = 'dns' })
+net.listen('{{ knot_resolver_listen_ip }}', 443, { kind = 'doh2' })
+net.ipv6 = false
+
+-- Modules
+modules = {
+    'hints > iterate',
+    'stats',
+    'predict',
+}
+
+trust_anchors.add_file('/usr/share/dns/root.key', true)
+
+-- Stub zones -> DoubleDiamond
+modules.load('policy')
+{% for zone in knot_resolver_internal_zones %}
+policy.add(policy.suffix(policy.FLAGS({'NO_CACHE'}), policy.todnames({'{{ zone }}'})))
+policy.add(policy.suffix(policy.STUB({'{{ knot_resolver_authoritative_ip }}'}), policy.todnames({'{{ zone }}'})))
+{% endfor %}
+
+-- Reverse DNS
+{% for zone in knot_resolver_reverse_zones %}
+policy.add(policy.suffix(policy.FLAGS({'NO_CACHE'}), policy.todnames({'{{ zone }}'})))
+policy.add(policy.suffix(policy.STUB({'{{ knot_resolver_authoritative_ip }}'}), policy.todnames({'{{ zone }}'})))
+{% endfor %}
+
+-- Access control
+modules.load('view')
+view:addr('127.0.0.1/32', policy.all(policy.PASS))
+view:addr('::1/128',      policy.all(policy.PASS))
+view:addr('10.0.0.0/8',   policy.all(policy.PASS))
+view:addr('0.0.0.0/0',    policy.all(policy.DROP))
+view:addr('::0/0',        policy.all(policy.DROP))
+
+-- Cache
+cache.open({{ knot_resolver_cache_size_mb }} * MB, 'lmdb://{{ knot_resolver_cache_path }}')
+cache.min_ttl({{ knot_resolver_cache_min_ttl }})
+cache.max_ttl({{ knot_resolver_cache_max_ttl }})
+
+-- Prefill root zone
+modules.load('prefill')
+prefill.config({
+    ['.'] = {
+        url = 'https://www.internic.net/domain/root.zone',
+        interval = 86400
+    }
+})
+
+-- WPAD sinkhole
+policy.add(policy.suffix(
+    policy.ANSWER({
+        [kres.type.A] = { rdata = kres.str2ip('0.0.0.0'), ttl = 3600 }
+    }),
+    policy.todnames({'wpad.rezoleo.fr.'})
+))
