@@ -19,7 +19,8 @@
     group: "podman"
     system: true
     create_home: true
-  register: podman_user
+  register:
+    podman_user_uid: _task.result.uid
   become: true
 
 - name: Add podman user to subuid file
@@ -79,7 +80,7 @@
 - name: Ensure systemd user manager is running for podman
   become: true
   ansible.builtin.systemd:
-    name: "user@{{ podman_user.uid }}.service"
+    name: "user@{{ podman_user_uid }}.service"
     state: started
     enabled: true
 
@@ -87,8 +88,8 @@
   become: true
   become_user: podman
   environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ podman_user.uid }}"
-    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ podman_user.uid }}/bus"
+    XDG_RUNTIME_DIR: "/run/user/{{ podman_user_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ podman_user_uid }}/bus"
   ansible.builtin.systemd:
     name: podman-restart.service
     scope: user
