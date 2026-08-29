@@ -1,6 +1,7 @@
 -- {{ ansible_managed }}
 
 -- Network interface configuration
+-- TODO : uses default auto-signed certificate, should be replaced with a valid one
 net.listen('{{ knot_resolver_listen_ip }}', 53, { kind = 'dns' })
 net.listen('{{ knot_resolver_listen_ip }}', 443, { kind = 'doh2' })
 net.ipv6 = false
@@ -12,12 +13,19 @@ modules = {
     'predict',          -- Prefetch expiring/frequent records
 }
 
-trust_anchors.add_file('/usr/share/dns/root.key', true)
+-- Expose server identity via NSID (RFC 5001), so we can tell which instance answered the query
+-- Useful with floating VIPs accross
+local systemd_instance = os.getenv("SYSTEMD_INSTANCE")
+
+modules.load('nsid')
+nsid.name('{{ ansible_hostname }}' .. systemd_instance)
 
 -- Stub zones -> DoubleDiamond
 modules.load('policy')
 {% for zone in knot_resolver_internal_zones %}
 policy.add(policy.suffix(policy.FLAGS({'NO_CACHE'}), policy.todnames({'{{ zone }}'})))
+
+-- TODO : switch to policy.FORWARD once DoubleDiamond is DNSSEC signed and validated
 policy.add(policy.suffix(policy.STUB({'{{ knot_resolver_authoritative_ip }}'}), policy.todnames({'{{ zone }}'})))
 {% endfor %}
 

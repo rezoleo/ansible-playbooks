@@ -44,6 +44,12 @@
           protocol: tcp
           destination_port: 53
           target: ACCEPT
+        - rule_name: "Authorize DNS from 10.0/8 subnet (TCP)"
+          chain: INPUT
+          source: 10.0.0.0/8
+          protocol: tcp
+          destination_port: 443
+          target: ACCEPT
 
 - name: Enable and start Knot Resolver
   ansible.builtin.systemd:
