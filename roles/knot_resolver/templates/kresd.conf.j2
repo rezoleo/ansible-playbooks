@@ -7,9 +7,9 @@ net.ipv6 = false
 
 -- Modules
 modules = {
-    'hints > iterate',
-    'stats',
-    'predict',
+    'hints > iterate',  -- Allow loading /etc/hosts or custom root hints
+    'stats',            -- Track internal statistics
+    'predict',          -- Prefetch expiring/frequent records
 }
 
 trust_anchors.add_file('/usr/share/dns/root.key', true)
