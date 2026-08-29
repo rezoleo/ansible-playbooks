@@ -5,7 +5,7 @@ knot_resolver_listen_ip: "{{ ansible_default_ipv4.address }}"
 # https://knot-resolver.readthedocs.io/en/stable/daemon-bindings-cache.html#sizing
 # Once configured, the cache size cannot be lowered, only increased
 # https://knot-resolver.readthedocs.io/en/stable/daemon-bindings-cache.html#cache-open
-knot_resolver_cache_size_mb: 300 
+knot_resolver_cache_size_mb: 300
 
 knot_resolver_cache_path: "/var/cache/knot-resolver"
 
