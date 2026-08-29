@@ -1,96 +1,12 @@
-- name: Installing podman
-  ansible.builtin.apt:
-    update_cache: true
-    name:
-      - podman
-      - podman-compose
-    state: present
-  become: true
+# Podman rootless requires lingering, this is not usually available using CT
+# thus this structure catches this issue and prevent the role from failing without explanations.
 
-- name: Create podman group
-  ansible.builtin.group:
-    name: "podman"
-    system: true
-  become: true
+- name: Fail if run on CT
+  ansible.builtin.fail:
+    msg: "Podman rootless can only be installed on a VM, don't use this role on a CT!"
+  when: ansible_virtualization_type == 'lxc'
 
-- name: Create podman user
-  ansible.builtin.user:
-    name: "podman"
-    group: "podman"
-    system: true
-    create_home: true
-  register: podman_user
-  become: true
-
-- name: Add podman user to subuid file
-  ansible.builtin.lineinfile:
-    path: /etc/subuid
-    regexp: "^podman:.*"
-    line: "podman:165536:65536"
-    create: true
-    mode: '0644'
-    owner: root
-    group: root
-  become: true
-
-- name: Add podman group to subgid file
-  ansible.builtin.lineinfile:
-    path: /etc/subgid
-    regexp: "^podman:.*"
-    line: "podman:165536:65536"
-    create: true
-    mode: '0644'
-    owner: root
-    group: root
-  become: true
-
-
-- name: Enable lingering for podman user
-  ansible.builtin.command:
-    cmd: "loginctl enable-linger podman"
-    creates: "/var/lib/systemd/linger/podman"
-  become: true
-
-- name: Create containers config directory for podman user
-  ansible.builtin.file:
-    path: "/home/podman/.config/containers"
-    state: directory
-    owner: podman
-    group: podman
-    mode: '0755'
-  become: true
-
-- name: Configure podman log rotation
-  ansible.builtin.copy:
-    src: containers.conf
-    dest: "/home/podman/.config/containers/containers.conf"
-    owner: podman
-    group: podman
-    mode: '0644'
-  become: true
-
-- name: Enable rootless mode for podman
-  ansible.builtin.command:
-    cmd: podman system migrate
-  become: true
-  become_user: podman
-  changed_when: true
-
-- name: Ensure systemd user manager is running for podman
-  become: true
-  ansible.builtin.systemd:
-    name: "user@{{ podman_user.uid }}.service"
-    state: started
-    enabled: true
-
-- name: Enable podman-restart.service for the podman user
-  become: true
-  become_user: podman
-  environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ podman_user.uid }}"
-    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ podman_user.uid }}/bus"
-  ansible.builtin.systemd:
-    name: podman-restart.service
-    scope: user
-    state: started
-    enabled: true
+- name: Install and configure Podman
+  ansible.builtin.include_tasks:
+    file: podman.yml
+  when: ansible_virtualization_type != 'lxc'

@@ -1,4 +1,4 @@
-# Docker Compose file for running paperless from the Docker Hub.
+# Compose file for running paperless from the Github Hub.
 # This file contains everything paperless needs to run.
 # Paperless supports amd64, arm and arm64 hardware.
 #
@@ -10,23 +10,23 @@
 #   as this file and mounted to the correct folders inside the container.
 # - Paperless listens on port 8000.
 #
-# In addition to that, this Docker Compose file adds the following optional
+# In addition to that, this Compose file adds the following optional
 # configurations:
 #
 # - Instead of SQLite (default), PostgreSQL is used as the database server.
 #
 # To install and update paperless with this file, do the following:
 #
-# - Copy this file as 'docker-compose.yml' and the files 'docker-compose.env'
-#   and '.env' into a folder.
-# - Run 'docker compose pull'.
-# - Run 'docker compose up -d'.
+# - Copy this file as 'compose.yml' and the files 'docker-compose.env'
+#   and 'paperless.env' into a folder.
+# - Run 'podman compose pull'.
+# - Run 'podman compose up -d'.
 #
 # For more extensive installation and update instructions, refer to the
 # documentation.
 services:
   broker:
-    image: docker.io/library/redis:8
+    image: docker.io/library/redis:8@sha256:a7efd4ed5037dcfe1543c0e50b9f06293d3e88827005544bf37f381eea5f01cf
     restart: always
     volumes:
       - redisdata:/data
@@ -36,7 +36,7 @@ services:
     cpus: 0.50
 
   webserver:
-    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    image: ghcr.io/paperless-ngx/paperless-ngx:3.0@sha256:65a4cabf0169ea7fbd90ab7bb28ba3f8b5909613635acda1a03ad606f34b456b
     restart: always
     depends_on:
       - broker

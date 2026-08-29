@@ -5,7 +5,7 @@
     - common
     - monitoring # firewall will be installed alongside (dependency)
     - role: ntp
-      when: ansible_virtualization_type != "lxc"
+      when: ansible_facts['virtualization_type'] != "lxc"
     - ssh
     # - podman
     # - hestia

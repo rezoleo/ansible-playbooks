@@ -1,6 +1,6 @@
 services:
   bentopdf:
-    image: ghcr.io/alam00000/bentopdf-simple:latest
+    image: ghcr.io/alam00000/bentopdf-simple:latest@sha256:ba67d44f07ec0d2d636c945eef1c186f71bceda3d11b1e9809d7dbfbbaaacfa4
     ports:
       - '3001:8080'
     restart: always

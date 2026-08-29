@@ -9,7 +9,10 @@
 - name: Retrieve SNMPv3 credentials from Vault
   community.hashi_vault.vault_kv2_get:
     path: services/snmp
-  register: monitoring_snmp_secrets
+  register:
+    monitoring_snmp_authpass: _task.result.secret.authpass
+    monitoring_snmp_cryptopass: _task.result.secret.cryptopass
+    monitoring_snmp_user: _task.result.secret.user
   run_once: true
   delegate_to: localhost
   become: false
@@ -17,17 +20,8 @@
 - name: Retrieve librenms api token from Vault
   community.hashi_vault.vault_kv2_get:
     path: services/librenms
-  register: monitoring_librenms_secrets
-  run_once: true
-  delegate_to: localhost
-  become: false
-
-- name: Set SNMPv3 password and passphrase to facts
-  ansible.builtin.set_fact:
-    monitoring_snmp_authpass: "{{ monitoring_snmp_secrets.secret.authpass }}"
-    monitoring_snmp_cryptopass: "{{ monitoring_snmp_secrets.secret.cryptopass }}"
-    monitoring_snmp_user: "{{ monitoring_snmp_secrets.secret.user }}"
-    monitoring_librenms_api_token: "{{ monitoring_librenms_secrets.secret.api_token }}"
+  register:
+    monitoring_librenms_api_token: _task.result.secret.api_token
   run_once: true
   delegate_to: localhost
   become: false
@@ -45,7 +39,8 @@
   ignore_errors: true
   delegate_to: localhost
   become: false
-  register: monitoring_facts_results
+  register:
+    monitoring_facts_failed: _task.result.failed
 
 - name: Configure SNMP
   ansible.builtin.template:
@@ -69,7 +64,7 @@
   notify: Restart snmpd
 
 - name: Setup SNMP v3 user
-  when: monitoring_facts_results.failed
+  when: monitoring_facts_failed
   block:
     - name: Stop SNMP service
       ansible.builtin.systemd:
@@ -119,12 +114,14 @@
   delegate_to: localhost
   become: false
   ansible.builtin.uri:
-    url: https://librenms.rezoleo.fr/api/v0/devices/{{ ansible_hostname }}
+    url: https://librenms.rezoleo.fr/api/v0/devices/{{ ansible_facts['hostname'] }}
     method: GET
     return_content: true
     headers:
       X-Auth-Token: "{{ monitoring_librenms_api_token }}"
-  register: monitoring_device_results
+  register:
+    monitoring_device_status: _task.result.json.status
+    monitoring_device_snmpver: _task.result.json.devices[0].snmpver if _task.result.json.devices|default([])|length > 0 else None
   ignore_errors: true
 
 - name: Add device to LibreNMS
@@ -138,7 +135,7 @@
       X-Auth-Token: "{{ monitoring_librenms_api_token }}"
     body_format: json
     body:
-      hostname: "{{ ansible_hostname }}"
+      hostname: "{{ ansible_facts['hostname'] }}"
       overwrite_ip: "{{ inventory_hostname }}"
       version: v3
       authlevel: authPriv
@@ -147,13 +144,13 @@
       authalgo: SHA
       cryptopass: "{{ monitoring_snmp_cryptopass }}"
       cryptoalgo: AES
-  when: monitoring_device_results.json.status != 'ok'
+  when: monitoring_device_status != 'ok'
 
 - name: Change SNMP version on LibreNMS
   delegate_to: localhost
   become: false
   ansible.builtin.uri:
-    url: https://librenms.rezoleo.fr/api/v0/devices/{{ ansible_hostname }}
+    url: https://librenms.rezoleo.fr/api/v0/devices/{{ ansible_facts['hostname'] }}
     method: PATCH
     return_content: true
     headers:
@@ -176,4 +173,4 @@
         - SHA
         - "{{ monitoring_snmp_cryptopass }}"
         - AES
-  when: monitoring_device_results.json.status == 'ok' and monitoring_device_results.json.devices[0].snmpver != 'v3'
+  when: monitoring_device_status == 'ok' and monitoring_device_snmpver != 'v3'
