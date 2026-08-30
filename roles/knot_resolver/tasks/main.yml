@@ -1,0 +1,59 @@
+---
+- name: Install Knot Resolver
+  ansible.builtin.apt:
+    update_cache: true
+    name: knot-resolver
+    state: present
+  become: true
+
+- name: Create cache directory
+  ansible.builtin.file:
+    path: "{{ knot_resolver_cache_path }}"
+    state: directory
+    owner: knot-resolver
+    group: knot-resolver
+    mode: "0750"
+  become: true
+
+- name: Configure Knot Resolver
+  ansible.builtin.template:
+    src: kresd.conf.j2
+    dest: /etc/knot-resolver/kresd.conf
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  notify: Restart kresd
+
+- name: Open DNS ports in firewall
+  ansible.builtin.include_role:
+    name: firewall
+    tasks_from: create_rule.yml
+  vars:
+    firewall_rules:
+      500-dns:
+        - rule_name: "Authorize DNS from 10.0/8 subnet (UDP)"
+          chain: INPUT
+          source: 10.0.0.0/8
+          protocol: udp
+          destination_port: 53
+          target: ACCEPT
+        - rule_name: "Authorize DNS from 10.0/8 subnet (TCP)"
+          chain: INPUT
+          source: 10.0.0.0/8
+          protocol: tcp
+          destination_port: 53
+          target: ACCEPT
+        - rule_name: "Authorize DNS from 10.0/8 subnet (TCP)"
+          chain: INPUT
+          source: 10.0.0.0/8
+          protocol: tcp
+          destination_port: 443
+          target: ACCEPT
+
+- name: Enable and start Knot Resolver
+  ansible.builtin.systemd:
+    name: kresd@1
+    enabled: true
+    state: started
+  become: true

@@ -1,0 +1,27 @@
+---
+knot_resolver_listen_ip: "{{ ansible_default_ipv4.address }}"
+
+# Cache size should fit entirely in RAM to avoid I/O slowness on missing page hit
+# https://knot-resolver.readthedocs.io/en/stable/daemon-bindings-cache.html#sizing
+# Once configured, the cache size cannot be lowered, only increased
+# https://knot-resolver.readthedocs.io/en/stable/daemon-bindings-cache.html#cache-open
+knot_resolver_cache_size_mb: 300
+
+knot_resolver_cache_path: "/var/cache/knot-resolver"
+
+# TODO: Authoritative DNS should come from inventory
+knot_resolver_authoritative_ip: "10.12.0.11"
+
+knot_resolver_internal_zones:
+  - "rezoleo.fr."
+
+knot_resolver_reverse_zones:
+  - "10.in-addr.arpa."
+
+# We enforce aminimum TTL of 60 seconds to avoid cache poisoning attacks and to avoid excessive DNS queries
+# Overwise, the default TTL is 0 seconds, which means that the cache will be flushed on every query
+# https://knot-resolver.readthedocs.io/en/stable/daemon-bindings-cache.html#cache-ttl
+knot_resolver_cache_min_ttl: 60
+knot_resolver_cache_max_ttl: 86400
+
+knot_resolver_log_level: "notice"
