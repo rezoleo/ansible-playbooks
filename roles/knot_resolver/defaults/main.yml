@@ -16,7 +16,7 @@ knot_resolver_internal_zones:
   - "rezoleo.fr."
 
 knot_resolver_reverse_zones:
-  - "0.12.10.in-addr.arpa."
+  - "10.in-addr.arpa."
 
 # We enforce aminimum TTL of 60 seconds to avoid cache poisoning attacks and to avoid excessive DNS queries
 # Overwise, the default TTL is 0 seconds, which means that the cache will be flushed on every query
