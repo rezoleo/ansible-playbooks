@@ -1,10 +1,4 @@
 ---
-- name: Install systemd-timesyncd
-  ansible.builtin.apt:
-    name: systemd-timesyncd
-    state: present
-  become: true
-
 - name: Configure timesyncd
   ansible.builtin.copy:
     src: timesyncd.conf
@@ -20,4 +14,3 @@
     name: systemd-timesyncd
     enabled: true
     state: started
-  become: true
