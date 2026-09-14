@@ -95,3 +95,36 @@
     scope: user
     state: started
     enabled: true
+
+- name: Create a folder for the systemd timer
+  ansible.builtin.file:
+    path: "/home/podman/.config/systemd/user"
+    state: directory
+    owner: podman
+    group: podman
+    mode: '0755'
+  become: true
+
+- name: Create the service file to configure auto-prune
+  ansible.builtin.copy:
+    src: podman-image-prune.service
+    dest: /home/podman/.config/systemd/user/podman-image-prune.service
+    owner: podman
+    group: podman
+    mode: "0600"
+  become: true
+
+- name: Create the service timer
+  ansible.builtin.copy:
+    src: podman-image-prune.timer
+    dest: /home/podman/.config/systemd/user/podman-image-prune.timer
+    owner: podman
+    group: podman
+    mode: "0600"
+  become: true
+
+- name: Enable the timer unit
+  ansible.builtin.systemd_service:
+    name: podman-image-prune.timer
+    state: started
+    enabled: true
