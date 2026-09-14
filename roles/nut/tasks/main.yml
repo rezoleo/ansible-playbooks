@@ -11,15 +11,9 @@
   become: false
   run_once: true
   delegate_to: localhost
-  register: nut_secrets
-
-- name: Set credentials for NUT to facts
-  ansible.builtin.set_fact:
-    nut_admin_pass: "{{ nut_secrets.secret.admin }}"
-    nut_nutcli_pass: "{{ nut_secrets.secret.nutcli }}"
-  become: false
-  run_once: true
-  delegate_to: localhost
+  register:
+    nut_admin_pass: _task.result.secret.admin
+    nut_nutcli_pass: _task.result.secret.nutcli
 
 - name: Configure NUT
   ansible.builtin.template:

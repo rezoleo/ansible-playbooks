@@ -12,7 +12,7 @@ On the managed servers:
 To develop on your computer:
   - A Python virtualenv with the [requirements](./pyproject.toml) installed
   - Recommended: the [`just`][just-manual] command runner, to simplify running commands (see [Usage](#usage) below)
-  - Recommended: Visual Studio Code with the [`Ansible` extension][ansible-vscode-extension] (you should be prompted to install it when opening the project)
+  - Recommended: Visual Studio Code with the [`Ansible` extension][ansible-vscode-extension] (you should be prompted to install it when opening the project in VSCode)
   - Recommended : the Vault CLI [installed](https://developer.hashicorp.com/vault/install).
 
 ## Usage

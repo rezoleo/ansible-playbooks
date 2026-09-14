@@ -3,13 +3,17 @@
   hosts: all
   roles:
     - common
-    - firewall
-    - monitoring
+    - monitoring # firewall will be installed alongside (dependency)
     - role: ntp
       when: ansible_facts['virtualization_type'] != "lxc"
     - ssh
     # - podman
     # - hestia
+
+- name: Deploy DNS resolver
+  hosts: dns_resolvers
+  roles:
+    - knot_resolver
 
 - name: Deploy UPS monitoring
   hosts: ups
