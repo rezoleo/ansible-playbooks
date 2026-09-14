@@ -1,0 +1,21 @@
+- name: Reload podman user systemd daemon
+  become: true
+  become_user: podman
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ podman_user.uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ podman_user.uid }}/bus"
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    scope: user
+
+- name: Restart podman-image-prune timer
+  become: true
+  become_user: podman
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ podman_user.uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ podman_user.uid }}/bus"
+  ansible.builtin.systemd_service:
+    name: podman-image-prune.timer
+    scope: user
+    state: restarted
+
