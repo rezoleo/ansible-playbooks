@@ -4,4 +4,4 @@ Description=Prune old Podman images
 [Service]
 Type=oneshot
 # Remove unused images older than 7 days
-ExecStart=/usr/bin/podman image prune -a -f --filter "until=168h"
+ExecStart=/usr/bin/podman image prune --all --force --filter "until=168h"
