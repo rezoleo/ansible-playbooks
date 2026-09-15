@@ -125,4 +125,3 @@
   become: true
   become_user: podman
   notify: Reload systemd
-
