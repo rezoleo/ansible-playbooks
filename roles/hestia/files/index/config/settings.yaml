@@ -15,7 +15,7 @@ layout:
     style: row
     "Services à la résidence":
       style: row
-      columns: 3
+      columns: 4
       useEqualHeights: true
     Autres:
       style: row

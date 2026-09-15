@@ -15,6 +15,11 @@
             siteMonitor: https://centrallgames.rezoleo.fr/
             href: https://centrallgames.rezoleo.fr/
             description: Emprunter des jeux de société chez CAG.
+        - MatosCLAP:
+            icon: /icons/matos.png
+            siteMonitor: https://matos.le-clap.fr/health/
+            href: https://matos.le-clap.fr/
+            description: Emprunter du matériel audiovisuel au CLAP.
 
     - Autres:
         - Absinthe:
