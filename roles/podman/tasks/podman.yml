@@ -125,3 +125,12 @@
   become: true
   become_user: podman
   notify: Reload systemd
+
+- name: Enable the timer unit
+  ansible.builtin.systemd_service:
+    name: podman-image-prune.timer
+    state: started
+    enabled: true
+    scope: user
+  become: true
+  become_user: podman
