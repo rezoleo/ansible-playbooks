@@ -2,13 +2,13 @@
 - name: Deploy a new server
   hosts: all
   roles:
-    # - common
-    # - monitoring # firewall will be installed alongside (dependency)
-    # - role: ntp
-    #   when: ansible_facts['virtualization_type'] != "lxc"
-    # - ssh
-    - podman
-    - hestia
+    - common
+    - monitoring # firewall will be installed alongside (dependency)
+    - role: ntp
+      when: ansible_facts['virtualization_type'] != "lxc"
+    - ssh
+    # - podman
+    # - hestia
 
 - name: Deploy DNS resolver
   hosts: dns_resolvers
