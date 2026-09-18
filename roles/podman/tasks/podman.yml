@@ -19,6 +19,7 @@
     group: "podman"
     system: true
     create_home: true
+    shell: "/usr/bin/bash"
   register:
     podman_user_uid: _task.result.uid
   become: true
@@ -120,10 +121,8 @@
     dest: /home/podman/.config/systemd/user/podman-image-prune.timer
     owner: podman
     group: podman
-    scope: user
     mode: "0600"
   become: true
-  become_user: podman
   notify: Reload systemd
 
 - name: Enable the timer unit
@@ -132,5 +131,8 @@
     state: started
     enabled: true
     scope: user
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ podman_user_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ podman_user_uid }}/bus"
   become: true
   become_user: podman
