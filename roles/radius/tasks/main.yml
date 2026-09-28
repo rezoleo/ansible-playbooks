@@ -1,0 +1,63 @@
+---
+- name: Install freeradius
+  ansible.builtin.apt:
+    package:
+      - freeradius
+      - git
+    state: present
+  become: true
+
+- name: Retrieve credentials for RADIUS from Vault
+  community.hashi_vault.vault_kv2_get:
+    path: infrastructure/radius
+  become: false
+  run_once: true
+  delegate_to: localhost
+  register:
+    radius_lea5_api_key: _task.result.secret.api_key
+    radius_secret_wired_connection: _task.result.secret.secret_ethernet
+    radius_secret_wifi: _task.result.secret.secret_wifi
+
+- name: Clone Lea5 api client git repo
+  ansible.builtin.git:
+    repo: "https://github.com/rezoleo/API-Client-Lea5.git"
+    dest: "/etc/freeradius/3.0/ApiLea5"
+    version: 'main'
+    update: true
+  become: true
+
+- name: Set ownership and permissions on Lea5 repo
+  ansible.builtin.file:
+    path: /etc/freeradius/3.0/ApiLea5
+    state: directory
+    owner: freerad
+    group: freerad
+    mode: "0755"
+    recurse: true
+  become: true
+
+- name: Copy configuration files
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/etc/freeradius/3.0/{{ item }}"
+    mode: '0755'
+    owner: freerad
+    group: freerad
+  loop:
+    - sites-enabled
+    - auth.py
+    - scripts
+    - mods-config
+  become: true
+
+- name: Configure freeradius
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/etc/freeradius/3.0/{{ item }}"
+    mode: "0755"
+    owner: freerad
+    group: freerad
+  loop:
+    - config.ini
+    - clients.conf
+  become: true

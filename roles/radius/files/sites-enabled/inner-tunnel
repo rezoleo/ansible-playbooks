@@ -1,0 +1,34 @@
+# -*- text -*-
+######################################################################
+#
+#	This is a virtual server that handles *only* inner tunnel
+#	requests for EAP-TTLS and PEAP types.
+#
+#	$Id: 10eeb55db7a1129ea62f2195c17b286eb4acd1d2 $
+#
+######################################################################
+
+server inner-tunnel {
+
+	authorize {
+		lea5
+		eap
+		pap
+	}
+
+	authenticate {
+		Auth-Type PAP {
+			pap
+		}
+		Auth-Type MS-CHAP {
+			mschap
+		}
+
+		eap
+	}
+
+	post-auth {
+		lea5
+	}
+
+}

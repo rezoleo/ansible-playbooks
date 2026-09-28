@@ -1,0 +1,18 @@
+# -*- text -*-
+##
+## clients.conf -- client configuration directives
+##
+##	$Id: 60f9f4bf8a32804182e4516ac69ac510d25215d1 $
+
+#######################################################################
+client filaire {
+	ipaddr = {{ radius_wired_network_subnet }}
+	secret = {{ radius_secret_wired_connection }}
+	virtual_server = radius-filaire
+}
+
+client wifi {
+	ipaddr = {{ radius_wifi_network_subnet }}
+	secret = {{ radius_secret_wifi }}
+	virtual_server = radius-wifi
+}

@@ -1,0 +1,88 @@
+server default {
+
+listen {
+	type = auth
+        ipv6addr = *
+	ipaddr = *
+	port = 0
+
+
+	limit {
+	      max_connections = 16
+	      lifetime = 0
+	      idle_timeout = 30
+	}
+}
+
+listen {
+	ipaddr = *
+	port = 0
+	type = acct
+
+	limit {
+	}
+}
+
+# IPv6 versions of the above - read their full config to understand options
+listen {
+	type = auth
+	ipv6addr = ::	# any.  ::1 == localhost
+	port = 0
+	limit {
+	      max_connections = 16
+	      lifetime = 0
+	      idle_timeout = 30
+	}
+}
+
+listen {
+	ipv6addr = ::
+	port = 0
+	type = acct
+
+	limit {
+	}
+}
+
+}
+
+server radius-filaire {
+	authorize {
+		#  Read the 'users' file.  In v3, this is located in
+		#  raddb/mods-config/files/authorize
+		files
+	}
+
+	authenticate {
+	}
+
+
+	preacct {
+	}
+
+	accounting {
+	}
+
+	post-auth {
+		# For Exec-Program and Exec-Program-Wait
+		exec
+	}
+
+}
+
+
+server radius-wifi {
+
+	authorize {
+		eap
+	}
+
+	authenticate {
+		eap
+	}
+
+	accounting {
+	}
+
+
+}
