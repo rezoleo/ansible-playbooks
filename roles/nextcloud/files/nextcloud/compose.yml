@@ -1,0 +1,32 @@
+services:
+  nextcloud:
+    image: nextcloud:35.0.1-apache
+    restart: always
+    ports:
+      - 8080:80
+    volumes:
+      - ./nextcloud:/var/www/html
+    networks:
+      - nextcloud_net
+    env_file: nextcloud.env
+    mem_limit: 4G
+    cpus: 4
+
+  broker:
+    image: docker.io/library/redis:8@sha256:a7efd4ed5037dcfe1543c0e50b9f06293d3e88827005544bf37f381eea5f01cf
+    restart: always
+    volumes:
+      - redisdata:/data
+    networks:
+      - nextcloud_net
+    mem_limit: 1G
+    cpus: 1
+
+volumes:
+  redisdata:
+
+networks:
+  nextcloud_net:
+    driver: bridge
+    x-podman:
+      dns_enabled: true

@@ -1,0 +1,10 @@
+---
+
+# Config for nextcloud
+# Secrets (db_password) are fetched from Vault at runtime, see tasks/main.yaml
+
+nextcloud_db_host: pg.rezoleo.fr
+nextcloud_db_name: nextcloud
+nextcloud_db_user: nextcloud
+
+
