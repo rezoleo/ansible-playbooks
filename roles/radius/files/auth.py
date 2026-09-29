@@ -1,13 +1,17 @@
-import radiusd
-import logging
 import configparser
+import logging
+import sys
+import traceback
+
+import radiusd
 from ApiLea5 import ApiLea5
+
 
 class RadiusHandler(logging.Handler):
     """Logs handler for FreeRADIUS"""
 
     def emit(self, record):
-        if record.levelno >= logging.WARN:
+        if record.levelno >= logging.WARNING:
             rad_sig = radiusd.L_ERR
         elif record.levelno >= logging.INFO:
             rad_sig = radiusd.L_INFO
@@ -40,21 +44,18 @@ def radius_event(fun):
         if isinstance(auth_data, dict):
             data = auth_data
         else:
-            data = dict()
+            data = {}
             for (key, value) in auth_data or []:
                 # Beware: les valeurs scalaires sont entre guillemets
                 # Ex: Calling-Station-Id: "une_adresse_mac"
                 data[key] = value.replace('"', "")
         try:
-            # TODO s'assurer ici que les tuples renvoy  s sont bien des
-            # (str,str) : rlm_python ne dig  re PAS les unicodes
             return fun(data)
-        except Exception as err:
-            exc_type, exc_instance, exc_traceback = sys.exc_info()
+        except (AttributeError, KeyError, TypeError, ValueError, OSError) as err:
+            _, _, exc_traceback = sys.exc_info()
             formatted_traceback = "".join(traceback.format_tb(exc_traceback))
-            logger.error("Failed %r on data %r" % (err, auth_data))
-            logger.error("Function %r, Traceback : %r" %
-                         (fun, formatted_traceback))
+            logger.error(f"Failed {err} on data {auth_data}")
+            logger.error(f"Function {fun}, Traceback : {formatted_traceback}")
             return radiusd.RLM_MODULE_FAIL
 
     return new_f
@@ -100,7 +101,7 @@ def authorize(data):
     return(
         radiusd.RLM_MODULE_UPDATED,
         (),
-        ((str("NT-Password"), str(password)),),
+        (("NT-Password", str(password)),),
     )
 
 @radius_event
@@ -111,6 +112,6 @@ def post_auth(data):
     mac = data.get('Calling-Station-Id')
     username = data.get("User-Name", "")
     user = api_client.fetchUserByUsername(username)
-    response = api_client.createMachine(user,mac)
+    api_client.createMachine(user,mac)
     logger.info(f"Post-Auth: Connecting machine {mac}")
     return radiusd.RLM_MODULE_OK

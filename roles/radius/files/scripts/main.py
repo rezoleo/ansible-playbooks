@@ -1,17 +1,15 @@
-#!/user/bin python3
-#encoding=utf8
-
-import sys
-import re
-from ApiLea5 import ApiLea5
-import datetime
-import dateutil.parser
 import configparser
+import datetime
+import re
+import sys
+
+import dateutil.parser
+from ApiLea5 import ApiLea5
 
 config = configparser.ConfigParser()
 config.read('../config.ini')
 
-now = datetime.datetime.now()
+now = datetime.datetime.now(tz=datetime.UTC)
 
 switch = sys.argv[1]
 mac = sys.argv[2]
@@ -27,5 +25,5 @@ if now.timestamp() < internet_expiration.timestamp():
     vlan = 12
 print('Tunnel-type=VLAN,')
 print('Tunnel-Medium-Type= IEEE-802,')
-print('Tunnel-Private-Group-ID="{vlan}"'.format(vlan=vlan))
+print(f'Tunnel-Private-Group-ID="{vlan}"')
 
