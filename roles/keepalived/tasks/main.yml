@@ -1,0 +1,42 @@
+- name: Install keepalived
+  ansible.builtin.apt:
+    name: keepalived
+    state: present
+  become: true
+
+- name: Create keepalived script user
+  ansible.builtin.user:
+    name: "{{ keepalived_script_user }}"
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+  become: true
+  when: keepalived_check_script
+
+- name: Deploy keepalived check script
+  ansible.builtin.copy:
+    content: "{{ keepalived_check_script }}"
+    dest: "{{ keepalived_check_script_path }}"
+    owner: "{{ keepalived_script_user }}"
+    group: "{{ keepalived_script_user }}"
+    mode: '0750'
+  become: true
+  when: keepalived_check_script
+  notify: Restart keepalived
+
+- name: Deploy keepalived config
+  ansible.builtin.template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    owner: root
+    group: root
+    mode: '0640'
+  become: true
+  notify: Restart keepalived
+
+- name: Enable and start keepalived service
+  ansible.builtin.systemd:
+    name: keepalived
+    enabled: true
+    state: started
+  become: true

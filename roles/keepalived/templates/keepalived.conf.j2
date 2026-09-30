@@ -1,0 +1,46 @@
+{% if keepalived_check_script | length > 0 %}
+global_defs {
+    enable_script_security
+    script_user {{ keepalived_script_user }}
+}
+
+vrrp_script check_service {
+    script "{{ keepalived_check_script_path }}"
+    interval {{ keepalived_check_interval }}
+    fall {{ keepalived_check_fall }}
+    rise {{ keepalived_check_rise }}
+}
+{% endif %}
+
+{% for instance in keepalived_vips %}
+vrrp_instance VI_{{ loop.index }} {
+    state {{ 'MASTER' if inventory_hostname == instance.master else 'BACKUP' }}
+    interface {{ keepalived_interface }}
+    virtual_router_id {{ instance.router_id }}
+    priority {{ keepalived_priority_master if inventory_hostname == instance.master else keepalived_priority_backup }}
+    advert_int {{ keepalived_advert_int }}
+
+    authentication {
+        auth_type PASS
+        auth_pass {{ keepalived_auth_pass }}
+    }
+
+    unicast_src_ip {{ ansible_host }}
+    unicast_peer {
+{% for host in groups[keepalived_peer_group] if host != inventory_hostname %}
+        {{ hostvars[host].ansible_host }}
+{% endfor %}
+    }
+
+    virtual_ipaddress {
+        {{ instance.vip }}
+    }
+{% if keepalived_check_script | length > 0 %}
+
+    track_script {
+        check_service
+    }
+{% endif %}
+}
+
+{% endfor %}
