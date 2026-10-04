@@ -1,6 +1,6 @@
-from typing import Annotated, Any, Literal
-from ipaddress import ip_address, ip_network
 from collections.abc import Iterator
+from ipaddress import ip_address, ip_network
+from typing import Annotated, Any, Literal
 
 from ansible.errors import AnsibleFilterError
 from pydantic import (
@@ -8,11 +8,11 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    StrictBool,
     TypeAdapter,
     ValidationError,
     field_validator,
     model_validator,
-    StrictBool
 )
 
 # Helper functions
