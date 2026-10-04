@@ -1,5 +1,6 @@
 ---
-# TODO if non existant, create users and databases
+# TODO if non existent, create users and databases
+
 - name: Install postgresql
   ansible.builtin.apt:
     package:
@@ -11,13 +12,6 @@
 - name: Validate PostgreSQL databases config
   ansible.builtin.set_fact:
     postgresql_databases_config: "{{ postgresql_databases_config | validate_config }}"
-
-- name: Debug
-  debug:
-    msg:
-      - "{{ postgresql_databases_config | to_ipset }}"
-      - "{{ postgresql_databases_config | to_pg_hba }}"
-
 
 - name: Configure firewall
   when: postgresql_listen_interfaces != 'localhost'
