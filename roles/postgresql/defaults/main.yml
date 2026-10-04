@@ -1,2 +1,61 @@
 ---
-postgresql_listen_interfaces: 'localhost'
+postgresql_listen_interfaces: '*'
+postgresql_hba_base_rules:
+  - contype: local
+    databases: all
+    users: postgres
+    method: peer
+postgresql_hostname: 'pg.rezoleo.fr'
+postgresql_databases_config:
+  dba:
+    users:
+      usera:
+        permissions: all
+        addresses:
+          - 10.12.0.56
+          - 10.12.2.15
+        comment: I am a comment
+      userb:
+        permissions: read-only
+        addresses: 10.12.0.1
+  dbb:
+    users:
+      userb:
+        permissions: all
+        local: true
+        addresses: 10.15.65.78
+        comment: I am another comment
+  dbd:
+    users:
+      userd:
+        permissions: all
+        addresses:
+          - 10.18.76.98
+      userg:
+        permissions: read-only
+        local: true
+postgresql_accounts:
+  intern:
+    - usera
+    - userb
+    - userc
+  extern:
+    - userh
+    - userj
+postgresql_pgtune:
+  max_connections: "200"
+  shared_buffers: "256GB"
+  effective_cache_size: "768GB"
+  maintenance_work_mem: "8GB"
+  checkpoint_completion_target: "0.9"
+  wal_buffers: "16MB"
+  default_statistics_target: "100"
+  random_page_cost: "1.1"
+  effective_io_concurrency: "200"
+  work_mem: "1161499kB"
+  huge_pages: "try"
+  jit: "off"
+  wal_compression: "lz4"
+  autovacuum_work_mem: "2GB"
+  min_wal_size: "1GB"
+  max_wal_size: "4GB"
