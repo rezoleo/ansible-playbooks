@@ -1,6 +1,0 @@
-user_type: Divers # type de l'utilisateur : Association, Liste, Projet, Divers, Projet Individuel, PDI
-user_name: Defaut # nom de l'utilisateur
-user_year: 2025 # année de promo de l'éléve, modifier si l'utilisateur est un éleve (projet perso ou PDI)
-mysql_install: false # Si oui ou non il faut un compte mysql
-user_pswd: defaut # à changer !
-user_hash: "{{ user_pswd | password_hash }}"
