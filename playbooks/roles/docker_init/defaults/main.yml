@@ -1,4 +1,0 @@
-docker_compose_path: "/home/docker-manager/docker/{{ user_name }}"
-template_origin: "../templates/template_docker_compose.yml.j2"
-user_id: 1
-default_url: "{{site_name}}.rezoleo.fr"

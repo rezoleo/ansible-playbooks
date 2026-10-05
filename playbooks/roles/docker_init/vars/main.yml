@@ -1,3 +1,0 @@
-path_to_template: "roles/docker_init/templates/compose.yml.j2"
-site_name: absinthe
-services: "{{ sites.absinthe['docker_compose'] }}"
