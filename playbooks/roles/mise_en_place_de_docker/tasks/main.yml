@@ -1,0 +1,21 @@
+- name: Install docker and docker compose
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+    state: present
+    name:
+      - docker
+      - docker-compose
+
+- name: Create a docker user
+  become: true
+  ansible.builtin.user:
+    name: docker-manager
+
+- name: Create  a docker folder in docker-manager path
+  become: true
+  become_user: "docker-manager"
+  ansible.builtin.file:
+    state: directory
+    path: "/home/docker-manager/docker"
+    mode: ug+rwX

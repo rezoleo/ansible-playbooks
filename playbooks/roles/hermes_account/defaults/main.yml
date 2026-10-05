@@ -1,0 +1,5 @@
+hermes_account_user_type: "{{ usern['user_type'] }}" # type de l'utilisateur : Association, Liste, Projet, Divers, Projet Individuel, PDI
+hermes_account_user_name: "{{ usern['user_name'] }}" # nom de l'utilisateur
+hermes_account_user_year: "{{ now(fmt='%Y') }}" # année de promo de l'éléve, modifier si l'utilisateur est un éleve (projet perso ou PDI)
+hermes_account_user_pswd: defaut # à changer manuellement aprés !
+hermes_account_user_hash: "{{ hermes_account_user_pswd | password_hash }}"

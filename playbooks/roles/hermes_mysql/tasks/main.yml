@@ -1,0 +1,15 @@
+- name: Create Mysql db for {{ db_name }}
+  community.mysql.mysql_db:
+    name: "{{ hermes_account_db_name }}"
+    login_host: mysql.rezoleo.fr
+    login_user: admin
+    login_port: 3306
+    login_password: "{{ mysql_secret.secret.password }}"
+- name: Create Mysql compte for {{ hermes_account_db_name }}
+  community.mysql.mysql_user:
+    name: "{{ hermes_account_user_name }}"
+    login_host: mysql.rezoleo.fr
+    login_user: admin
+    login_port: 3306
+    login_password: "{{ mysql_secret.secret.password }}"
+    priv: "{{ hermes_account_db_name }}.*: ALL"

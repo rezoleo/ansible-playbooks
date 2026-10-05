@@ -1,0 +1,8 @@
+# {{ ansible_managed }}
+
+maxretry = 3
+
+[ups-{{ nut_ups_id }}]
+	driver = usbhid-ups
+	port = auto
+	desc = "{{ nut_ups_description }}"

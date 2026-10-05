@@ -1,0 +1,57 @@
+services:
+{% for service_name in services.keys() %}
+    {{ service_name }}:
+{% if 'image' in services[service_name] %}
+        image: {{services[service_name].image}}
+{% endif %}
+{% if 'need_user' in services[service_name] %}
+        user: "{{ userdata.uid }}"
+        userns_mode: "host"
+{% endif %}
+        restart: always
+{% if 'label' in services[service_name] %}
+        labels:
+            - "traefik.enable=true"
+            - "traefik.frontend.rule=Host:{{ services[service_name].label.url }}"      
+            - "traefik.port={{ services[service_name].label.port }}"
+            - "traefik.network=proxy"
+{% endif %}
+{% if "volumes" in services[service_name] %}
+        volumes:
+            - "{{home_path}}/writable:/app"
+{% endif %}
+{% if "environment" in services[service_name]%}
+        environment:
+{% for environment_name in services[service_name].environment.keys() %}
+           - {{ environment_name }}={{ services[service_name].environment[environment_name] }}
+{% endfor %}
+{% endif %}
+{% if "depends_on" in services[service_name] %}
+       depends_on:
+{% for dependencies in services[service_name].depends_on %}
+             - dependencies
+{% endfor %}
+{% endif %}
+{% if "networks" in services[service_name] %}
+        networks:
+{% for network in services[service_name].networks %}
+            - {{ network }}
+{% endfor %}
+{% endif %}
+{% if "entrypoint" in services[service_name] %}
+    entrypoint: {{ services[service_name].entrypoint }}
+{%endif%}
+{% if "container_name" in services[service_name] %}
+    container_name: {{services[service_name].container_name}}
+{% endif %}
+{% if "command" in services[service_name] %}
+        command: "{{services[service_name].command}}"
+{% endif %}
+{% if "working_dir" in services[service_name] %}
+        working_dir: {{services[service_name].working_dir }}
+{% endif %}
+{% endfor %}
+
+networks:
+    proxy:
+        external: true

@@ -1,0 +1,12 @@
+[Unit]
+Description=Vault Agent - retrieve Let's Encrypt certificates from Vault
+After=network.target
+
+[Service]
+Type=notify
+WorkingDirectory={{ vault_agent_working_directory }}
+ExecStart=/usr/bin/vault agent -config=agent-config.hcl
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

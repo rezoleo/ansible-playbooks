@@ -1,0 +1,9 @@
+- name: Reload systemd
+  become: true
+  become_user: podman
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    scope: user
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ podman_user_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ podman_user_uid }}/bus"

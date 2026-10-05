@@ -1,0 +1,1 @@
+hermes_compose_docker_compose_path: "/home/docker-manager/docker/{{ hermes_account_user_name }}"

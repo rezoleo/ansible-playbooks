@@ -1,0 +1,54 @@
+- name: Créer le compte d'un utilisateur
+  ansible.builtin.user:
+    append: true
+    home: "{{ hermes_account_home_path }}"
+    name: "{{ hermes_account_user_name }}"
+    expires: "{{ ((hermes_account_user_type | get_expiration_date(hermes_account_user_year, (hermes_account_date | int))) | to_datetime('%Y_%m_%d')).timestamp() }}"
+    password: "{{ hermes_account_user_hash }}"
+    update_password: on_create
+    groups: Utilisateurs-Services
+    uid_min: "{{ (hermes_account_user_type | get_uidrange)[0] }}"
+    uid_max: "{{ (hermes_account_user_type | get_uidrange)[1] }}"
+  register: userdata
+  become: true
+
+- name: Set up permission for home_path
+  ansible.builtin.file:
+    path: "{{ hermes_account_home_path }}"
+    owner: "root"
+  become: true
+
+- name: Create writable folder for user
+  ansible.builtin.file:
+    state: directory
+    path: "{{ hermes_account_home_path }}/writable"
+    mode: '770'
+    owner: "{{ hermes_account_user_name }}"
+  become: true
+
+- name: Create Mysql compte for {{ hermes_account_user_name }}
+  ansible.builtin.include_role:
+    name: hermes_mysql
+  when: mysql_db is defined
+  loop: "{{ mysql_db }}"
+  loop_control:
+    loop_var: hermes_account_db_name
+
+- name: Verify existence of configuration file
+  ansible.builtin.stat:
+    path: "{{ hermes_confpath }}/conf_{{ hermes_account_user_name }}.yml"
+  register: hermes_account_conf_existence
+  delegate_to: localhost
+
+- name: Include configuration file
+  ansible.builtin.include_vars:
+    file: "{{ hermes_confpath }}/conf_{{ hermes_account_user_name }}.yml"
+  when: hermes_account_conf_existence.stat.exists
+
+- name: Set up Containers for {{ hermes_account_user_name }}
+  ansible.builtin.include_role:
+    name: hermes_compose
+  loop: "{{ sites | dict2items }}"
+  loop_control:
+    loop_var: hermes_account_site
+  when: hermes_account_conf_existence.stat.exists

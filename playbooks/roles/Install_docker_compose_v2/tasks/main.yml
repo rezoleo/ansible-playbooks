@@ -1,0 +1,29 @@
+# Source - https://stackoverflow.com/a/78840121
+# Posted by Ibrahim Osama
+# Retrieved 2026-05-18, License - CC BY-SA 4.0
+
+- name: Create directory for Docker CLI plugins
+  become: true
+  file:
+    path: /usr/local/lib/docker/cli-plugins
+    state: directory
+    mode: '0755'
+- name: Download Docker Compose V2 binary
+  become: true
+  get_url:
+    url: https://github.com/docker/compose/releases/download/v2.18.0/docker-compose-linux-x86_64
+    dest: /usr/local/lib/docker/cli-plugins/docker-compose
+    mode: '0755'
+- name: Make Docker Compose binary executable
+  become: true
+  file:
+    path: /usr/local/lib/docker/cli-plugins/docker-compose
+    mode: '0755'
+- name: Verify Docker Compose installation
+  become: true
+  command: docker compose version
+  register: docker_compose_version
+- name: Show Docker Compose version
+  debug:
+    msg: "{{ docker_compose_version.stdout }}"
+  when: docker_compose_version.rc == 0

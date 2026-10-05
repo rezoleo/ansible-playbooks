@@ -1,0 +1,69 @@
+- name: "Test if creation of user work"
+  hosts: services
+  vars:
+    hermes_confpath: /home/rezoleo/ansible-playbooks/Hermes/Ansible/Configurations
+  tasks:
+    - name: Create Utilisateurs-Services user group
+      ansible.builtin.group:
+        name: Utilisateurs-Services
+      notify:
+        - Prevent user access through ssh
+        - Permit access through sftp
+        - Restart sshd
+      become: true
+
+    - name: Initialise podman
+      ansible.builtin.include_role:
+        name: mise_en_place_de_podman
+
+    - name: Start podman
+      ansible.builtin.systemd_service:
+        name: podman
+        state: "started"
+      become: true
+
+    - name: Launch Traefik
+      community.docker.docker_network:
+        name: proxy
+      become: true
+
+    - name: Load Config file
+      ansible.builtin.include_vars:
+        file: "{{ hermes_confpath }}/conf_users.yml"
+      delegate_to: localhost
+
+    - name: "Create user and set up his containers"
+      ansible.builtin.include_role:
+        name: hermes_account
+      loop: "{{ users }}"
+      loop_control:
+        loop_var: usern
+    # - name: Debug
+    #   ansible.builtin.debug:
+    #     msg: "{{ usern }}"
+
+  handlers:
+    - name: Prevent user access through ssh
+      become: true
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        line: "DenyUsers Utilisateurs-Services"
+
+    - name: Permit access through sftp
+      become: true
+      ansible.builtin.blockinfile:
+        path: /etc/ssh/sshd_config
+        block: |
+          Match Group Utilisateurs-Services # indique que les lignes suivantes n'ont d'influence que sur le groupe Utilisateurs-Services
+            ChrootDirectory %h          # restreint l'accès au dossier %home de l'utilisateur.
+            X11Forwarding no            # empêche l'usage de déport d'affichage.
+            AllowTcpForwarding no       # empêche l'usage de la redirection TCP.
+            PermitTTY no
+            ForceCommand internal-sftp  # impose l'utilisation du sftp pour se connecter.
+
+    - name: Restart sshd
+      become: true
+      ansible.builtin.service:
+        name: "sshd"
+        state: restarted
+        enabled: true

@@ -1,0 +1,16 @@
+---
+
+# Config for paperless
+# Secrets (secret_key, db_password, superadmin_password, sso_client_id,
+# sso_client_secret) are fetched from Vault at runtime, see tasks/main.yaml
+
+hestia_paperless_db_host: pg.rezoleo.fr
+hestia_paperless_db_port: 5432
+hestia_paperless_db_name: paperless
+hestia_paperless_db_user: paperless
+
+hestia_paperless_superadmin_mail: rezoleo@rezoleo.fr
+hestia_paperless_superadmin_name: rezoleo
+
+hestia_paperless_url: https://vanadis.rezoleo.fr
+hestia_paperless_service_name: "Vanadis"
