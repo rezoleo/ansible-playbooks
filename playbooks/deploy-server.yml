@@ -7,8 +7,21 @@
     - role: ntp
       when: ansible_facts['virtualization_type'] != "lxc"
     - ssh
-    # - podman
-    # - hestia
+
+- name: Install podman
+  hosts: podman_vm
+  roles:
+    - podman
+
+- name: Deploy Hestia
+  hosts: hestia
+  roles:
+    - hestia
+
+- name: Deploy Nextcloud
+  hosts: nextcloud
+  roles:
+    - nextcloud
 
 - name: Deploy DNS resolver
   hosts: dns_resolvers

@@ -26,5 +26,11 @@ nextcloud_smtp_domain: rezoleo.fr
 # Object storage
 
 nextcloud_object_bucket: nextcloud
+# TODO : garage's default region is garage, to be checked later
+nextcloud_object_region: garage
+# For Garage we must set it to true
+nextcloud_object_usepath_style: true
+# Garage does not support autocreate
+nextcloud_object_autocreate: false
 nextcloud_object_host: garage.rezoleo.fr
 nextcloud_object_port: # TODO
