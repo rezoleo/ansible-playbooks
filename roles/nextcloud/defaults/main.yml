@@ -1,10 +1,30 @@
 ---
-
 # Config for nextcloud
-# Secrets (db_password) are fetched from Vault at runtime, see tasks/main.yaml
+# The following secret are to fetched from vault at runtime, see tasks/main.yaml
+# db_password
+# admin_username and admin_password
+# smtp_password and smtp_address
+# object_key and object_secret
+
+# Nextcloud
+
+nextcloud_host: nextcloud.rezoleo.fr
+
+# Database
 
 nextcloud_db_host: pg.rezoleo.fr
 nextcloud_db_name: nextcloud
 nextcloud_db_user: nextcloud
 
+# SMTP
 
+nextcloud_smtp_host: mail.rezoleo.fr
+nextcloud_smtp_secure: false
+nextcloud_smtp_name: Rezoleo
+nextcloud_smtp_domain: rezoleo.fr
+
+# Object storage
+
+nextcloud_object_bucket: nextcloud
+nextcloud_object_host: garage.rezoleo.fr
+nextcloud_object_port: # TODO
