@@ -1,0 +1,88 @@
+---
+# TODO if non existent, create users and databases
+- name: Install postgresql
+  ansible.builtin.apt:
+    package:
+      - postgresql
+      - python3-psycopg2
+    state: present
+  become: true
+
+- name: Validate PostgreSQL databases config
+  ansible.builtin.set_fact:
+    postgresql_databases_config: "{{ postgresql_databases_config | validate_config }}"
+
+- name: Configure firewall
+  when: postgresql_listen_interfaces != 'localhost'
+  block:
+    - name: Create postgresql_ips
+      ansible.builtin.set_fact:
+        postgresql_ips: "{{ postgresql_databases_config | to_ipset }}"
+
+    - name: Create ipset of authorized servers
+      ansible.builtin.template:
+        src: ipsets.j2
+        dest: /etc/iptables/ipsets
+        owner: root
+        group: root
+        mode: '0644'
+      become: true
+      notify: Restart iptables
+
+    - name: Immediately restart iptables to avoid validation problems
+      ansible.builtin.meta: flush_handlers
+
+    - name: Create firewall rules
+      ansible.builtin.import_role:
+        name: firewall
+        tasks_from: create_rule.yml
+      vars:
+        firewall_rules:
+          200-postgresql:
+            - rule_name: "Allow authorized server to connect to postgresql"
+              chain: INPUT
+              protocol: tcp
+              destination_port: 5432
+              target: ACCEPT
+              raw_extras:
+                - "--match set"
+                - "--match-set pg-authorized src"
+                - "--syn"
+
+- name: Configure postgres to listen to target interfaces
+  community.postgresql.postgresql_alter_system:
+    param: listen_addresses
+    value: "{{ postgresql_listen_interfaces }}"
+  become: true
+  become_user: postgres
+  notify: Restart postgresql
+
+- name: Custom postgresql conf if postgresql_pgtune is specified
+  community.postgresql.postgresql_alter_system:
+    param: "{{ item.key }}"
+    value: "{{ item.value }}"
+  become: true
+  become_user: postgres
+  loop: "{{ postgresql_pgtune | dict2items }}"
+  when: postgresql_pgtune is defined
+
+- name: Merge default and custom hba rules
+  ansible.builtin.set_fact:
+    postgresql_hba_rules: "{{ postgresql_hba_base_rules + (postgresql_databases_config | to_pg_hba) }}"
+
+- name: Configure pg_hba.conf
+  community.postgresql.postgresql_pg_hba:
+    dest: /etc/postgresql/17/main/pg_hba.conf
+    overwrite: true
+    backup: true
+    owner: postgres
+    group: postgres
+    mode: '0644'
+    contype: host
+    method: scram-sha-256
+    state: present
+    rules_behavior: "combine"
+    rules: "{{ postgresql_hba_rules }}"
+  become: true
+  become_user: postgres
+  notify: Restart postgresql

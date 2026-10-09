@@ -9,6 +9,7 @@ dependencies = [
     "pysnmp==7.1.27",
     "lolcat==1.4",
     "pyfiglet==1.0.4",
+    "pydantic>=2.13.5",
 ]
 
 [dependency-groups]
