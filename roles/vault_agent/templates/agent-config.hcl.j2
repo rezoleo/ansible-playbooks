@@ -9,7 +9,7 @@ auto_auth {
   method {
     type = "approle"
 
-    config = { 
+    config = {
       // create a role in vault with a policy able to "read" the secret
       role_id_file_path = "role_id" // to change based on the path of the role_id file
       secret_id_file_path = "secret_id" // to change based on the path of the secret_id file
