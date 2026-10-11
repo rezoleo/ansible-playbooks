@@ -23,7 +23,7 @@ A `justfile` is provided, to help you run the most common commands. Once you hav
   - `just lint`: run [ansible-lint][ansible-lint] to check the playbooks and roles for errors and bad practices
   - `just todo`: search all files for `# TODO` and `# noqa` comments (they silence linter errors)
   - `just vault <username>`: login to Vault using the `userpass` method
-  - `just venv`: create a local virtualenv using the currently available Python (in [`.venv`](./venv)) and install dependencies using `pip`
+  - `just venv`: create a local virtualenv using the currently available Python (in [`.venv`](./venv)) and install dependencies using `pip`. It installs the pre-commit git hooks as well.
   - ...and more, see `just` for the updated list
 
 If you want to run a playbook manually, you will need to:
@@ -31,6 +31,12 @@ If you want to run a playbook manually, you will need to:
 2. Login to Vault: `vault login -method=userpass username=<username>` (you can use any other method)
 3. Retrieve the SSH private key from Vault and save it as `id_ed25519_ansible`
 4. Execute a playbook: `ansible-playbook --inventory hosts playbooks/deploy-server.yml`
+
+## Pre-commit integration
+
+On commit, automated actions are run through `pre-commit` python library. It runs `ruff`, `ty` and `ansible-lint` before the commit and block it if fixes are required.
+
+If you are certain you want to push the code as is, you may add the argument `--no-verify`. However, not passing the pre-commit hooks will surely result in not passing automated tests of the CI. It can be use in case you want to push a draft of your features.
 
 ## Continuous Integration (CI)
 
