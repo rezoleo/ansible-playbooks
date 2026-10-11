@@ -8,9 +8,10 @@
     state: present
   become: true
 
-- name: Validate PostgreSQL databases config
+- name: Validate PostgreSQL databases configuration
   ansible.builtin.set_fact:
-    postgresql_databases_config: "{{ postgresql_databases_config | validate_config }}"
+    postgresql_databases_config: "{{ postgresql_databases_config | validate_config(postgresql_permission_profiles) }}"
+    postgresql_users: "{{ postgresql_users | validate_users }}"
 
 - name: Configure firewall
   when: postgresql_listen_interfaces != 'localhost'
@@ -63,12 +64,9 @@
     value: "{{ item.value }}"
   become: true
   become_user: postgres
+  notify: Restart postgresql
   loop: "{{ postgresql_pgtune | dict2items }}"
   when: postgresql_pgtune is defined
-
-- name: Merge default and custom hba rules
-  ansible.builtin.set_fact:
-    postgresql_hba_rules: "{{ postgresql_hba_base_rules + (postgresql_databases_config | to_pg_hba) }}"
 
 - name: Configure pg_hba.conf
   community.postgresql.postgresql_pg_hba:
@@ -82,7 +80,65 @@
     method: scram-sha-256
     state: present
     rules_behavior: "combine"
-    rules: "{{ postgresql_hba_rules }}"
+    rules: "{{ postgresql_hba_base_rules + (postgresql_databases_config | to_pg_hba) }}"
   become: true
   become_user: postgres
   notify: Restart postgresql
+
+# User management
+
+- name: Retrieve internal accounts passwords from Vault
+  community.hashi_vault.vault_kv2_get:
+    path: "{{ postgresql_vault_path }}/{{ item.key }}@{{ postgresql_hostname }}"
+  loop: "{{ postgresql_users | dict2items | selectattr('value.kind', 'equalto', 'intern') }}"
+  loop_control:
+    label: "{{ item.key }}"
+  register:
+    postgresql_vault_result: dict(
+        _task.loop_result.results | map(attribute='item.key') | zip(_task.loop_result.results | map(attribute='secret.password', default=''))
+      )
+  delegate_to: localhost
+  failed_when: >-
+    _task.result.failed | default(false) and not ((_task.result.msg | default('') | lower) is search('missing path'))
+
+- name: Generate missing passwords for internal accounts
+  community.hashi_vault.vault_kv2_write:
+    path: "{{ postgresql_vault_path }}/{{ item.key }}@{{ postgresql_hostname }}"
+    data:
+      password: "{{ lookup('ansible.builtin.password', '/dev/null length=32 chars=ascii_letters,digit') }}"
+  loop: "{{ postgresql_vault_result | dict2items(value_name='password') }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when: item.password | length == 0
+  delegate_to: localhost
+
+- name: Re-read internal accounts passwords from Vault
+  community.hashi_vault.vault_kv2_get:
+    path: "{{ postgresql_vault_path }}/{{ item.key }}@{{ postgresql_hostname }}"
+  loop: "{{ postgresql_users | dict2items | selectattr('value.kind', 'equalto', 'intern') }}"
+  loop_control:
+    label: "{{ item.key }}"
+  register:
+    postgresql_intern_credentials: dict(
+        _task.loop_result.results | map(attribute='item.key') | zip(_task.loop_result.results | map(attribute='secret.password'))
+      )
+  delegate_to: localhost
+
+- name: Postgres tasks
+  become: true
+  become_user: postgres
+  block:
+    - name: Create databases
+      community.postgresql.postgresql_db:
+        name: "{{ item.key }}"
+      loop: "{{ postgresql_databases_config | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
+
+    - name: Create/Update internal users
+      community.postgresql.postgresql_user:
+        name: "{{ item.key }}"
+        password: "{{ item.value }}"
+      loop: "{{ postgresql_intern_credentials | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
