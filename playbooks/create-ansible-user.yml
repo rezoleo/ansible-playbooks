@@ -11,6 +11,7 @@
     - name: Create an ansible user
       ansible.builtin.user:
         name: ansible
+        shell: "/usr/bin/bash"
 
     - name: Set authorized key for user ansible copying it from current user
       ansible.posix.authorized_key:

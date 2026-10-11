@@ -19,6 +19,7 @@
     group: "podman"
     system: true
     create_home: true
+    shell: "/usr/bin/bash"
   register:
     podman_user_uid: _task.result.uid
   become: true
@@ -95,3 +96,43 @@
     scope: user
     state: started
     enabled: true
+
+- name: Create a folder for the systemd timer
+  ansible.builtin.file:
+    path: "/home/podman/.config/systemd/user"
+    state: directory
+    owner: podman
+    group: podman
+    mode: '0755'
+  become: true
+
+- name: Create the service file to configure auto-prune
+  ansible.builtin.copy:
+    src: podman-image-prune.service
+    dest: /home/podman/.config/systemd/user/podman-image-prune.service
+    owner: podman
+    group: podman
+    mode: "0600"
+  become: true
+
+- name: Create the service timer
+  ansible.builtin.copy:
+    src: podman-image-prune.timer
+    dest: /home/podman/.config/systemd/user/podman-image-prune.timer
+    owner: podman
+    group: podman
+    mode: "0600"
+  become: true
+  notify: Reload systemd
+
+- name: Enable the timer unit
+  ansible.builtin.systemd_service:
+    name: podman-image-prune.timer
+    state: started
+    enabled: true
+    scope: user
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ podman_user_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ podman_user_uid }}/bus"
+  become: true
+  become_user: podman

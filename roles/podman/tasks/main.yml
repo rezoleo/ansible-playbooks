@@ -4,9 +4,9 @@
 - name: Fail if run on CT
   ansible.builtin.fail:
     msg: "Podman rootless can only be installed on a VM, don't use this role on a CT!"
-  when: ansible_virtualization_type == 'lxc'
+  when: ansible_facts["virtualization_type"] == 'lxc'
 
 - name: Install and configure Podman
   ansible.builtin.include_tasks:
     file: podman.yml
-  when: ansible_virtualization_type != 'lxc'
+  when: ansible_facts["virtualization_type"] != 'lxc'

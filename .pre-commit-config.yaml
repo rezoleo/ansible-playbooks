@@ -1,0 +1,34 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: Ruff check
+        entry: .venv/bin/ruff check --fix
+        language: system
+        types: [python]
+
+      - id: ruff-format
+        name: Ruff format
+        entry: .venv/bin/ruff format
+        language: system
+        types: [python]
+
+      - id: ty-check
+        name: Ty check
+        entry: .venv/bin/ty check
+        language: system
+        types: [python]
+
+      - id: ansible-lint
+        name: Ansible lint
+        entry: .venv/bin/ansible-lint
+        language: system
+        types: [yaml]
+        exclude: ^\.github/workflows/
