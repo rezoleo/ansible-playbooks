@@ -34,9 +34,9 @@ If you want to run a playbook manually, you will need to:
 
 ## Pre-commit integration
 
-On commit, automated actions are run through `pre-commit` python library. It runs `ruff`, `ty` and `ansible-lint` before the commit and block it if fixes are required.
+On commit, automated checks are run through the `pre-commit` python library. It runs `ruff`, `ty` and `ansible-lint` before the commit and block it if fixes are required.
 
-If you are certain you want to push the code as is, you may add the argument `--no-verify`. However, not passing the pre-commit hooks will surely result in not passing automated tests of the CI. It can be use in case you want to push a draft of your features.
+If you are sure you want to commit the code anyway, you may add the argument `--no-verify`. However, not passing the `pre-commit` hooks will surely result in not passing automated tests of the CI. It can be used in case you want to push a draft commit.
 
 ## Continuous Integration (CI)
 
