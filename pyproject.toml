@@ -13,9 +13,9 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "ansible-lint>=26.8.0",
-    "ruff>=0.15.0",
-    "ty>=0.0.16",
+    "ansible-lint==26.9.0",
+    "ruff==0.17.0",
+    "ty==0.0.86",
 ]
 
 [tool.setuptools]
