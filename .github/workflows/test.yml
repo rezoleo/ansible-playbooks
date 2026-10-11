@@ -28,10 +28,15 @@ jobs:
       - name: Install the project
         run: uv sync --locked --no-python-downloads
 
-      - name: Run Ruff
+      - name: Run ruff
         id: ruff
         continue-on-error: true # Allow other tasks to continue if ruff fails
         run: uv run ruff check
+
+      - name: Run ty
+        id: ty
+        continue-on-error: true # Allow other tasks to continue if ty fails
+        run: uv run ty check
 
       - name: Run Ansible-Lint
         id: ansible_lint
@@ -45,7 +50,7 @@ jobs:
           category: ansible-lint
 
       - name: Fail job if any lint failed
-        if: steps.ruff.outcome == 'failure' || steps.ansible_lint.outcome == 'failure'
+        if: steps.ruff.outcome == 'failure' || steps.ty.outcome == 'failure' || steps.ansible_lint.outcome == 'failure'
         run: |
           echo "::error::One or more linters failed"
           exit 1
