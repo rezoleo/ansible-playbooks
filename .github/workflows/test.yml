@@ -20,7 +20,7 @@ jobs:
           enable-cache: true
 
       - name: Setup Python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.13"
 
@@ -43,7 +43,7 @@ jobs:
         run: uv run ansible-lint --offline --sarif-file ansible-lint.sarif.json
 
       - name: Upload Ansible-Lint SARIF
-        uses: github/codeql-action/upload-sarif@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           sarif_file: ansible-lint.sarif.json
           category: ansible-lint
