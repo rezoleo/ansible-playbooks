@@ -5,7 +5,22 @@ postgresql_hba_base_rules:
     databases: all
     users: postgres
     method: peer
+postgresql_permission_profiles:
+  all:
+    on_database: [ALL]
+    on_schema: [ALL]
+    on_tables: [ALL]
+    on_sequences: [ALL]
+  read-only:
+    on_database: [CONNECT]
+    on_schema: [USAGE]
+    on_tables: [SELECT]
+    on_sequences: [SELECT]
+
+
+# TODO: Do not let this in default
 postgresql_hostname: 'pg.rezoleo.fr'
+postgresql_vault_path: "test/baptiste/database"
 postgresql_databases_config:
   dba:
     users:
@@ -15,6 +30,7 @@ postgresql_databases_config:
           - 10.12.0.56
           - 10.12.2.15
         comment: I am a comment
+        owner: true
       userb:
         permissions: read-only
         addresses: 10.12.0.1
@@ -34,28 +50,29 @@ postgresql_databases_config:
       userg:
         permissions: read-only
         local: true
-postgresql_accounts:
-  intern:
-    - usera
-    - userb
-    - userc
-  extern:
-    - userh
-    - userj
-postgresql_pgtune:
-  max_connections: "200"
-  shared_buffers: "256GB"
-  effective_cache_size: "768GB"
-  maintenance_work_mem: "8GB"
-  checkpoint_completion_target: "0.9"
-  wal_buffers: "16MB"
-  default_statistics_target: "100"
-  random_page_cost: "1.1"
-  effective_io_concurrency: "200"
-  work_mem: "1161499kB"
-  huge_pages: "try"
-  jit: "off"
-  wal_compression: "lz4"
-  autovacuum_work_mem: "2GB"
-  min_wal_size: "1GB"
-  max_wal_size: "4GB"
+postgresql_users:
+  usera:
+    kind: intern
+  userb:
+    kind: intern
+  userd:
+    kind: extern
+  userg:
+    kind: extern
+# postgresql_pgtune:
+#   max_connections: "200"
+#   shared_buffers: "256GB"
+#   effective_cache_size: "768GB"
+#   maintenance_work_mem: "8GB"
+#   checkpoint_completion_target: "0.9"
+#   wal_buffers: "16MB"
+#   default_statistics_target: "100"
+#   random_page_cost: "1.1"
+#   effective_io_concurrency: "200"
+#   work_mem: "1161499kB"
+#   huge_pages: "try"
+#   jit: "off"
+#   wal_compression: "lz4"
+#   autovacuum_work_mem: "2GB"
+#   min_wal_size: "1GB"
+#   max_wal_size: "4GB"
