@@ -62,6 +62,7 @@
     group: root
     mode: "0755"
   notify: Restart snmpd
+  become: true
 
 - name: Setup SNMP v3 user
   when: monitoring_facts_failed
