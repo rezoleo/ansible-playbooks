@@ -1,6 +1,8 @@
 from collections.abc import Iterator
+from dataclasses import dataclass
+from functools import cache
 from ipaddress import ip_address, ip_network
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, get_args
 
 from ansible.errors import AnsibleFilterError
 from pydantic import (
@@ -72,24 +74,64 @@ class UserConfig(BaseModel):
     kind: Literal["intern", "extern"] = "extern"
 
 
+@dataclass(frozen=True)
+class Target:
+    kind: str  # `type` argument of postgresql_privs
+    default_objs: str | None = None  # `objs` for default_privs, None if not applicable
+
+
 class PermissionProfile(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    on_database: list[Literal["CONNECT", "CREATE", "TEMPORARY", "ALL"]] = []
-    on_schema: list[Literal["USAGE", "CREATE", "ALL"]] = []
-    on_tables: list[
-        Literal[
-            "SELECT",
-            "INSERT",
-            "UPDATE",
-            "DELETE",
-            "TRUNCATE",
-            "REFERENCES",
-            "TRIGGER",
-            "ALL",
-        ]
-    ] = []
-    on_sequences: list[Literal["USAGE", "SELECT", "UPDATE", "ALL"]] = []
+    on_database: Annotated[
+        list[Literal["CONNECT", "CREATE", "TEMPORARY", "ALL"]], Target("database")
+    ] = Field(default_factory=list)
+    on_schema: Annotated[list[Literal["USAGE", "CREATE", "ALL"]], Target("schema")] = (
+        Field(default_factory=list)
+    )
+    on_tables: Annotated[
+        list[
+            Literal[
+                "SELECT",
+                "INSERT",
+                "UPDATE",
+                "DELETE",
+                "TRUNCATE",
+                "REFERENCES",
+                "TRIGGER",
+                "MAINTAIN",
+                "ALL",
+            ]
+        ],
+        Target("table", "TABLES"),
+    ] = Field(default_factory=list)
+    on_sequences: Annotated[
+        list[Literal["USAGE", "SELECT", "UPDATE", "ALL"]],
+        Target("sequence", "SEQUENCES"),
+    ] = Field(default_factory=list)
+
+    def wanted(self, field: str) -> set[str]:
+        """Privileges granted for a field, with ALL expanded."""
+        values = getattr(self, field)
+        return set(self.full()[field]) if "ALL" in values else set(values)
+
+    @classmethod
+    @cache
+    def full(cls) -> dict[str, tuple[str, ...]]:
+        """Every concrete privilege per field (the ALL shorthand excluded)."""
+        return {
+            name: tuple(p for p in get_args(get_args(f.annotation)[0]) if p != "ALL")
+            for name, f in cls.model_fields.items()
+        }
+
+    @classmethod
+    @cache
+    def targets(cls) -> dict[str, Target]:
+        """Field name -> Target metadata."""
+        return {
+            name: next(m for m in f.metadata if isinstance(m, Target))
+            for name, f in cls.model_fields.items()
+        }
 
 
 class DatabaseUserConfig(BaseModel):
@@ -212,6 +254,72 @@ def to_pg_hba(config: dict[str, Any]) -> list[dict[str, str]]:
     return local_entries + host_entries
 
 
+def to_pg_privs(config, profiles, users, admin="postgres", schema="public"):
+    """postgresql_privs arguments: revocations first, then grants."""
+    config, users = _to_plain(config), list(_to_plain(users))
+    profiles = {
+        n: PermissionProfile.model_validate(p) for n, p in _to_plain(profiles).items()
+    }
+    no_access = PermissionProfile()
+    everyone = ",".join([admin, *users])
+    full, targets = PermissionProfile.full(), PermissionProfile.targets()
+    grants: list[dict[str, str]] = []
+    revokes: list[dict[str, str]] = []
+
+    for db, db_config in config.items():
+        db_users = db_config["users"]
+        profile_of = {
+            u: profiles[db_users[u]["permissions"]] if u in db_users else no_access
+            for u in users
+        }
+
+        # Default privileges only cover objects created by these roles.
+        creators = ",".join(
+            [
+                admin,
+                *(u for u in users if "CREATE" in profile_of[u].wanted("on_schema")),
+            ]
+        )
+
+        for user in users:
+            for field, target in targets.items():
+                wanted = profile_of[user].wanted(field)
+                for privs, state, target_roles, out in (
+                    (wanted, "present", creators, grants),
+                    (set(full[field]) - wanted, "absent", everyone, revokes),
+                ):
+                    if not privs:
+                        continue
+                    base = {
+                        "login_db": db,
+                        "roles": user,
+                        "state": state,
+                        "privs": ",".join(p for p in privs),
+                    }
+                    if target.default_objs is None:  # database or schema level
+                        extra = {"objs": schema} if target.kind == "schema" else {}
+                        out.append({**base, "type": target.kind, **extra})
+                    else:  # tables / sequences: existing objects, then future ones
+                        out.append(
+                            {
+                                **base,
+                                "type": target.kind,
+                                "objs": "ALL_IN_SCHEMA",
+                                "schema": schema,
+                            }
+                        )
+                        out.append(
+                            {
+                                **base,
+                                "type": "default_privs",
+                                "objs": target.default_objs,
+                                "schema": schema,
+                                "target_roles": target_roles,
+                            }
+                        )
+    return revokes + grants
+
+
 # Jinja filter declaration
 
 
@@ -223,4 +331,5 @@ class FilterModule:
             "validate_config": validate_config,
             "validate_profiles": validate_profiles,
             "validate_users": validate_users,
+            "to_pg_privs": to_pg_privs,
         }
