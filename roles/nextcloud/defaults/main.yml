@@ -19,7 +19,7 @@ nextcloud_db_user: nextcloud
 # SMTP
 
 nextcloud_smtp_host: mail.rezoleo.fr
-nextcloud_smtp_secure: false
+nextcloud_smtp_secure: "" # "" (none), "ssl" or "tls"
 nextcloud_smtp_name: Rezoleo
 nextcloud_smtp_domain: rezoleo.fr
 
@@ -33,4 +33,9 @@ nextcloud_object_usepath_style: true
 # Garage does not support autocreate
 nextcloud_object_autocreate: false
 nextcloud_object_host: garage.rezoleo.fr
-nextcloud_object_port: # TODO
+# The buckets are behind a reverse proxy
+nextcloud_object_port: 443
+
+# Collabora Online
+
+nextcloud_code_host: collabora.rezoleo.fr

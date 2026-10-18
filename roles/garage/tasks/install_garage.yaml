@@ -1,0 +1,62 @@
+# TODO : remove the old binary if upgrading, check if we need to upgrade
+- name: Download Garage
+  ansible.builtin.get_url:
+    url: "https://garagehq.deuxfleurs.fr/_releases/{{ garage_version }}/{{ garage_architecture }}-unknown-linux-musl/garage"
+    dest: "{{ garage_binary }}"
+    mode: '0711'
+    owner: root
+    group: root
+  notify: Restart garage
+  become: true
+
+- name: Create garage group
+  ansible.builtin.group:
+    name: "{{ garage_group }}"
+    state: present
+    system: true
+  become: true
+
+- name: Create Garage User
+  ansible.builtin.user:
+    name: "{{ garage_user }}"
+    group: "{{ garage_group }}"
+    system: true
+    state: present
+  become: true
+
+- name: Create Garage directories
+  ansible.builtin.file:
+    state: directory
+    path: "{{ item }}"
+    mode: "0700"
+    owner: "{{ garage_user }}"
+    group: "{{ garage_group }}"
+  loop:
+    - "{{ garage_metadata_directory }}"
+    - "{{ garage_data_directory }}"
+    - "{{ garage_metadata_snapshot_directory }}"
+  become: true
+
+# We load the file where Garage expects it (it also enforced in the .service file)
+- name: Import Garage config
+  ansible.builtin.template:
+    src: garage.toml.j2
+    dest: /etc/garage.toml
+    owner: "{{ garage_user }}"
+    group: "{{ garage_group }}"
+    mode: "0600"
+  become: true
+  notify: Restart garage
+
+- name: Create Garage systemd service file
+  ansible.builtin.template:
+    src: garage.service.j2
+    dest: /etc/systemd/system/garage.service
+    mode: '0644'
+    owner: root
+    group: root
+  become: true
+  notify: Restart garage
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

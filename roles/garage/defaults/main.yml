@@ -1,0 +1,14 @@
+# Where Garage stores its metadata and data.
+# The idea of separate directories is to allow for metdata to be on faster storage than data.
+
+# TODO : change those
+garage_metadata_directory: /opt/garage/metadata
+garage_data_directory: /opt/garage/data
+garage_metadata_snapshot_directory: "{{ garage_metadata_directory }}/snapshots"
+
+# System architecture to determine what binary to install
+# should be x86_64 for us
+garage_architecture: "{{ ansible_architecture }}"
+
+# Where we store the binary
+garage_binary: /usr/local/bin/garage
