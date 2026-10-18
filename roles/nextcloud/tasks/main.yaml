@@ -6,8 +6,18 @@
     nextcloud_admin_password: _task.result.secret.admin_password
     nextcloud_smtp_password: _task.result.secret.smtp_password
     nextcloud_smtp_address: _task.result.secret.smtp_address
-    nextcloud_object_key: _task.result.secret.object_key
-    nextcloud_object_secret: _task.result.secret.object_secret
+  run_once: true
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+- name: Retrieve S3 secrets from Vault
+  community.hashi_vault.vault_kv2_get:
+    path: buckets/nextcloud
+  register:
+    nextcloud_object_key: _task.result.secret.key_id
+    nextcloud_object_secret: _task.result.secret.key_secret
   run_once: true
   delegate_to: localhost
   become: false
@@ -36,7 +46,7 @@
 
 - name: Copy compose file for nextcloud
   ansible.builtin.copy:
-    src: nextcloud/compose.yml
+    src: compose.yml
     dest: /home/podman/nextcloud/compose.yml
     owner: podman
     group: podman
@@ -47,6 +57,15 @@
   ansible.builtin.template:
     src: nextcloud.env.j2
     dest: /home/podman/nextcloud/nextcloud.env
+    owner: podman
+    group: podman
+    mode: "0600"
+  become: true
+
+- name: Copy and fill .env file for code
+  ansible.builtin.template:
+    src: code.env.j2
+    dest: /home/podman/nextcloud/code.env
     owner: podman
     group: podman
     mode: "0600"
@@ -73,4 +92,10 @@
           protocol: tcp
           source: 10.12.2.2/32 # TODO: Source IP should depend on the inventory
           destination_port: 3000
+          target: ACCEPT
+        - rule_name: "Allow traffic from Equestria to port 3001"
+          chain: INPUT
+          protocol: tcp
+          source: 10.12.2.2/32 # TODO: Source IP should depend on the inventory
+          destination_port: 3001
           target: ACCEPT

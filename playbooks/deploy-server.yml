@@ -23,6 +23,11 @@
   roles:
     - nextcloud
 
+- name: Deploy Garage
+  hosts: garage
+  roles:
+    - garage
+
 - name: Deploy DNS resolver
   hosts: dns_resolvers
   roles:
