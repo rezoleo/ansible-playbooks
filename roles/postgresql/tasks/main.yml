@@ -131,7 +131,7 @@
     - name: Create databases
       community.postgresql.postgresql_db:
         name: "{{ item.key }}"
-      loop: "{{ postgresql_databases_config | dict2items }}"
+      loop: "{{ postgresql_databases_config | dict2items }}" # use zip to add the owners
       loop_control:
         label: "{{ item.key }}"
 
@@ -142,3 +142,62 @@
       loop: "{{ postgresql_intern_credentials | dict2items }}"
       loop_control:
         label: "{{ item.key }}"
+
+    - name: Find existing extern roles
+      community.postgresql.postgresql_query:
+        query: SELECT rolname FROM pg_roles WHERE rolname = ANY(%s)
+        positional_args: # Automatic translation from list to psql array fail so we format it manually
+          - "{{ '{' ~
+                  (postgresql_users | dict2items | selectattr('value.kind', 'equalto', 'extern') | map(attribute='key') | map('to_json') | join(','))
+                  ~ '}' }}"
+      register:
+        postgresql_existing_users: _task.result.query_result | map(attribute='rolname') | list
+      changed_when: false
+
+    - name: Debug
+      ansible.builtin.debug:
+        msg:
+          - "{{ postgresql_existing_users }}"
+
+    - name: Determine extern roles to create
+      ansible.builtin.set_fact:
+        postgresql_extern_missing: >-
+          {{ postgresql_users | dict2items | selectattr('value.kind', 'equalto', 'extern') | map(attribute='key') | list
+             | difference(postgresql_existing_users) }}
+        postgresql_extern_new: {}
+
+    - name: Debug
+      ansible.builtin.debug:
+        msg:
+          - "{{ postgresql_extern_missing }}"
+
+    - name: Generate passwords for new extern roles
+      ansible.builtin.set_fact:
+        postgresql_extern_new: >-
+          {{ postgresql_extern_new | combine({item: lookup('ansible.builtin.password',
+             '/dev/null length=32 chars=ascii_letters,digits')}) }}
+      loop: "{{ postgresql_extern_missing }}"
+
+    - name: Debug
+      ansible.builtin.debug:
+        msg:
+          - "{{ postgresql_extern_new }}"
+
+    - name: Create new extern users
+      community.postgresql.postgresql_user:
+        name: "{{ item.key }}"
+        password: "{{ item.value }}"
+      loop: "{{ postgresql_extern_new | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
+
+    - name: Reconcile PostgreSQL privileges
+      community.postgresql.postgresql_privs:
+      args: "{{ item }}"
+      loop: "{{ postgresql_databases_config | to_pg_privs(postgresql_permission_profiles, postgresql_users) }}"
+      loop_control:
+        label: "{{ item.state }} {{ item.login_db }}/{{ item.roles }}/{{ item.type }}:{{ item.privs }}"
+
+    - name: Debug
+      ansible.builtin.debug:
+        msg: "{{ postgresql_databases_config | to_pg_privs(postgresql_permission_profiles, postgresql_users) }}"
