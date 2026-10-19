@@ -1,6 +1,6 @@
 - name: Retrieve Garage secrets from Vault
   community.hashi_vault.vault_kv2_get:
-    path: services/garage/privileged
+    path: "{{ garage_vault_path }}"
   register:
     garage_rpc_secret: _task.result.secret.rpc_secret
     garage_admin_token: _task.result.secret.admin_token
@@ -12,7 +12,7 @@
 
 - name: Retrieve Garage metric secret from Vault
   community.hashi_vault.vault_kv2_get:
-    path: services/garage/metrics
+    path: "{{ garage_vault_metrics_path }}"
   register:
     garage_metrics_token: _task.result.secret.metrics_token
   run_once: true

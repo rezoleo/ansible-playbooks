@@ -9,9 +9,11 @@
 # Nextcloud
 
 nextcloud_host: nextcloud.rezoleo.fr
+nextcloud_vault_secret_path: services/nextcloud
 
 # Database
 
+nextcloud_vault_db_path: databases/nextcloud@pg.rezoleo.fr
 nextcloud_db_host: pg.rezoleo.fr
 nextcloud_db_name: nextcloud
 nextcloud_db_user: nextcloud
@@ -25,8 +27,9 @@ nextcloud_smtp_domain: rezoleo.fr
 
 # Object storage
 
+nextcloud_vault_garage_path: buckets/nextcloud
 nextcloud_object_bucket: nextcloud
-# TODO : garage's default region is garage, to be checked later
+# Garage's default region is garage
 nextcloud_object_region: garage
 # For Garage we must set it to true
 nextcloud_object_usepath_style: true
