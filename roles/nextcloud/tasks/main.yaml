@@ -44,14 +44,35 @@
     mode: "0755"
   become: true
 
+- name: Create CODE directory
+  ansible.builtin.file:
+    path: /home/podman/code
+    state: directory
+    owner: podman
+    group: podman
+    mode: "0755"
+  become: true
+
+- name: Copy compose file for CODE
+  ansible.builtin.copy:
+    src: code/compose.yml
+    dest: /home/podman/code/compose.yml
+    owner: podman
+    group: podman
+    mode: "0644"
+  become: true
+  notify: Restart CODE
+
 - name: Copy compose file for nextcloud
   ansible.builtin.copy:
-    src: compose.yml
+    src: nextcloud/compose.yml
     dest: /home/podman/nextcloud/compose.yml
     owner: podman
     group: podman
     mode: "0644"
   become: true
+  register: nextcloud_compose
+  notify: Restart Nextcloud
 
 - name: Copy and fill .env file for nextcloud
   ansible.builtin.template:
@@ -61,24 +82,17 @@
     group: podman
     mode: "0600"
   become: true
+  notify: Restart Nextcloud service
 
-- name: Copy and fill .env file for code
+- name: Copy and fill .env file for CODE
   ansible.builtin.template:
     src: code.env.j2
-    dest: /home/podman/nextcloud/code.env
+    dest: /home/podman/code/code.env
     owner: podman
     group: podman
     mode: "0600"
   become: true
-
-- name: Start nextcloud
-  ansible.builtin.command:
-    cmd: podman-compose up -d
-    chdir: /home/podman/nextcloud
-  become: true
-  become_user: podman
-  changed_when: true
-
+  notify: Restart CODE
 
 - name: Add firewall rules for Nextcloud
   ansible.builtin.import_role:

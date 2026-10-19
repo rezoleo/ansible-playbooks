@@ -1,4 +1,5 @@
-# TODO : remove the old binary if upgrading, check if we need to upgrade
+# TODO : This currently does not remove the old binary if upgrading
+# also we should first check if we need to upgrade before downloading a binary
 - name: Download Garage
   ansible.builtin.get_url:
     url: "https://garagehq.deuxfleurs.fr/_releases/{{ garage_version }}/{{ garage_architecture }}-unknown-linux-musl/garage"

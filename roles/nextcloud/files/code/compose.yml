@@ -1,0 +1,11 @@
+services:
+  code:
+    image: docker.io/collabora/code:26.04.5.1.1@sha256:bb8f3c9c5c9016045f25fccb5f0649be94469ebc7c7cc379f3576e470cccf33d
+    ports:
+      - 3001:9980
+    env_file: code.env
+    restart: always
+    cap_add:
+      - MKNOD
+    mem_limit: 4G
+    cpus: 2

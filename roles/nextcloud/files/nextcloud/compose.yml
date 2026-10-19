@@ -20,18 +20,6 @@ services:
     depends_on:
       broker:
         condition: service_healthy
-
-  code:
-    image: docker.io/collabora/code:26.04.5.1.1@sha256:bb8f3c9c5c9016045f25fccb5f0649be94469ebc7c7cc379f3576e470cccf33d
-    ports:
-      - 3001:9980
-    env_file: code.env
-    restart: always
-    cap_add:
-      - MKNOD
-    mem_limit: 4G
-    cpus: 2
-
   broker:
     image: docker.io/library/redis:8@sha256:a7efd4ed5037dcfe1543c0e50b9f06293d3e88827005544bf37f381eea5f01cf
     restart: always
