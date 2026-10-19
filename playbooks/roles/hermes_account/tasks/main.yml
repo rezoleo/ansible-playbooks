@@ -3,7 +3,7 @@
     append: true
     home: "{{ hermes_account_home_path }}"
     name: "{{ hermes_account_user_name }}"
-    expires: "{{ ((hermes_account_user_type | get_expiration_date(hermes_account_user_year, (hermes_account_date | int))) | to_datetime('%Y_%m_%d')).timestamp() }}"
+    expires: "{{ hermes_account_user_type | get_expiration_date(hermes_account_user_year, (hermes_account_date | int)) }}"
     password: "{{ hermes_account_user_hash }}"
     update_password: on_create
     groups: Utilisateurs-Services
