@@ -1,6 +1,6 @@
 - name: Retrieve Nextcloud secrets from Vault
   community.hashi_vault.vault_kv2_get:
-    path: services/nextcloud
+    path: "{{ nextcloud_vault_secret_path }}"
   register:
     nextcloud_admin_username: _task.result.secret.admin_username
     nextcloud_admin_password: _task.result.secret.admin_password
@@ -14,7 +14,7 @@
 
 - name: Retrieve S3 secrets from Vault
   community.hashi_vault.vault_kv2_get:
-    path: buckets/nextcloud
+    path: "{{ nextcloud_vault_garage_path }}"
   register:
     nextcloud_object_key: _task.result.secret.key_id
     nextcloud_object_secret: _task.result.secret.key_secret
@@ -26,7 +26,7 @@
 
 - name: Retrieve db secrets from Vault
   community.hashi_vault.vault_kv2_get:
-    path: databases/nextcloud@pg.rezoleo.fr
+    path: "{{ nextcloud_vault_db_path }}"
   register:
     nextcloud_db_password: _task.result.secret.nextcloud
   run_once: true

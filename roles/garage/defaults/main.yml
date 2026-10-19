@@ -12,3 +12,8 @@ garage_architecture: "{{ ansible_architecture }}"
 
 # Where we store the binary
 garage_binary: /usr/local/bin/garage
+
+# Secrets path:
+
+garage_vault_path: services/garage/privileged
+garage_vault_metrics_path: services/garage/metrics
