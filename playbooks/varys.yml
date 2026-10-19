@@ -38,10 +38,6 @@
       loop: "{{ users }}"
       loop_control:
         loop_var: usern
-    # - name: Debug
-    #   ansible.builtin.debug:
-    #     msg: "{{ usern }}"
-
   handlers:
     - name: Prevent user access through ssh
       become: true

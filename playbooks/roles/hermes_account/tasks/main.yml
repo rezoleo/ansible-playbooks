@@ -9,7 +9,7 @@
     groups: Utilisateurs-Services
     uid_min: "{{ (hermes_account_user_type | get_uidrange)[0] }}"
     uid_max: "{{ (hermes_account_user_type | get_uidrange)[1] }}"
-  register: userdata
+  register: hermes_account_userdata
   become: true
 
 - name: Set up permission for home_path

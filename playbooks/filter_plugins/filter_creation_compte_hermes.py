@@ -1,8 +1,6 @@
 # !/usr/bin/python
-# -*- encoding: utf8 -*-'
 
-#import crypt
-
+import datetime
 Type_Renouvellement_annuel= ['Association','Liste','Projet','Divers']
 Type_Personnel= ['PDI','Projet Individuel']
 
@@ -33,12 +31,11 @@ def get_home_path(user_type,user_name,user_year):
 
 def get_expiration_date(user_type,user_year,date_année):
     if user_type in Type_Renouvellement_annuel:
-        return (str(int(date_année)+1)+'_02_01')# je suppose que les passations devraient être finis le premier février, et donc dans le cas, certe improbable, que quelqu'un reprendrait le compte, on pourrait faire ça à ce moment
+        return (datetime.datetime(int(date_année)+1,2,1,0,0).timestamp())# je suppose que les passations devraient être finis le premier février, et donc dans le cas, certe improbable, que quelqu'un reprendrait le compte, on pourrait faire ça à ce moment
     if user_type in Type_Personnel:
-        return(str(int(user_year)+1)+'_01_01')#on met un +1 pour la césure, et je sais str(int(...)) c'est dégueu, mais ansible transforme toutes ses entrées en str donc c'est chiant
+        return (datetime.datetime(int(date_année)+1,1,1,0,0).timestamp())#on met un +1 pour la césure, et je sais str(int(...)) c'est dégueu, mais ansible transforme toutes ses entrées en str donc c'est chiant
 
-# def checpswd(plain,hash):
-#     return crypt.crypt(plain,hash)==hash
+        return(str(int(user_year)+1)+'_01_01')
 
 class FilterModule(object):
     '''give back filters to ansible '''

@@ -1,2 +1,0 @@
-  ansible.builtin.debug:
-    msg: "{{home_path}}"

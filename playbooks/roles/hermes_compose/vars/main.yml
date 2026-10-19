@@ -1,4 +1,4 @@
-services: "{{ hermes_account_site.value }}"
+hermes_compose_services: "{{ hermes_account_site.value }}"
 hermes_compose_path_to_template: "roles/hermes_compose/templates/compose.yml.j2"
-site_name: "{{ hermes_account_site.key }}"
-default_url: "{{ hermes_account_site.key }}.rezoleo.fr"
+hermes_compose_site_name: "{{ hermes_account_site.key }}"
+hermes_compose_default_url: "{{ hermes_account_site.key }}.rezoleo.fr"
