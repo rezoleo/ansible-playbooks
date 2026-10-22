@@ -17,3 +17,11 @@ garage_binary: /usr/local/bin/garage
 
 garage_vault_path: services/garage/privileged
 garage_vault_metrics_path: services/garage/metrics
+
+# S3 config
+garage_s3_region: garage
+garage_domain: garage.rezoleo.fr
+
+# Version management
+# The version tag should be in the format vX.Y.Z
+garage_version: "v2.4.1"

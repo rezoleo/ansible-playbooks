@@ -4,15 +4,7 @@ garage_user: garage
 garage_group: garage
 garage_log_level: "info"
 
-# Version management
-# The version tag should be in the format vX.Y.Z
-garage_version: "v2.4.1"
-
 # DB engine : the default (lmdb) is recommend for high-performance cluster
 # (replication_factor ≥ 2) but has some defaults, sqlite has none
 # but is less performant in that scenario. As we only have one node, sqlite it is
 garage_db_engine: sqlite
-
-# S3 config
-garage_s3_region: garage
-garage_domain: garage.rezoleo.fr
