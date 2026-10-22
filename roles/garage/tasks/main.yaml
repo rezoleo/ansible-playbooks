@@ -1,0 +1,40 @@
+- name: Retrieve Garage secrets from Vault
+  community.hashi_vault.vault_kv2_get:
+    path: "{{ garage_vault_path }}"
+  register:
+    garage_rpc_secret: _task.result.secret.rpc_secret
+    garage_admin_token: _task.result.secret.admin_token
+  run_once: true
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+- name: Retrieve Garage metric secret from Vault
+  community.hashi_vault.vault_kv2_get:
+    path: "{{ garage_vault_metrics_path }}"
+  register:
+    garage_metrics_token: _task.result.secret.metrics_token
+  run_once: true
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+- name: Install Garage
+  ansible.builtin.include_tasks:
+    file: install_garage.yaml
+
+- name: Add firewall rules for Garage
+  ansible.builtin.import_role:
+    name: firewall
+    tasks_from: create_rule.yml
+  vars:
+    firewall_rules:
+      050-equestria:
+        - rule_name: "Allow traffic from Equestria to port 3000"
+          chain: INPUT
+          protocol: tcp
+          source: 10.12.2.2/32 # TODO: Source IP should depend on the inventory
+          destination_port: 3900
+          target: ACCEPT

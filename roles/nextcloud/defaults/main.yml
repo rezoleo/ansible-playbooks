@@ -1,0 +1,44 @@
+---
+# Config for nextcloud
+# The following secret are to fetched from vault at runtime, see tasks/main.yaml
+# db_password
+# admin_username and admin_password
+# smtp_password and smtp_address
+# object_key and object_secret
+
+# Nextcloud
+
+nextcloud_host: nextcloud.rezoleo.fr
+nextcloud_vault_secret_path: services/nextcloud
+
+# Database
+
+nextcloud_vault_db_path: databases/nextcloud@pg.rezoleo.fr
+nextcloud_db_host: pg.rezoleo.fr
+nextcloud_db_name: nextcloud
+nextcloud_db_user: nextcloud
+
+# SMTP
+
+nextcloud_smtp_host: mail.rezoleo.fr
+nextcloud_smtp_secure: "" # "" (none), "ssl" or "tls"
+nextcloud_smtp_name: Rezoleo
+nextcloud_smtp_domain: rezoleo.fr
+
+# Object storage
+
+nextcloud_vault_garage_path: buckets/nextcloud
+nextcloud_object_bucket: nextcloud
+# Garage's default region is garage
+nextcloud_object_region: garage
+# For Garage we must set it to true
+nextcloud_object_usepath_style: true
+# Garage does not support autocreate
+nextcloud_object_autocreate: false
+nextcloud_object_host: garage.rezoleo.fr
+# The buckets are behind a reverse proxy
+nextcloud_object_port: 443
+
+# Collabora Online
+
+nextcloud_code_host: collabora.rezoleo.fr
