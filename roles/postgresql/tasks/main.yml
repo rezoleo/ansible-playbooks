@@ -1,0 +1,203 @@
+---
+# TODO if non existent, create users and databases
+- name: Install postgresql
+  ansible.builtin.apt:
+    package:
+      - postgresql
+      - python3-psycopg2
+    state: present
+  become: true
+
+- name: Validate PostgreSQL databases configuration
+  ansible.builtin.set_fact:
+    postgresql_databases_config: "{{ postgresql_databases_config | validate_config(postgresql_permission_profiles) }}"
+    postgresql_users: "{{ postgresql_users | validate_users }}"
+
+- name: Configure firewall
+  when: postgresql_listen_interfaces != 'localhost'
+  block:
+    - name: Create postgresql_ips
+      ansible.builtin.set_fact:
+        postgresql_ips: "{{ postgresql_databases_config | to_ipset }}"
+
+    - name: Create ipset of authorized servers
+      ansible.builtin.template:
+        src: ipsets.j2
+        dest: /etc/iptables/ipsets
+        owner: root
+        group: root
+        mode: '0644'
+      become: true
+      notify: Restart iptables
+
+    - name: Immediately restart iptables to avoid validation problems
+      ansible.builtin.meta: flush_handlers
+
+    - name: Create firewall rules
+      ansible.builtin.import_role:
+        name: firewall
+        tasks_from: create_rule.yml
+      vars:
+        firewall_rules:
+          200-postgresql:
+            - rule_name: "Allow authorized server to connect to postgresql"
+              chain: INPUT
+              protocol: tcp
+              destination_port: 5432
+              target: ACCEPT
+              raw_extras:
+                - "--match set"
+                - "--match-set pg-authorized src"
+                - "--syn"
+
+- name: Configure postgres to listen to target interfaces
+  community.postgresql.postgresql_alter_system:
+    param: listen_addresses
+    value: "{{ postgresql_listen_interfaces }}"
+  become: true
+  become_user: postgres
+  notify: Restart postgresql
+
+- name: Custom postgresql conf if postgresql_pgtune is specified
+  community.postgresql.postgresql_alter_system:
+    param: "{{ item.key }}"
+    value: "{{ item.value }}"
+  become: true
+  become_user: postgres
+  notify: Restart postgresql
+  loop: "{{ postgresql_pgtune | dict2items }}"
+  when: postgresql_pgtune is defined
+
+- name: Configure pg_hba.conf
+  community.postgresql.postgresql_pg_hba:
+    dest: /etc/postgresql/17/main/pg_hba.conf
+    overwrite: true
+    backup: true
+    owner: postgres
+    group: postgres
+    mode: '0644'
+    contype: host
+    method: scram-sha-256
+    state: present
+    rules_behavior: "combine"
+    rules: "{{ postgresql_hba_base_rules + (postgresql_databases_config | to_pg_hba) }}"
+  become: true
+  become_user: postgres
+  notify: Restart postgresql
+
+# User management
+
+- name: Retrieve internal accounts passwords from Vault
+  community.hashi_vault.vault_kv2_get:
+    path: "{{ postgresql_vault_path }}/{{ item.key }}@{{ postgresql_hostname }}"
+  loop: "{{ postgresql_users | dict2items | selectattr('value.kind', 'equalto', 'intern') }}"
+  loop_control:
+    label: "{{ item.key }}"
+  register:
+    postgresql_vault_result: dict(
+        _task.loop_result.results | map(attribute='item.key') | zip(_task.loop_result.results | map(attribute='secret.password', default=''))
+      )
+  delegate_to: localhost
+  failed_when: >-
+    _task.result.failed | default(false) and not ((_task.result.msg | default('') | lower) is search('missing path'))
+
+- name: Generate missing passwords for internal accounts
+  community.hashi_vault.vault_kv2_write:
+    path: "{{ postgresql_vault_path }}/{{ item.key }}@{{ postgresql_hostname }}"
+    data:
+      password: "{{ lookup('ansible.builtin.password', '/dev/null length=32 chars=ascii_letters,digit') }}"
+  loop: "{{ postgresql_vault_result | dict2items(value_name='password') }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when: item.password | length == 0
+  delegate_to: localhost
+
+- name: Re-read internal accounts passwords from Vault
+  community.hashi_vault.vault_kv2_get:
+    path: "{{ postgresql_vault_path }}/{{ item.key }}@{{ postgresql_hostname }}"
+  loop: "{{ postgresql_users | dict2items | selectattr('value.kind', 'equalto', 'intern') }}"
+  loop_control:
+    label: "{{ item.key }}"
+  register:
+    postgresql_intern_credentials: dict(
+        _task.loop_result.results | map(attribute='item.key') | zip(_task.loop_result.results | map(attribute='secret.password'))
+      )
+  delegate_to: localhost
+
+- name: Postgres tasks
+  become: true
+  become_user: postgres
+  block:
+    - name: Create databases
+      community.postgresql.postgresql_db:
+        name: "{{ item.key }}"
+      loop: "{{ postgresql_databases_config | dict2items }}" # use zip to add the owners
+      loop_control:
+        label: "{{ item.key }}"
+
+    - name: Create/Update internal users
+      community.postgresql.postgresql_user:
+        name: "{{ item.key }}"
+        password: "{{ item.value }}"
+      loop: "{{ postgresql_intern_credentials | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
+
+    - name: Find existing extern roles
+      community.postgresql.postgresql_query:
+        query: SELECT rolname FROM pg_roles WHERE rolname = ANY(%s)
+        positional_args: # Automatic translation from list to psql array fail so we format it manually
+          - "{{ '{' ~
+                  (postgresql_users | dict2items | selectattr('value.kind', 'equalto', 'extern') | map(attribute='key') | map('to_json') | join(','))
+                  ~ '}' }}"
+      register:
+        postgresql_existing_users: _task.result.query_result | map(attribute='rolname') | list
+      changed_when: false
+
+    - name: Debug
+      ansible.builtin.debug:
+        msg:
+          - "{{ postgresql_existing_users }}"
+
+    - name: Determine extern roles to create
+      ansible.builtin.set_fact:
+        postgresql_extern_missing: >-
+          {{ postgresql_users | dict2items | selectattr('value.kind', 'equalto', 'extern') | map(attribute='key') | list
+             | difference(postgresql_existing_users) }}
+        postgresql_extern_new: {}
+
+    - name: Debug
+      ansible.builtin.debug:
+        msg:
+          - "{{ postgresql_extern_missing }}"
+
+    - name: Generate passwords for new extern roles
+      ansible.builtin.set_fact:
+        postgresql_extern_new: >-
+          {{ postgresql_extern_new | combine({item: lookup('ansible.builtin.password',
+             '/dev/null length=32 chars=ascii_letters,digits')}) }}
+      loop: "{{ postgresql_extern_missing }}"
+
+    - name: Debug
+      ansible.builtin.debug:
+        msg:
+          - "{{ postgresql_extern_new }}"
+
+    - name: Create new extern users
+      community.postgresql.postgresql_user:
+        name: "{{ item.key }}"
+        password: "{{ item.value }}"
+      loop: "{{ postgresql_extern_new | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
+
+    - name: Reconcile PostgreSQL privileges
+      community.postgresql.postgresql_privs:
+      args: "{{ item }}"
+      loop: "{{ postgresql_databases_config | to_pg_privs(postgresql_permission_profiles, postgresql_users) }}"
+      loop_control:
+        label: "{{ item.state }} {{ item.login_db }}/{{ item.roles }}/{{ item.type }}:{{ item.privs }}"
+
+    - name: Debug
+      ansible.builtin.debug:
+        msg: "{{ postgresql_databases_config | to_pg_privs(postgresql_permission_profiles, postgresql_users) }}"
