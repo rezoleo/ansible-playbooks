@@ -1,0 +1,77 @@
+###########################################
+# Redundancy config                       #
+###########################################
+
+# How many copies of each block we want across our cluster (should be greater or equal to our node number)
+replication_factor = 1
+# Defines the read and write quorum, for one node, we keep it as "consistent"
+consistency_mode = "consistent"
+
+###########################################
+# Folder config - managed using ansible   #
+###########################################
+
+metadata_dir = "{{garage_metadata_directory}}"
+data_dir = "{{garage_data_directory}}"
+metadata_snapshots_dir = "{{garage_metadata_snapshot_directory}}"
+
+###########################################
+# Database config                         #
+###########################################
+
+# Reduces the risk of metadata corruption because of catastrophic
+# failure on multi-nodes deployment if set to false. This mitigation
+# is not useful on single node deployment and would negatively impact performance
+metadata_fsync = false
+data_fsync = false
+disable_scrub = false
+use_local_tz = true
+metadata_auto_snapshot_interval = "6h"
+
+db_engine = "{{garage_db_engine}}"
+
+block_size = "1M"
+block_ram_buffer_max = "256MiB"
+block_max_concurrent_reads = 16
+block_max_concurrent_writes_per_request =10
+lmdb_map_size = "1T"
+
+compression_level = 1
+
+###########################################
+# Network config                          #
+###########################################
+
+# Secret key shared between all nodes of the cluster in order to
+# identify these nodes and allow them to communicate together
+rpc_secret = "{{garage_rpc_secret}}"
+rpc_bind_addr = "[::]:3901"
+rpc_public_addr = "127.0.0.1:3901"
+
+###########################################
+# Miscellaneous config                    #
+###########################################
+
+allow_world_readable_secrets = false
+allow_punycode = false
+
+
+###########################################
+# S3 config                               #
+###########################################
+
+[s3_api]
+api_bind_addr = "[::]:3900"
+s3_region = "{{garage_s3_region}}"
+root_domain = ".{{garage_domain}}"
+advertise_endpoint = "https://{{garage_domain}}"
+advertise_path_style = false
+
+[admin]
+api_bind_addr = "127.0.0.1:3903"
+metrics_token = "{{garage_metrics_token}}"
+metrics_require_token = true
+admin_token = "{{garage_admin_token}}"
+
+# Optional OpenTelemetry endpoint
+# trace_sink = "http://localhost:4317"
