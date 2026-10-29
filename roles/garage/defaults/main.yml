@@ -10,9 +10,6 @@ garage_metadata_snapshot_directory: "{{ garage_metadata_directory }}/snapshots"
 # should be x86_64 for us
 garage_architecture: "{{ ansible_architecture }}"
 
-# Where we store the binary
-garage_binary: /usr/local/bin/garage
-
 # Secrets path:
 
 garage_vault_path: services/garage/privileged
