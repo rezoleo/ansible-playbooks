@@ -1,8 +1,13 @@
 ---
 
+# Vault paths
+hestia_paperless_vault_path: services/paperless
+hestia_paperless_db_vault_path: databases/paperless@pg.rezoleo.fr
+hestia_github_webhook_filter_vault_path: services/github_webhook_filter
+
 # Config for paperless
 # Secrets (secret_key, db_password, superadmin_password, sso_client_id,
-# sso_client_secret) are fetched from Vault at runtime, see tasks/main.yaml
+# sso_client_secret) are fetched from Vault at runtime, see tasks/paperless.yaml
 
 hestia_paperless_db_host: pg.rezoleo.fr
 hestia_paperless_db_port: 5432
@@ -14,3 +19,9 @@ hestia_paperless_superadmin_name: rezoleo
 
 hestia_paperless_url: https://vanadis.rezoleo.fr
 hestia_paperless_service_name: "Vanadis"
+
+# Config for github webhook filter
+# The webhook url is fetched from Vault at runtime, see tasks/github_webhook_filter.yaml
+
+# Drop events not defined in filterConfiguration.json
+hestia_github_webhook_filter_block_undefined_events: false

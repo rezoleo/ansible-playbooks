@@ -1,0 +1,44 @@
+- name: Retrieve webhook secrets from Vault
+  community.hashi_vault.vault_kv2_get:
+    path: "{{ hestia_github_webhook_filter_vault_path }}"
+  register:
+    hestia_github_webhook_filter_url: _task.result.secret.url
+  run_once: true
+  delegate_to: localhost
+  become: false
+  no_log: true
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+- name: Create github webhook filter directory
+  ansible.builtin.file:
+    path: /home/podman/github_webhook_filter
+    state: directory
+    owner: podman
+    group: podman
+    mode: "0755"
+  become: true
+
+- name: Copy compose and filterConfiguration files for github webhook filter
+  ansible.builtin.copy:
+    src: "github_webhook_filter/{{ item }}"
+    dest: /home/podman/github_webhook_filter/{{ item }}
+    owner: podman
+    group: podman
+    mode: "0644"
+  loop:
+    - compose.yml
+    - filterConfiguration.json
+  register: hestia_github_webhook_filter_files
+  become: true
+
+- name: Copy and fill .env file for github webhook filter
+  ansible.builtin.template:
+    src: github_webhook_filter.env.j2
+    dest: /home/podman/github_webhook_filter/.env
+    owner: podman
+    group: podman
+    mode: "0600"
+  register: hestia_github_webhook_filter_env
+  no_log: true
+  become: true

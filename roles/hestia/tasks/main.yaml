@@ -16,6 +16,12 @@
   ansible.builtin.include_tasks:
     file: paperless.yaml
 
+#### Github webhook filter
+
+- name: Install Github webhook filter
+  ansible.builtin.include_tasks:
+    file: github_webhook_filter.yaml
+
 ##### Start services #####
 
 - name: Start index
@@ -38,6 +44,14 @@
   ansible.builtin.command:
     cmd: podman-compose up -d
     chdir: /home/podman/paperless
+  become: true
+  become_user: podman
+  changed_when: true
+
+- name: Start Github webhook filter
+  ansible.builtin.command:
+    cmd: podman-compose up -d
+    chdir: /home/podman/github_webhook_filter
   become: true
   become_user: podman
   changed_when: true
@@ -66,4 +80,10 @@
           protocol: tcp
           source: 10.12.2.2/32 # TODO: Source IP should depend on the inventory
           destination_port: 3002
+          target: ACCEPT
+        - rule_name: "Allow traffic from Equestria to port 3003"
+          chain: INPUT
+          protocol: tcp
+          source: 10.12.2.2/32 # TODO: Source IP should depend on the inventory
+          destination_port: 3003
           target: ACCEPT
