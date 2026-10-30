@@ -1,0 +1,14 @@
+python3 lea5 {
+        module = auth
+
+        python_path = /etc/freeradius/3.0:/usr/bin/python3
+
+        mod_instantiate = ${.module}
+        func_instantiate = instantiate
+
+        mod_authorize = ${.module}
+        func_authorize = authorize
+
+        mod_post_auth = ${.module}
+        func_post_auth = post_auth
+}

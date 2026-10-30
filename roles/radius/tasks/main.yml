@@ -3,7 +3,9 @@
   ansible.builtin.apt:
     package:
       - freeradius
+      - freeradius-python3
       - git
+      - acl
     state: present
   become: true
 
@@ -23,20 +25,11 @@
     repo: "https://github.com/rezoleo/API-Client-Lea5.git"
     dest: "/etc/freeradius/3.0/ApiLea5"
     version: 'main'
-    update: true
+    update: yes
+  become_user: freerad
   become: true
 
-- name: Set ownership and permissions on Lea5 repo
-  ansible.builtin.file:
-    path: /etc/freeradius/3.0/ApiLea5
-    state: directory
-    owner: freerad
-    group: freerad
-    mode: "0755"
-    recurse: true
-  become: true
-
-- name: Copy configuration files
+- name: Copy sites-enabled files
   ansible.builtin.copy:
     src: "{{ item }}"
     dest: "/etc/freeradius/3.0/{{ item }}"
@@ -44,10 +37,13 @@
     owner: freerad
     group: freerad
   loop:
-    - sites-enabled
+    - sites-enabled/default
+    - sites-enabled/inner-tunnel
     - auth.py
-    - scripts
-    - mods-config
+    - main.py
+    - mods-enabled/python
+    - mods-available/eap
+    - mods-config/files/authorize
   become: true
 
 - name: Configure freeradius

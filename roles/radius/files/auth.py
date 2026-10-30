@@ -2,10 +2,8 @@ import configparser
 import logging
 import sys
 import traceback
-
 import radiusd
-from ApiLea5 import ApiLea5
-
+from ApiLea5.apilea5.apilea5 import ApiLea5
 
 class RadiusHandler(logging.Handler):
     """Logs handler for FreeRADIUS"""
@@ -49,6 +47,7 @@ def radius_event(fun):
                 # Beware: les valeurs scalaires sont entre guillemets
                 # Ex: Calling-Station-Id: "une_adresse_mac"
                 data[key] = value.replace('"', "")
+            print(data)
         try:
             return fun(data)
         except (AttributeError, KeyError, TypeError, ValueError, OSError) as err:
@@ -67,7 +66,7 @@ def instantiate(p):
     logger.info("Instantiation")
 
     config = configparser.ConfigParser()
-    config.read('config.ini')
+    config.read('/etc/freeradius/3.0/config.ini')
   
     api_hostname = config['API LEA5']['ApiEndpoint']
     api_key = config['API LEA5']['ApiKey']
@@ -81,7 +80,7 @@ def authorize(data):
     Check user authorizations to connect to wifi
     """
     username = data.get("User-Name", "")
-    user = api_client.fetchUserByUsername(username)
+    user = api_client.fetch_user_by_username(username)
 
     if not user:
         logger.info(f"User {username} does not exist")
@@ -111,7 +110,7 @@ def post_auth(data):
     """
     mac = data.get('Calling-Station-Id')
     username = data.get("User-Name", "")
-    user = api_client.fetchUserByUsername(username)
-    api_client.createMachine(user,mac)
+    user = api_client.fetch_user_by_username(username)
+    api_client.create_machine(user,mac)
     logger.info(f"Post-Auth: Connecting machine {mac}")
     return radiusd.RLM_MODULE_OK
