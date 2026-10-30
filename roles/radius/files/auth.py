@@ -2,8 +2,10 @@ import configparser
 import logging
 import sys
 import traceback
+
 import radiusd
 from ApiLea5.apilea5.apilea5 import ApiLea5
+
 
 class RadiusHandler(logging.Handler):
     """Logs handler for FreeRADIUS"""

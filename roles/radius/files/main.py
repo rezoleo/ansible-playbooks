@@ -1,7 +1,9 @@
-import sys
-import re
 import configparser
+import re
+import sys
+
 from ApiLea5.apilea5.apilea5 import ApiLea5
+
 config = configparser.ConfigParser()
 config.read('/etc/freeradius/3.0/config.ini')
 
@@ -19,4 +21,4 @@ if machine.internet_expiration:
     vlan = 12
 print('Tunnel-type=VLAN,')
 print('Tunnel-Medium-Type= IEEE-802,')
-print('Tunnel-Private-Group-ID="{vlan}"'.format(vlan=vlan))
+print(f'Tunnel-Private-Group-ID="{vlan}"')
