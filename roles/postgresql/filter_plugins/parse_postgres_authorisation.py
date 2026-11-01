@@ -71,7 +71,7 @@ IPAddress = Annotated[str, AfterValidator(_check_ip)]
 class UserConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    kind: Literal["intern", "extern"] = "extern"
+    kind: Literal["internal", "external"] = "external"
 
 
 @dataclass(frozen=True)

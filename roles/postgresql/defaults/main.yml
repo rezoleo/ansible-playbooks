@@ -1,8 +1,8 @@
 ---
-# Default to localhost for security reasons, must be override if the server should be reachable
+# Default to localhost for security reasons, must be overridden if the server should be reachable
 postgresql_listen_interfaces: 'localhost'
 
-# Roles to keep even though not defined in postgresql_users
+# Roles to protect from deletion even when not defined in postgresql_users
 postgresql_protected_roles: []
 
 # Default pg_hba rules
@@ -65,16 +65,16 @@ postgresql_permission_profiles:
 #         permissions: read-only
 #         local: true
 
-# Declaration of the user with two types intern or extern, internal's passwords would be stored on vault but not external ones
+# Declaration of the user with two types internal or external, internal's passwords would be stored on vault but not external ones
 # postgresql_users:
 #   usera:
-#     kind: intern
+#     kind: internal
 #   userb:
-#     kind: intern
+#     kind: internal
 #   userd:
-#     kind: extern
+#     kind: external
 #   userg:
-#     kind: extern
+#     kind: external
 
 # Change tuning of the instance see https://pgtune.leopard.in.ua/
 # postgresql_pgtune:

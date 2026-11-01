@@ -90,7 +90,7 @@
 - name: Retrieve internal accounts passwords from Vault
   community.hashi_vault.vault_kv2_get:
     path: "{{ postgresql_vault_path }}/{{ item.key }}@{{ postgresql_hostname }}"
-  loop: "{{ postgresql_users | dict2items | selectattr('value.kind', 'equalto', 'intern') }}"
+  loop: "{{ postgresql_users | dict2items | selectattr('value.kind', 'equalto', 'internal') }}"
   loop_control:
     label: "{{ item.key }}"
   register:
@@ -115,11 +115,11 @@
 - name: Re-read internal accounts passwords from Vault
   community.hashi_vault.vault_kv2_get:
     path: "{{ postgresql_vault_path }}/{{ item.key }}@{{ postgresql_hostname }}"
-  loop: "{{ postgresql_users | dict2items | selectattr('value.kind', 'equalto', 'intern') }}"
+  loop: "{{ postgresql_users | dict2items | selectattr('value.kind', 'equalto', 'internal') }}"
   loop_control:
     label: "{{ item.key }}"
   register:
-    postgresql_intern_credentials: dict(
+    postgresql_internal_credentials: dict(
         _task.loop_result.results | map(attribute='item.key') | zip(_task.loop_result.results | map(attribute='secret.password'))
       )
   delegate_to: localhost
@@ -193,41 +193,41 @@
       community.postgresql.postgresql_user:
         name: "{{ item.user }}"
         password: "{{ item.password }}"
-      loop: "{{ postgresql_intern_credentials | dict2items(key_name='user', value_name='password') }}"
+      loop: "{{ postgresql_internal_credentials | dict2items(key_name='user', value_name='password') }}"
       loop_control:
         label: "{{ item.user }}"
 
-    - name: Find existing extern roles
+    - name: Find existing external roles
       community.postgresql.postgresql_query:
         query: SELECT rolname FROM pg_roles WHERE rolname = ANY(%s)
         login_db: "{{ postgresql_default_database }}"
         positional_args: # Automatic translation from list to psql array fail so we format it manually
           - "{{ '{' ~
-                  (postgresql_users | dict2items | selectattr('value.kind', 'equalto', 'extern') | map(attribute='key') | map('to_json') | join(','))
+                  (postgresql_users | dict2items | selectattr('value.kind', 'equalto', 'external') | map(attribute='key') | map('to_json') | join(','))
                   ~ '}' }}"
       register:
         postgresql_existing_users: _task.result.query_result | map(attribute='rolname') | list
       changed_when: false
 
-    - name: Determine extern roles to create
+    - name: Determine external roles to create
       ansible.builtin.set_fact:
-        postgresql_extern_missing: >-
-          {{ postgresql_users | dict2items | selectattr('value.kind', 'equalto', 'extern') | map(attribute='key') | list
+        postgresql_external_missing: >-
+          {{ postgresql_users | dict2items | selectattr('value.kind', 'equalto', 'external') | map(attribute='key') | list
              | difference(postgresql_existing_users) }}
         postgresql_extern_new: {}
 
-    - name: Generate passwords for new extern roles
+    - name: Generate passwords for new external roles
       ansible.builtin.set_fact:
-        postgresql_extern_new: >-
-          {{ postgresql_extern_new | combine({item: lookup('ansible.builtin.password',
+        postgresql_external_new: >-
+          {{ postgresql_external_new | combine({item: lookup('ansible.builtin.password',
              '/dev/null length=32 chars=ascii_letters,digits')}) }}
-      loop: "{{ postgresql_extern_missing }}"
+      loop: "{{ postgresql_external_missing }}"
 
-    - name: Create new extern users
+    - name: Create new external users
       community.postgresql.postgresql_user:
         name: "{{ item.key }}"
         password: "{{ item.value }}"
-      loop: "{{ postgresql_extern_new | dict2items }}"
+      loop: "{{ postgresql_external_new | dict2items }}"
       loop_control:
         label: "{{ item.key }}"
 
