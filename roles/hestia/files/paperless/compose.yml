@@ -26,7 +26,7 @@
 # documentation.
 services:
   broker:
-    image: docker.io/library/redis:8@sha256:a7efd4ed5037dcfe1543c0e50b9f06293d3e88827005544bf37f381eea5f01cf
+    image: docker.io/library/redis:8@sha256:4764ce37931aac77c0d033680b339b19b4a4a81772204d268947cb851212d0ac
     restart: always
     volumes:
       - redisdata:/data
@@ -36,7 +36,7 @@ services:
     cpus: 0.50
 
   webserver:
-    image: ghcr.io/paperless-ngx/paperless-ngx:3.3.0@sha256:6b94799bc769a063b3340cc5847402e626d4d91d29a295a8e747f8e9bead4207
+    image: ghcr.io/paperless-ngx/paperless-ngx:3.3.4@sha256:9bc6e8248891bcfa6f52fffe8b81e4ea8cae75790c3ec1b9906961a7ba55c969
     restart: always
     depends_on:
       - broker
