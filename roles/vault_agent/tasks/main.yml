@@ -1,3 +1,4 @@
+---
 - name: Download Vault Hashicorp gpg key
   ansible.builtin.get_url:
     url: https://apt.releases.hashicorp.com/gpg
@@ -10,7 +11,7 @@
   ansible.builtin.template:
     src: vault.pref.j2
     dest: /etc/apt/preferences.d/vault.pref
-    mode: '0644'
+    mode: "0644"
     owner: root
     group: root
 
@@ -44,7 +45,7 @@
   ansible.builtin.file:
     path: "{{ vault_agent_working_directory }}"
     state: directory
-    mode: '0755'
+    mode: "0755"
     owner: root
     group: root
 
@@ -54,7 +55,7 @@
   ansible.builtin.template:
     src: content.j2
     dest: "{{ vault_agent_working_directory }}/role_id"
-    mode: '0600'
+    mode: "0600"
     owner: root
     group: root
 
@@ -64,7 +65,7 @@
   ansible.builtin.template:
     src: content.j2
     dest: "{{ vault_agent_working_directory }}/secret_id"
-    mode: '0600'
+    mode: "0600"
     owner: root
     group: root
 
@@ -72,7 +73,7 @@
   ansible.builtin.template:
     src: agent-config.hcl.j2
     dest: "{{ vault_agent_working_directory }}/agent-config.hcl"
-    mode: '0644'
+    mode: "0644"
     owner: root
     group: root
   notify: Restart vault-agent-certificates
@@ -81,18 +82,18 @@
   ansible.builtin.template:
     src: retrieving_cert.tmpl.j2
     dest: "{{ vault_agent_working_directory }}/retrieving_cert.tmpl"
-    mode: '0644'
+    mode: "0644"
     owner: root
     group: root
-    variable_start_string: '<<'
-    variable_end_string: '>>'
+    variable_start_string: "<<"
+    variable_end_string: ">>"
   notify: Restart vault-agent-certificates
 
 - name: Copy vault-agent-certificates.service
   ansible.builtin.template:
     src: vault-agent-certificates.service.j2
     dest: /etc/systemd/system/vault-agent-certificates.service
-    mode: '0644'
+    mode: "0644"
     owner: root
     group: root
 
@@ -104,7 +105,7 @@
   ansible.builtin.file:
     state: directory
     dest: "{{ vault_agent_certificate_directory }}"
-    mode: '0755'
+    mode: "0755"
     owner: root
     group: "{{ vault_agent_group_name }}"
 

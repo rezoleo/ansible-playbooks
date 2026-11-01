@@ -1,3 +1,4 @@
+---
 - name: Create index directory
   ansible.builtin.file:
     path: /home/podman/index
