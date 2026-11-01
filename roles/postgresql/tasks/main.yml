@@ -50,12 +50,12 @@
                 - "--match-set pg-authorized src"
                 - "--syn"
 
-- name: Configure postgres to listen to target interfaces
+- name: Configure postgresql to listen to target interfaces
   community.postgresql.postgresql_alter_system:
     param: listen_addresses
     value: "{{ postgresql_listen_interfaces }}"
   become: true
-  become_user: postgres
+  become_user: "{{ postgresql_user }}"
   notify: Restart postgresql
 
 - name: Custom postgresql conf if postgresql_pgtune is specified
@@ -63,7 +63,7 @@
     param: "{{ item.key }}"
     value: "{{ item.value }}"
   become: true
-  become_user: postgres
+  become_user: "{{ postgresql_user }}"
   notify: Restart postgresql
   loop: "{{ postgresql_pgtune | dict2items }}"
   when: postgresql_pgtune is defined
@@ -73,8 +73,8 @@
     dest: /etc/postgresql/17/main/pg_hba.conf
     overwrite: true
     backup: true
-    owner: postgres
-    group: postgres
+    owner: "{{ postgresql_user }}"
+    group: "{{ postgresql_group }}"
     mode: '0644'
     contype: host
     method: scram-sha-256
@@ -82,7 +82,7 @@
     rules_behavior: "combine"
     rules: "{{ postgresql_hba_base_rules + (postgresql_databases_config | to_pg_hba) }}"
   become: true
-  become_user: postgres
+  become_user: "{{ postgresql_user }}"
   notify: Restart postgresql
 
 # User management
@@ -124,30 +124,83 @@
       )
   delegate_to: localhost
 
-- name: Postgres tasks
+- name: Remove roles not declared in postgresql_users
   become: true
-  become_user: postgres
+  become_user: "{{ postgresql_user }}"
+  block:
+    - name: List candidate roles
+      community.postgresql.postgresql_query:
+        query: >-
+          SELECT rolname FROM pg_roles
+          WHERE rolname !~ '^pg_' AND NOT rolsuper AND NOT rolreplication
+          ORDER BY rolname
+        login_db: "{{ postgresql_default_database }}"
+      register:
+        postgresql_roles_existent: _task.result.query_result | map(attribute='rolname') | list
+      changed_when: false
+
+    - name: Compute roles to remove
+      ansible.builtin.set_fact:
+        postgresql_roles_stale: >-
+          {{ postgresql_roles_existent
+             | difference(postgresql_users | list)
+             | difference(postgresql_protected_roles + [postgresql_user]) }}
+
+    - name: List connectable databases
+      community.postgresql.postgresql_query:
+        query: SELECT datname FROM pg_database WHERE datallowconn
+        login_db: "{{ postgresql_default_database }}"
+      register:
+        postgresql_databases: _task.result.query_result | default({}) | map(attribute='datname') | list
+      changed_when: false
+      when: postgresql_roles_stale | length > 0
+
+    - name: Hand over then drop owned objects in every database
+      community.postgresql.postgresql_query:
+        login_db: "{{ item }}"
+        query: >-
+          REASSIGN OWNED BY {{ postgresql_stale_idents }} TO "{{ postgresql_user | replace('"', '""') }}";
+          DROP OWNED BY {{ postgresql_stale_idents }};
+      vars:
+        # Quote as SQL identifiers: double inner quotes, then wrap in quotes
+        postgresql_stale_idents: >-
+          {{ postgresql_roles_stale | map('replace', '"', '""')
+             | map('regex_replace', '^|$', '"') | join(', ') }}
+      loop: "{{ postgresql_databases }}"
+      when: postgresql_roles_stale | length > 0
+
+    - name: Drop the roles
+      community.postgresql.postgresql_user:
+        name: "{{ item }}"
+        state: absent
+      loop: "{{ postgresql_roles_stale }}"
+      when: postgresql_roles_stale | length > 0
+
+- name: Create Databases, Users and grant Privileges
+  become: true
+  become_user: "{{ postgresql_user }}"
   block:
     - name: Create databases
       community.postgresql.postgresql_db:
         name: "{{ item.key }}"
         owner: "{{ item.value.users | dict2items | selectattr('value.owner', 'defined') | selectattr('value.owner') |
-            map(attribute='key') | first | default('postgres', true) }}"
+            map(attribute='key') | first | default(postgresql_user, true) }}"
       loop: "{{ postgresql_databases_config | dict2items }}"
       loop_control:
         label: "{{ item.key }}"
 
     - name: Create/Update internal users
       community.postgresql.postgresql_user:
-        name: "{{ item.key }}"
-        password: "{{ item.value }}"
-      loop: "{{ postgresql_intern_credentials | dict2items }}"
+        name: "{{ item.user }}"
+        password: "{{ item.password }}"
+      loop: "{{ postgresql_intern_credentials | dict2items(key_name='user', value_name='password') }}"
       loop_control:
-        label: "{{ item.key }}"
+        label: "{{ item.user }}"
 
     - name: Find existing extern roles
       community.postgresql.postgresql_query:
         query: SELECT rolname FROM pg_roles WHERE rolname = ANY(%s)
+        login_db: "{{ postgresql_default_database }}"
         positional_args: # Automatic translation from list to psql array fail so we format it manually
           - "{{ '{' ~
                   (postgresql_users | dict2items | selectattr('value.kind', 'equalto', 'extern') | map(attribute='key') | map('to_json') | join(','))

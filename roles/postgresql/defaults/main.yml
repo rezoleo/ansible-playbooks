@@ -1,10 +1,18 @@
 ---
-postgresql_listen_interfaces: '*'
+# Default to localhost for security reasons, must be override if the server should be reachable
+postgresql_listen_interfaces: 'localhost'
+
+# Roles to keep even though not defined in postgresql_users
+postgresql_protected_roles: []
+
+# Default pg_hba rules
 postgresql_hba_base_rules:
   - contype: local
     databases: all
     users: postgres
     method: peer
+
+# Default permission profiles for postgresql_databases_config
 postgresql_permission_profiles:
   all:
     on_database: [ALL]
@@ -18,47 +26,57 @@ postgresql_permission_profiles:
     on_sequences: [SELECT]
 
 
-# TODO: Do not let this in default
-postgresql_hostname: 'pg.rezoleo.fr'
-postgresql_vault_path: "test/baptiste/database"
-postgresql_databases_config:
-  dba:
-    users:
-      usera:
-        permissions: all
-        addresses:
-          - 10.12.0.56
-          - 10.12.2.15
-        comment: I am a comment
-        owner: true
-      userb:
-        permissions: read-only
-        addresses: 10.12.0.1
-  dbb:
-    users:
-      userb:
-        permissions: all
-        local: true
-        addresses: 10.15.65.78
-        comment: I am another comment
-  dbd:
-    users:
-      userd:
-        permissions: all
-        addresses:
-          - 10.18.76.98
-      userg:
-        permissions: read-only
-        local: true
-postgresql_users:
-  usera:
-    kind: intern
-  userb:
-    kind: intern
-  userd:
-    kind: extern
-  userg:
-    kind: extern
+# Should be configured in group/host-vars for each instance
+
+# Hostname of the instance
+# postgresql_hostname: 'pg.example.com'
+
+# Vault path to secrets
+# postgresql_vault_path: "path/to/databases/secrets"
+
+# A database configuration example
+# postgresql_databases_config:
+#   dba:
+#     users:
+#       usera:
+#         permissions: all
+#         addresses:
+#           - 10.12.0.56
+#           - 10.12.2.15
+#         comment: I am a comment
+#         owner: true
+#       userb:
+#         permissions: read-only
+#         addresses: 10.12.0.1
+#   dbb:
+#     users:
+#       userb:
+#         permissions: all
+#         local: true
+#         addresses: 10.15.65.78
+#         comment: I am another comment
+#   dbd:
+#     users:
+#       userd:
+#         permissions: all
+#         addresses:
+#           - 10.18.76.98
+#       userg:
+#         permissions: read-only
+#         local: true
+
+# Declaration of the user with two types intern or extern, internal's passwords would be stored on vault but not external ones
+# postgresql_users:
+#   usera:
+#     kind: intern
+#   userb:
+#     kind: intern
+#   userd:
+#     kind: extern
+#   userg:
+#     kind: extern
+
+# Change tuning of the instance see https://pgtune.leopard.in.ua/
 # postgresql_pgtune:
 #   max_connections: "200"
 #   shared_buffers: "256GB"
