@@ -1,3 +1,4 @@
+---
 - name: Restart vault-agent-certificates
   ansible.builtin.systemd:
     name: vault-agent-certificates
