@@ -1,0 +1,14 @@
+---
+
+- name: Add rule
+  ansible.builtin.template:
+    src: rule.iptables.j2
+    dest: /etc/iptables/rules.d/{{ item.key }}.iptables
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Merge firewall rules fragment files
+  loop: "{{ firewall_rules | validate_firewall_rules | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  become: true

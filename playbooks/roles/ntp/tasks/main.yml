@@ -1,0 +1,16 @@
+---
+- name: Configure timesyncd
+  ansible.builtin.copy:
+    src: timesyncd.conf
+    dest: /etc/systemd/timesyncd.conf
+    owner: root
+    group: root
+    mode: "0644"
+    backup: true
+  notify: Restart timesyncd
+
+- name: Start timesyncd service
+  ansible.builtin.systemd:
+    name: systemd-timesyncd
+    enabled: true
+    state: started

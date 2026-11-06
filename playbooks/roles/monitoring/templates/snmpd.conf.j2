@@ -1,0 +1,14 @@
+# {{ ansible_managed }}
+
+sysLocation    {{ monitoring_server_location }}
+sysContact     Rezoleo <contact@rezoleo.fr>
+rouser {{ monitoring_snmp_user }} authpriv
+
+# We do not want annoying "Connection from UDP: " messages in syslog.
+# If the following option is commented out, snmpd will print each incoming
+# connection, which can be useful for debugging.
+
+dontLogTCPWrappersConnects yes
+
+#This line allows LibreNMS to detect the host OS if the distro script is installed
+extend distro /usr/bin/distro

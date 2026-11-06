@@ -1,0 +1,69 @@
+### BentoPDF ###
+
+- name: Install BentoPDF
+  ansible.builtin.include_tasks:
+    file: bentokae.yaml
+
+### Index ###
+
+- name: Install Index
+  ansible.builtin.include_tasks:
+    file: index.yaml
+
+#### Paperless ####
+
+- name: Install Vanadis
+  ansible.builtin.include_tasks:
+    file: paperless.yaml
+
+##### Start services #####
+
+- name: Start index
+  ansible.builtin.command:
+    cmd: podman-compose up -d
+    chdir: /home/podman/index
+  become: true
+  become_user: podman
+  changed_when: true
+
+- name: Start bentopdf
+  ansible.builtin.command:
+    cmd: podman-compose up -d
+    chdir: /home/podman/bentokae
+  become: true
+  become_user: podman
+  changed_when: true
+
+- name: Start paperless
+  ansible.builtin.command:
+    cmd: podman-compose up -d
+    chdir: /home/podman/paperless
+  become: true
+  become_user: podman
+  changed_when: true
+
+- name: Add firewall rules for Hestia services
+  ansible.builtin.import_role:
+    name: firewall
+    tasks_from: create_rule.yml
+  vars:
+    firewall_rules:
+      050-equestria:
+        - rule_name: "Allow traffic from Equestria to port 3000"
+          chain: INPUT
+          protocol: tcp
+          source: 10.12.2.2/32 # TODO: Source IP should depend on the inventory
+          destination_port: 3000
+          target: ACCEPT
+        - rule_name: "Allow traffic from Equestria to port 3001"
+          chain: INPUT
+          protocol: tcp
+          source: 10.12.2.2/32 # TODO: Source IP should depend on the inventory
+          destination_port: 3001
+          target: ACCEPT
+        - rule_name: "Allow traffic from Equestria to port 3002"
+          chain: INPUT
+          protocol: tcp
+          source: 10.12.2.2/32 # TODO: Source IP should depend on the inventory
+          destination_port: 3002
+          target: ACCEPT

@@ -1,0 +1,12 @@
+# {{ ansible_managed }}
+
+[admin]
+	password = {{ nut_admin_pass }}
+	upsmon master
+	actions = SET
+	instcmds = ALL
+
+[nutcli]
+	password = {{ nut_nutcli_pass }}
+	actions = FSD
+	upsmon master

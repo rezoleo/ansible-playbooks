@@ -1,0 +1,5 @@
+This folder is managed by Ansible!
+
+Files in this folder are managed by Ansible and used as fragment to compile "/etc/iptables/rules.v4".
+Putting file in this folder is at your own risk, it might be deleted at anytime.
+Please use Ansible to create the necessary firewall rules.

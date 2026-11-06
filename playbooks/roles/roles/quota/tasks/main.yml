@@ -1,0 +1,14 @@
+- name: Install Quota
+  become: true
+  ansible.builtin.apt:
+    name: xfsprogs
+    state: present
+
+- name: Set up a Quota
+  become: true
+  community.general.xfs_quota:
+    bhard: 1G
+    bsoft: 512M
+    mountpoint: "{{ home_path }}"
+    name: "{{ user_name }}"
+    type: user
