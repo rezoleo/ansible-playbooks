@@ -1,3 +1,4 @@
+---
 - name: Installing podman
   ansible.builtin.apt:
     update_cache: true
@@ -30,7 +31,7 @@
     regexp: "^podman:.*"
     line: "podman:165536:65536"
     create: true
-    mode: '0644'
+    mode: "0644"
     owner: root
     group: root
   become: true
@@ -41,11 +42,10 @@
     regexp: "^podman:.*"
     line: "podman:165536:65536"
     create: true
-    mode: '0644'
+    mode: "0644"
     owner: root
     group: root
   become: true
-
 
 - name: Enable lingering for podman user
   ansible.builtin.command:
@@ -59,7 +59,7 @@
     state: directory
     owner: podman
     group: podman
-    mode: '0755'
+    mode: "0755"
   become: true
 
 - name: Configure podman log rotation
@@ -68,7 +68,7 @@
     dest: "/home/podman/.config/containers/containers.conf"
     owner: podman
     group: podman
-    mode: '0644'
+    mode: "0644"
   become: true
 
 - name: Enable rootless mode for podman
@@ -103,7 +103,7 @@
     state: directory
     owner: podman
     group: podman
-    mode: '0755'
+    mode: "0755"
   become: true
 
 - name: Create the service file to configure auto-prune
