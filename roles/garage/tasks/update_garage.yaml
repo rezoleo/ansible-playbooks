@@ -1,0 +1,48 @@
+# Minor upgrade procedure, see https://garagehq.deuxfleurs.fr/documentation/operations/upgrading/
+# Nodes are upgraded one by one thanks to `serial: 1` in the playbook.
+# The new configuration and the restart are handled by configure_garage.yaml, included right after this file.
+
+- name: Ensure this is a minor upgrade
+  ansible.builtin.assert:
+    that: (garage_installed_version | regex_search('^v[0-9]+')) == (garage_version | regex_search('^v[0-9]+'))
+    fail_msg: "Upgrading from {{ garage_installed_version }} to {{ garage_version }} is a major upgrade, which must be done manually."
+
+- name: Check cluster health
+  ansible.builtin.command: "{{ garage_binary }} status"
+  register: garage_status
+  until: "'FAILED NODES' not in garage_status.stdout"
+  retries: 10
+  delay: 6
+  changed_when: false
+  check_mode: false
+  become: true
+
+- name: Repair tables
+  ansible.builtin.command: "{{ garage_binary }} repair --all-nodes --yes tables"
+  become: true
+  changed_when: true
+
+# The repair command returns immediately, give the workers time to start
+- name: Wait for table repair to start
+  ansible.builtin.pause:
+    seconds: 5
+
+- name: Wait for table repair to finish
+  ansible.builtin.command: "{{ garage_binary }} worker list --busy"
+  register: garage_busy_workers
+  until: (garage_busy_workers.stdout | regex_search(' sync |repair', ignorecase=true)) is none
+  retries: 30
+  delay: 10
+  changed_when: false
+  check_mode: false
+  become: true
+
+- name: Stop Garage
+  ansible.builtin.systemd:
+    name: garage
+    state: stopped
+  become: true
+
+- name: Install the new binary
+  ansible.builtin.include_tasks:
+    file: install_garage.yaml
