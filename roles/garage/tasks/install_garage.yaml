@@ -1,5 +1,3 @@
-# TODO : This currently does not remove the old binary if upgrading
-# also we should first check if we need to upgrade before downloading a binary
 - name: Download Garage
   ansible.builtin.get_url:
     url: "https://garagehq.deuxfleurs.fr/_releases/{{ garage_version }}/{{ garage_architecture }}-unknown-linux-musl/garage"
@@ -7,8 +5,10 @@
     mode: '0711'
     owner: root
     group: root
+    force: true
   notify: Restart garage
   become: true
+  when: garage_installed_version != garage_version
 
 - name: Create garage group
   ansible.builtin.group:
@@ -37,27 +37,3 @@
     - "{{ garage_data_directory }}"
     - "{{ garage_metadata_snapshot_directory }}"
   become: true
-
-# We load the file where Garage expects it (it also enforced in the .service file)
-- name: Import Garage config
-  ansible.builtin.template:
-    src: garage.toml.j2
-    dest: /etc/garage.toml
-    owner: "{{ garage_user }}"
-    group: "{{ garage_group }}"
-    mode: "0600"
-  become: true
-  notify: Restart garage
-
-- name: Create Garage systemd service file
-  ansible.builtin.template:
-    src: garage.service.j2
-    dest: /etc/systemd/system/garage.service
-    mode: '0644'
-    owner: root
-    group: root
-  become: true
-  notify: Restart garage
-
-- name: Flush handlers
-  ansible.builtin.meta: flush_handlers
