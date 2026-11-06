@@ -62,6 +62,7 @@ venv:
     if [[ ! -d .venv ]]; then
       {{ venv_command }}
       {{ install_command }}
+      pre-commit install
     fi
 
 # Run ruff and ansible-lint
@@ -69,6 +70,7 @@ venv:
 lint *ARGS:
     {{venv_bin}}/ruff check
     {{venv_bin}}/ansible-lint {{ARGS}}
+    {{venv_bin}}/ty check
 
 # Find TODOs and comments silencing lints
 [group('tooling')]
