@@ -15,15 +15,15 @@ postgresql_hba_base_rules:
 # Default permission profiles for postgresql_databases_config
 postgresql_permission_profiles:
   all:
-    on_database: [ALL]
-    on_schema: [ALL]
-    on_tables: [ALL]
-    on_sequences: [ALL]
+    database: [ALL]
+    schema_: [ALL]
+    tables: [ALL]
+    sequences: [ALL]
   read-only:
-    on_database: [CONNECT]
-    on_schema: [USAGE]
-    on_tables: [SELECT]
-    on_sequences: [SELECT]
+    database: [CONNECT]
+    schema_: [USAGE]
+    tables: [SELECT]
+    sequences: [SELECT]
 
 
 # Should be configured in group/host-vars for each instance

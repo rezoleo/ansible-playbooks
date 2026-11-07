@@ -141,35 +141,35 @@ Default:
 ```yaml
 postgresql_permission_profiles:
   all:
-    on_database: [ALL]
-    on_schema: [ALL]
-    on_tables: [ALL]
-    on_sequences: [ALL]
+    database: [ALL]
+    schema_: [ALL]
+    tables: [ALL]
+    sequences: [ALL]
   read-only:
-    on_database: [CONNECT]
-    on_schema: [USAGE]
-    on_tables: [SELECT]
-    on_sequences: [SELECT]
+    database: [CONNECT]
+    schema_: [USAGE]
+    tables: [SELECT]
+    sequences: [SELECT]
 ```
 
 Allowed privileges per object type:
 
 | Key            | Allowed values |
 |----------------|----------------|
-| `on_database`  | `CONNECT`, `CREATE`, `TEMPORARY`, `ALL` |
-| `on_schema`    | `USAGE`, `CREATE`, `ALL` |
-| `on_tables`    | `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`, `REFERENCES`, `TRIGGER`, `MAINTAIN`, `ALL` |
-| `on_sequences` | `USAGE`, `SELECT`, `UPDATE`, `ALL` |
+| `database`  | `CONNECT`, `CREATE`, `TEMPORARY`, `ALL` |
+| `schema_`    | `USAGE`, `CREATE`, `ALL` |
+| `tables`    | `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`, `REFERENCES`, `TRIGGER`, `MAINTAIN`, `ALL` |
+| `sequences` | `USAGE`, `SELECT`, `UPDATE`, `ALL` |
 
 `ALL` expands to every concrete privilege of that type. Empty or omitted lists grant nothing. Example of an additional profile:
 
 ```yaml
 postgresql_permission_profiles:
   read-write:
-    on_database: [CONNECT]
-    on_schema: [USAGE]
-    on_tables: [SELECT, INSERT, UPDATE, DELETE]
-    on_sequences: [USAGE, SELECT, UPDATE]
+    database: [CONNECT]
+    schema_: [USAGE]
+    tables: [SELECT, INSERT, UPDATE, DELETE]
+    sequences: [USAGE, SELECT, UPDATE]
 ```
 
 Defining `postgresql_permission_profiles` replaces the whole default mapping, so repeat `all` and `read-only` if you still use them.

@@ -83,13 +83,13 @@ class Target:
 class PermissionProfile(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    on_database: Annotated[
+    database: Annotated[
         list[Literal["CONNECT", "CREATE", "TEMPORARY", "ALL"]], Target("database")
     ] = Field(default_factory=list)
-    on_schema: Annotated[list[Literal["USAGE", "CREATE", "ALL"]], Target("schema")] = (
+    schema_: Annotated[list[Literal["USAGE", "CREATE", "ALL"]], Target("schema")] = (
         Field(default_factory=list)
     )
-    on_tables: Annotated[
+    tables: Annotated[
         list[
             Literal[
                 "SELECT",
@@ -105,7 +105,7 @@ class PermissionProfile(BaseModel):
         ],
         Target("table", "TABLES"),
     ] = Field(default_factory=list)
-    on_sequences: Annotated[
+    sequences: Annotated[
         list[Literal["USAGE", "SELECT", "UPDATE", "ALL"]],
         Target("sequence", "SEQUENCES"),
     ] = Field(default_factory=list)
@@ -277,7 +277,7 @@ def to_pg_privs(config, profiles, users, admin="postgres", schema="public"):
         creators = ",".join(
             [
                 admin,
-                *(u for u in users if "CREATE" in profile_of[u].wanted("on_schema")),
+                *(u for u in users if "CREATE" in profile_of[u].wanted("schema_")),
             ]
         )
 
