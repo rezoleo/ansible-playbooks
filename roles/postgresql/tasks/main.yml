@@ -214,7 +214,7 @@
         postgresql_external_missing: >-
           {{ postgresql_users | dict2items | selectattr('value.kind', 'equalto', 'external') | map(attribute='key') | list
              | difference(postgresql_existing_users) }}
-        postgresql_extern_new: {}
+        postgresql_external_new: {}
 
     - name: Generate passwords for new external roles
       ansible.builtin.set_fact:
@@ -230,6 +230,14 @@
       loop: "{{ postgresql_external_new | dict2items }}"
       loop_control:
         label: "{{ item.key }}"
+
+    - name: Report generated passwords at the end of the run
+      ansible.builtin.set_stats:
+        data:
+          postgresql_new_external_passwords: "{{ postgresql_external_new }}"
+        per_host: true
+        aggregate: false
+      when: postgresql_external_new | length > 0
 
     - name: Reconcile PostgreSQL privileges
       community.postgresql.postgresql_privs:
