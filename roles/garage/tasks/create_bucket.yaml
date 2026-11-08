@@ -1,0 +1,55 @@
+- name: Get bucket current details
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v1/bucket?globalAlias={{ bucket.name }}"
+    return_content: true
+    headers:
+      Authorization: "Bearer {{ garage_admin_token }}"
+    status_code:
+      - 200
+      - 404
+    body_format: json
+  register: bucket_details
+
+- name: Create Garage bucket
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v1/bucket"
+    return_content: true
+    headers:
+      Authorization: "Bearer {{ garage_admin_token }}"
+      Content-Type: application/json
+    method: POST
+    body:
+      globalAlias: "{{ bucket.name }}"
+    body_format: json
+  register: bucket_details_new
+  when: bucket_details.status == 404
+
+- name: Choose what details to use
+  ansible.builtin.set_fact:
+    bucket_details: "{{ bucket_details_new if bucket_details.status == 404 else bucket_details }}"
+
+- name: Set Update list
+  ansible.builtin.set_fact:
+    update_list:
+      quotas:
+        maxSize: "{{ bucket.quotas.max_size | default(omit) }}"
+        maxObjects: "{{ bucket.quotas.max_objects | default(omit) }}"
+
+- name: Define web acccess
+  ansible.builtin.set_fact:
+    web_access:
+      enabled: "{{ bucket.web_access.enabled | default(false) }}"
+      index_document: "{{ bucket.web_access.index_document | default('index.html') }}"
+      error_document: "{{ bucket.web_access.error_document | default('error.html') }}"
+  when: bucket.web_access is defined and not (bucket.web_access.enabled | default(false))
+
+- name: Update Garage bucket
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v1/bucket?id={{ bucket_details.json.id }}"
+    return_content: true
+    headers:
+      Authorization: "Bearer {{ garage_admin_token }}"
+      Content-Type: application/json
+    method: PUT
+    body_format: json
+    body: "{{ update_list | combine(web_access | default([]), recursive=True) }}"
