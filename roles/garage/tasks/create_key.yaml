@@ -1,0 +1,55 @@
+- name: Check if Key ID is valid
+  ansible.builtin.assert:
+    that:
+      - key.id is defined
+      - key.id | regex_search('^GK[a-f0-9]{24}$') != None
+    msg: "Key ID must be defined, non-empty, and match the pattern '^GK[a-f0-9]{24}$'."
+
+- name: Check if Key secret is valid
+  ansible.builtin.assert:
+    that:
+      - key.secret is defined
+      - key.secret | regex_search('^[a-f0-9]{64}$') != None
+    msg: "Key secret must be defined, non-empty, and match the pattern '^[a-f0-9]{64}$'."
+
+- name: Get key current details
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v1/key?id={{ key.id }}"
+    return_content: true
+    headers:
+      Authorization: "Bearer {{ garage_admin_token }}"
+    body_format: json
+    status_code:
+      - 200
+      - 404
+  register: garage_key_details
+
+- name: Create Garage key
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v1/key/import"
+    return_content: true
+    headers:
+      Authorization: "Bearer {{ garage_admin_token }}"
+      Content-Type: application/json
+    method: POST
+    body:
+      name: "{{ key.name }}"
+      accessKeyId: "{{ key.id }}"
+      secretAccessKey: "{{ key.secret }}"
+    body_format: json
+  register: garage_key_details_new
+  when: garage_key_details.status == 404
+  no_log: true
+
+- name: Choose what details to use
+  ansible.builtin.set_fact:
+    garage_key_details: "{{ garage_key_details_new if garage_key_details.status == 404 else garage_key_details }}"
+  no_log: true
+
+- name: Allow Access to buckets
+  loop: "{{ key.buckets | default([]) }}"
+  loop_control:
+    label: "{{ bucket.name }}"
+    loop_var: bucket
+  ansible.builtin.include_tasks: grant_key_access.yaml
+  when: key.buckets is defined and key.buckets | length > 0

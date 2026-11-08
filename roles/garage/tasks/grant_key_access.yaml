@@ -1,0 +1,42 @@
+- name: Get bucket current details
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v1/bucket?globalAlias={{ bucket.name }}"
+    return_content: true
+    headers:
+      Authorization: "Bearer {{ garage_admin_token }}"
+    body_format: json
+  register: garage_bucket_details
+
+- name: Allow key access to bucket
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v1/bucket/allow"
+    return_content: true
+    headers:
+      Authorization: "Bearer {{ garage_admin_token }}"
+      Content-Type: application/json
+    method: POST
+    body:
+      bucketId: "{{ garage_bucket_details.json.id }}"
+      accessKeyId: "{{ key.id }}"
+      permissions:
+        - "{{ 'read' in bucket.access }}"
+        - "{{ 'write' in bucket.access }}"
+        - "{{ 'owner' in bucket.access }}"
+    body_format: json
+
+- name: Revoke undefined key access to bucket
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v1/bucket/deny"
+    return_content: true
+    headers:
+      Authorization: "Bearer {{ garage_admin_token }}"
+      Content-Type: application/json
+    method: POST
+    body:
+      bucketId: "{{ garage_bucket_details.json.id }}"
+      accessKeyId: "{{ key.id }}"
+      permissions:
+        - "{{ 'read' not in bucket.access }}"
+        - "{{ 'write' not in bucket.access }}"
+        - "{{ 'owner' not in bucket.access }}"
+    body_format: json
