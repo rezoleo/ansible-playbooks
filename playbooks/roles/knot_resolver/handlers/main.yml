@@ -1,6 +1,0 @@
----
-- name: Restart kresd
-  ansible.builtin.systemd:
-    name: kresd@1
-    state: restarted
-  become: true
