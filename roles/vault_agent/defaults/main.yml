@@ -1,3 +1,4 @@
+---
 # Location of approle files
 vault_agent_working_directory: /root/vault_agent_certificates
 

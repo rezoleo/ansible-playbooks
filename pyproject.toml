@@ -4,7 +4,7 @@ description = "Rézoléo Ansible Playbooks"
 version = "0.1.0"
 requires-python = ">=3.13, <4"
 dependencies = [
-    "ansible==14.5.0",
+    "ansible==14.6.0",
     "hvac==2.4.0",
     "pysnmp==7.1.30",
     "lolcat==1.4",
@@ -13,10 +13,10 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "ansible-lint==26.9.0",
-    "pre-commit==4.6.2",
-    "ruff==0.17.0",
-    "ty==0.0.86",
+    "ansible-lint==26.10.1",
+    "pre-commit==4.7.0",
+    "ruff==0.17.3",
+    "ty==0.0.95",
 ]
 
 [tool.setuptools]

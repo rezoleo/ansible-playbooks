@@ -1,3 +1,4 @@
+---
 - name: Retrieve Paperless secrets from Vault
   community.hashi_vault.vault_kv2_get:
     path: "{{ hestia_paperless_vault_path }}"

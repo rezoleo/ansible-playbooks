@@ -1,5 +1,4 @@
 ---
-
 - name: Merge firewall rules fragment files
   ansible.builtin.assemble:
     src: /etc/iptables/rules.d
