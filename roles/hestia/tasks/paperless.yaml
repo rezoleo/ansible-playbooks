@@ -13,11 +13,11 @@
   vars:
     ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
-- name: Retrieve db secrets from Vault
+- name: Retrieve database secrets from Vault
   community.hashi_vault.vault_kv2_get:
-    path: "{{ hestia_paperless_db_vault_path }}"
+    path: "{{ hestia_paperless_database_vault_path }}"
   register:
-    hestia_paperless_db_password: _task.result.secret.paperless
+    hestia_paperless_database_password: _task.result.secret.paperless
   run_once: true
   delegate_to: localhost
   become: false
