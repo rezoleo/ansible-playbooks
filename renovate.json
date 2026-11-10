@@ -18,7 +18,7 @@
     },
     {
       "description": "Debian 13 (trixie) ships Python 3.13",
-      "matchManagers": ["mise", "pep621"],
+      "matchManagers": ["mise", "pep621", "pyenv"],
       "matchDepNames": ["python"],
       "allowedVersions": "<3.14"
     }
