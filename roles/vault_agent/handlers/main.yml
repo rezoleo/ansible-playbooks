@@ -3,3 +3,4 @@
   ansible.builtin.systemd:
     name: vault-agent-certificates
     state: restarted
+  become: true
