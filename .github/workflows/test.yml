@@ -19,10 +19,11 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Setup Python
-        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      - name: Setup mise
+        uses: jdx/mise-action@v5
         with:
-          python-version: "3.13"
+          install: true
+          cache: true
 
       - name: Install the project
         run: uv sync --locked --no-python-downloads
