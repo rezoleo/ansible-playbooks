@@ -1,6 +1,6 @@
 - name: Retrieve webhook secrets from Vault
   community.hashi_vault.vault_kv2_get:
-    path: "{{ hestia_github_webhook_filter_vault_path }}"
+    path: "{{ hestia_services_vault_path }}/{{ hestia_github_webhook_filter_vault_path }}"
   register:
     hestia_github_webhook_filter_url: _task.result.secret.url
   run_once: true

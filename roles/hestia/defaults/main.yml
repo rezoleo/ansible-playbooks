@@ -1,9 +1,11 @@
 ---
 
 # Vault paths
-hestia_paperless_vault_path: services/paperless
-hestia_paperless_database_vault_path: databases/paperless@pg.rezoleo.fr
-hestia_github_webhook_filter_vault_path: services/github_webhook_filter
+hestia_services_vault_path: services
+hestia_paperless_database_vault_path: databases
+
+hestia_paperless_vault_path: paperless
+hestia_github_webhook_filter_vault_path: github_webhook_filter
 
 # Config for paperless
 # Secrets (secret_key, database_password, superadmin_password, sso_client_id,

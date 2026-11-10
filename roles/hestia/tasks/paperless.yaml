@@ -1,7 +1,7 @@
 ---
 - name: Retrieve Paperless secrets from Vault
   community.hashi_vault.vault_kv2_get:
-    path: "{{ hestia_paperless_vault_path }}"
+    path: "{{ hestia_services_vault_path }}/{{ hestia_paperless_vault_path }}"
   register:
     hestia_paperless_secret_key: _task.result.secret.paperless_default_key
     hestia_paperless_superadmin_password: _task.result.secret.rezoleo
@@ -15,7 +15,7 @@
 
 - name: Retrieve database secrets from Vault
   community.hashi_vault.vault_kv2_get:
-    path: "{{ hestia_paperless_database_vault_path }}"
+    path: "{{ hestia_database_vault_path }}/{{ hestia_paperless_database_user }}@{{ hestia_paperless_database_host }}"
   register:
     hestia_paperless_database_password: _task.result.secret.paperless
   run_once: true
