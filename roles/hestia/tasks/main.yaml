@@ -25,25 +25,6 @@
 
 ##### Start services #####
 
-- name: Start index
-  ansible.builtin.command:
-    cmd: podman-compose up -d
-    chdir: /home/podman/index
-  become: true
-  become_user: podman
-  changed_when: true
-
-- name: Start bentopdf
-  ansible.builtin.command:
-    cmd: podman-compose up -d
-    chdir: /home/podman/bentokae
-  become: true
-  become_user: podman
-  changed_when: true
-
-- name: Start paperless
-  ansible.builtin.command:
-    cmd: podman-compose up -d
 - name: Start {{ item }}
   ansible.builtin.command:
     cmd: podman-compose up -d
@@ -51,10 +32,10 @@
   become: true
   become_user: podman
   loop:
-  	- index
-  	- bentokae
-  	- paperless
-  	- github_webhook_filter
+    - index
+    - bentokae
+    - paperless
+    - github_webhook_filter
   changed_when: true
 
 - name: Add firewall rules for Hestia services
