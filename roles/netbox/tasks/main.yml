@@ -1,0 +1,315 @@
+---
+
+# System prerequisites
+- name: Install packages
+  ansible.builtin.apt:
+    name:
+      - redis-server
+      - nginx
+      - python3
+      - python3-pip
+      - python3-venv
+      - python3-dev
+      - build-essential
+      - libxml2-dev
+      - libxslt1-dev
+      - libffi-dev
+      - libpq-dev
+      - libssl-dev
+      - zlib1g-dev
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+
+- name: Enable and start Redis
+  ansible.builtin.systemd_service:
+    name: "redis-server"
+    enabled: true
+    state: started
+  become: true
+
+- name: Create netbox group
+  ansible.builtin.group:
+    name: "{{ netbox_group }}"
+    state: present
+    system: true
+  become: true
+
+- name: Create netbox user
+  ansible.builtin.user:
+    name: "{{ netbox_user }}"
+    group: "{{ netbox_group }}"
+    groups:
+      - vault-certs
+    system: true
+    home: "{{ netbox_directory }}"
+    create_home: false
+    shell: /usr/sbin/nologin
+    state: present
+  become: true
+
+- name: Create persistent data directories
+  ansible.builtin.file:
+    path: "{{ netbox_data_directory }}/{{ item }}"
+    state: directory
+    owner: "{{ netbox_user }}"
+    group: "{{ netbox_group }}"
+    mode: "0750"
+  loop:
+    - media
+    - reports
+    - scripts
+  become: true
+
+# Download netbox files
+
+- name: Download and extract netbox release
+  ansible.builtin.unarchive:
+    src: "https://github.com/netbox-community/netbox/archive/refs/tags/v{{ netbox_version }}.tar.gz"
+    dest: "{{ netbox_directory | dirname }}"
+    remote_src: true
+    owner: root
+    group: root
+    creates: "{{ netbox_working_directory }}/upgrade.sh"
+  become: true
+
+# Secrets management
+
+- name: Read netbox secrets from Vault
+  community.hashi_vault.vault_kv2_get:
+    path: "{{ netbox_vault_path }}"
+  delegate_to: localhost
+  become: false
+  no_log: true
+  register:
+    netbox_vault_read: _task.result.secret | default({})
+  # A missing secret is expected on first run; any other error is fatal.
+  failed_when:
+    - _task.result.failed | default(false)
+    - "'missing path' not in (_task.result.msg | default(''))"
+
+- name: Merge existing secrets with freshly generated ones
+  ansible.builtin.set_fact:
+    netbox_vault_secret: >-
+      {{
+        {
+          'pepper': lookup('ansible.builtin.password', '/dev/null length=120 chars=ascii_letters,digits'),
+          'secret_key': lookup('ansible.builtin.password', '/dev/null length=120 chars=ascii_letters,digits'),
+          netbox_superuser_name: lookup('ansible.builtin.password', '/dev/null length=40 chars=ascii_letters,digits')
+        } | combine(netbox_vault_read | default({}))
+      }}
+  no_log: true
+
+- name: Persist newly generated secrets to Vault
+  community.hashi_vault.vault_kv2_write:
+    path: "{{ netbox_vault_path }}"
+    data: "{{ netbox_vault_secret }}"
+  delegate_to: localhost
+  become: false
+  no_log: true
+
+- name: Read secrets from vault # Single source of truth
+  community.hashi_vault.vault_kv2_get:
+    path: "{{ netbox_vault_path }}"
+  register:
+    netbox_crypto_pepper: _task.result.secret.pepper
+    netbox_crypto_secret_key: _task.result.secret.secret_key
+    netbox_superuser_password: _task.result.secret[netbox_superuser_name]
+  delegate_to: localhost
+  become: false
+  no_log: true
+
+- name: Read database password from vault
+  community.hashi_vault.vault_kv2_get:
+    path: "{{ netbox_database_vault_path }}/{{ netbox_database_user }}@{{ netbox_database_host }}"
+  register:
+    netbox_database_password: _task.result.secret.password
+  no_log: true
+  delegate_to: localhost
+  become: false
+
+# Configuration
+
+- name: Deploy netbox configuration # Should be run at every plays
+  ansible.builtin.template:
+    src: configuration.py.j2
+    dest: "{{ netbox_working_directory }}/netbox/netbox/configuration.py"
+    owner: "root"
+    group: "{{ netbox_group }}"
+    mode: "0640"
+  no_log: true
+  notify: Restart Netbox
+  become: true
+
+- name: Copy gunicorn configuration file
+  ansible.builtin.copy:
+    src: gunicorn.py
+    dest: "{{ netbox_working_directory }}/gunicorn.py"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Netbox
+  become: true
+
+# Upgrade / Installation
+
+- name: Check whether a netbox release is already active
+  ansible.builtin.stat:
+    path: "{{ netbox_directory }}"
+  register:
+    netbox_current_link: _task.result.stat.exists
+  become: true
+
+- name: Check whether the upgrade already ran for this version
+  ansible.builtin.stat:
+    path: "{{ netbox_upgrade_marker }}"
+  register:
+    netbox_upgrade_state: _task.result.stat.exists
+  become: true
+
+- name: Stop netbox services before running migrations
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    state: stopped
+  loop:
+    - netbox
+    - netbox-rq
+  when:
+    - not netbox_upgrade_state
+    - netbox_current_link
+  become: true
+
+- name: Run netbox upgrade script
+  ansible.builtin.command:
+    cmd: ./upgrade.sh
+    chdir: "{{ netbox_working_directory }}"
+  when:
+    - not netbox_upgrade_state
+  changed_when: true
+  become: true
+
+- name: Record successful upgrade
+  ansible.builtin.copy:
+    content: "{{ netbox_version }}\n"
+    dest: "{{ netbox_upgrade_marker }}"
+    owner: root
+    group: root
+    mode: "0644"
+    force: false
+  become: true
+
+- name: Point the netbox symbolic link to the active release
+  ansible.builtin.file:
+    state: link
+    src: "{{ netbox_working_directory }}"
+    path: "{{ netbox_directory }}"
+    owner: root
+    group: root
+  become: true
+  notify: Restart Netbox
+
+# Superuser
+
+- name: Ensure netbox superuser exists
+  ansible.builtin.command:
+    argv:
+      - "{{ netbox_working_directory }}/venv/bin/python"
+      - "{{ netbox_working_directory }}/netbox/manage.py"
+      - createsuperuser
+      - --no-input
+      - --username
+      - "{{ netbox_superuser_name }}"
+      - --email
+      - "{{ netbox_superuser_email }}"
+  environment:
+    DJANGO_SUPERUSER_PASSWORD: "{{ netbox_superuser_password }}"
+  changed_when: _task.result.rc == 0
+  failed_when:
+    - _task.result.rc != 0
+    - "'already taken' not in _task.result.stderr"
+  no_log: true
+  become: true
+
+# Application services
+
+- name: Install netbox systemd units
+  ansible.builtin.template:
+    src: "{{ item }}.service.j2"
+    dest: "/etc/systemd/system/{{ item }}.service"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - netbox
+    - netbox-rq
+  notify: Restart Netbox
+  become: true
+
+# Configure nginx
+# TODO: different role
+
+- name: Configure Nginx site
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-available/netbox
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart nginx
+  become: true
+
+- name: Enable Nginx site
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/netbox
+    dest: /etc/nginx/sites-enabled/netbox
+    state: link
+  notify: Restart nginx
+  become: true
+
+- name: Disable default Nginx site
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Restart nginx
+  become: true
+
+# Firewall and start application
+
+- name: Enable and start application services
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+  loop:
+    - netbox
+    - netbox-rq
+    - nginx
+  become: true
+
+- name: Add firewall rule
+  ansible.builtin.import_role:
+    name: firewall
+    tasks_from: create_rule.yml
+  vars:
+    firewall_rules:
+      050-https-traffic:
+        - rule_name: "Allow traffic to port 443"
+          chain: INPUT
+          protocol: tcp
+          destination_port: 443
+          target: ACCEPT
+
+- name: Apply handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait for netbox to answer
+  ansible.builtin.uri:
+    url: "https://127.0.0.1:443/login/"
+    validate_certs: false
+    status_code: 200
+  until: _task.result.status == 200
+  retries: 10
+  delay: 3
+  changed_when: false
