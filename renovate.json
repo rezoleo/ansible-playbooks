@@ -8,14 +8,19 @@
   "timezone": "Europe/Paris",
   "osvVulnerabilityAlerts": true,
   "labels": ["dependencies", "{{updateType}}"],
+  "pre-commit": {
+    "enabled": true
+  },
   "packageRules": [
     {
-      "matchPackageNames": ["ansible-lint", "ansible-cmdb"],
+      "matchPackageNames": ["ansible-lint", "pre-commit", "ruff", "ty"],
       "addLabels": ["development"]
     },
     {
-      "matchPackageNames": ["python"],
-      "allowedVersions": "3.13" // Match debian 13 supported version
+      "description": "Debian 13 (trixie) ships Python 3.13",
+      "matchManagers": ["mise", "pep621"],
+      "matchDepNames": ["python"],
+      "allowedVersions": "<3.14"
     }
   ],
   "vulnerabilityAlerts": {
