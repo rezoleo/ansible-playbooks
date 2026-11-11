@@ -40,7 +40,7 @@
 - name: Valider la synchronisation du serveur Chrony
   ansible.builtin.assert:
     that:
-      - ntp_server_chrony_check.rc == 0
+      - ntp_server_chrony_check_rc == 0
     success_msg: "Le serveur Chrony est synchronisé."
     fail_msg: >-
       {{
