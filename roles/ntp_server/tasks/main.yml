@@ -1,8 +1,8 @@
 - name: Install chrony package
   ansible.builtin.apt:
-    update_cache: true
     name: chrony
     state: present
+    update_cache: true
   become: true
 
 - name: Assert systemd-timesyncd is deleted # or at least stopped?
