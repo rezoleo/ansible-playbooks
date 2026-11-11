@@ -28,7 +28,8 @@
     set -o pipefail
     chronyc -n sources | awk '$1 == "^*" && $5+0 > 0 {ok=1} END {exit ok ? 0 : 1}' &&
     chronyc tracking | awk -F: '/^Leap status[[:space:]]*:/ {if ($2 ~ /^[[:space:]]*Normal[[:space:]]*$/) ok=1} END {exit ok ? 0 : 2}'
-  register: ntp_server_chrony_check
+  register:
+    ntp_server_chrony_check_rc: _task.result.rc 
   changed_when: false
   failed_when: false
   retries: 2
