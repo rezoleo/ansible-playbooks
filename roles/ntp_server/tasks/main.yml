@@ -25,29 +25,14 @@
 
 - name: Vérifier la synchronisation du serveur Chrony
   ansible.builtin.shell: |
-    set -o pipefail
-    chronyc -n sources | awk '$1 == "^*" && $5+0 > 0 {ok=1} END {exit ok ? 0 : 1}' &&
-    chronyc tracking | awk -F: '/^Leap status[[:space:]]*:/ {if ($2 ~ /^[[:space:]]*Normal[[:space:]]*$/) ok=1} END {exit ok ? 0 : 2}'
-  register:
-    ntp_server_chrony_check_rc: _task.result.rc 
+    sources=$(chronyc -n sources) || exit 3
+    awk '$1 == "^*" && $5+0 > 0 {ok=1} END {exit !ok}' <<< "$sources" || exit 1
+    tracking=$(chronyc tracking) || exit 3
+    grep -Eq '^Leap status[[:space:]]*:[[:space:]]*Normal[[:space:]]*$' <<< "$tracking" || exit 2
+    exit 0
   changed_when: false
-  failed_when: false
   retries: 2
   delay: 5
   until: _task.result.rc == 0
   args:
     executable: /usr/bin/bash
-
-- name: Valider la synchronisation du serveur Chrony
-  ansible.builtin.assert:
-    that:
-      - ntp_server_chrony_check_rc == 0
-    success_msg: "Le serveur Chrony est synchronisé."
-    fail_msg: >-
-      {{
-        'Aucune source NTP marquée ^* avec Reach > 0.' if ntp_server_chrony_check_rc == 1
-        else
-          'Leap status différent de Normal.' if ntp_server_chrony_check_rc == 2
-          else
-            'Erreur inattendue pendant la vérification Chrony.'
-      }}
