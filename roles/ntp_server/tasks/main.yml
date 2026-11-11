@@ -34,7 +34,7 @@
   failed_when: false
   retries: 2
   delay: 5
-  until: ntp_server_chrony_check.rc == 0
+  until: _task.result.rc == 0
   args:
     executable: /usr/bin/bash
 
