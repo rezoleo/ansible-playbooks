@@ -5,12 +5,12 @@
     update_cache: true
   become: true
 
-- name: Assert systemd-timesyncd is deleted # or at least stopped?
-  ansible.builtin.assert:
-    that:
-      - "ansible_facts['packages']['systemd-timesyncd'] is not defined"
-    fail_msg: "systemd-timesyncd package is still installed. It should have been removed by the installation of chrony."
-    success_msg: "systemd-timesyncd package is not installed. Chrony installation is successful."
+- name: Remove systemd-timesyncd
+  ansible.builtin.apt:
+    name: systemd-timesyncd
+    state: absent
+    update-cache: true
+  become: true
 
 - name: Configure chrony server
   ansible.builtin.copy:
