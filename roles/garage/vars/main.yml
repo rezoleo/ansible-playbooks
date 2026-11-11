@@ -1,0 +1,12 @@
+# Basic config
+garage_user: garage
+garage_group: garage
+garage_log_level: "info"
+
+# Where we store the binary
+garage_binary: /usr/local/bin/garage
+
+# DB engine : the default (lmdb) is recommend for high-performance cluster
+# (replication_factor ≥ 2) but has some defaults, sqlite has none
+# but is less performant in that scenario. As we only have one node, sqlite it is
+garage_db_engine: sqlite
