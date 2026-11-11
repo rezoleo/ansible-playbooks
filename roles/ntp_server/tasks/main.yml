@@ -45,9 +45,9 @@
     success_msg: "Le serveur Chrony est synchronisé."
     fail_msg: >-
       {{
-        'Aucune source NTP marquée ^* avec Reach > 0.' if ntp_server_chrony_check.rc == 1
+        'Aucune source NTP marquée ^* avec Reach > 0.' if ntp_server_chrony_check_rc == 1
         else
-          'Leap status différent de Normal.' if ntp_server_chrony_check.rc == 2
+          'Leap status différent de Normal.' if ntp_server_chrony_check_rc == 2
           else
             'Erreur inattendue pendant la vérification Chrony.'
       }}
