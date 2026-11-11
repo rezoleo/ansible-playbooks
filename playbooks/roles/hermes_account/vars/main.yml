@@ -1,0 +1,3 @@
+hermes_account_date: "{{ ('%Y' | strftime) }}" # date actuelle
+hermes_account_date_full: "{{ ('%Y-%m-%d %H_%M_%S' | strftime) }}" # date actuelle compléte, pour faire des tests
+hermes_account_home_path: "{{ hermes_account_user_type | get_home_path(hermes_account_user_name, hermes_account_user_year) }}"

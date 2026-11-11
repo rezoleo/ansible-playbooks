@@ -1,0 +1,27 @@
+- name: Create  a docker folder in docker-manager path
+  ansible.builtin.file:
+    state: directory
+    path: "{{ hermes_compose_docker_compose_path }}/{{ hermes_account_site.key }}"
+    mode: ug+rwX
+    owner: "docker-manager"
+  become: true
+
+# - name: Set up service value for template # les valeurs de services ne se mettent pas à jour si elle sont définis directement
+#   ansible.builtin.set_fact:
+#     services: "{{ hermes_account_site.value }}"
+
+- name: Create a Compose.yml file for {{ hermes_account_site.key }}
+  ansible.builtin.template:
+    src: "{{ hermes_compose_path_to_template }}"
+    dest: "{{ hermes_compose_docker_compose_path }}/{{ hermes_account_site.key }}/compose.yml"
+    validate: docker-compose -f %s config --quiet
+    owner: "docker-manager"
+    mode: '644'
+  become: true
+
+- name: Launch CT with previously generated compose file with podman
+  ansible.builtin.command:
+    cmd: podman-compose up -d
+    chdir: "{{ hermes_compose_docker_compose_path }}/{{ hermes_account_site.key }}"
+    state: present
+  become: true
