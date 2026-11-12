@@ -20,3 +20,9 @@
   become: true
   roles:
     - nut
+
+- name: Deploy mail server
+  hosts: mail
+  become: true
+  roles:
+    - stalwart

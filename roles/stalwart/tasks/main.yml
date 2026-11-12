@@ -1,0 +1,289 @@
+---
+- name: Retrieve db secrets from Vault
+  community.hashi_vault.vault_kv2_get:
+    path: databases/stalwart@pg.rezoleo.fr
+  register: stalwart_vault_db_secret
+  run_once: true
+  delegate_to: localhost
+  become: false
+  no_log: true
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+- name: Set secrets as facts
+  ansible.builtin.set_fact:
+    stalwart_db_password: "{{ stalwart_vault_db_secret.secret.password }}"
+  no_log: true
+
+### Installation ###
+
+- name: Install tools needed to unpack the releases
+  ansible.builtin.apt:
+    update_cache: true
+    name:
+      - xz-utils
+      - ca-certificates
+    state: present
+  become: true
+
+- name: Remove Postfix # Shipped by the Debian CT template, it takes port 25
+  ansible.builtin.apt:
+    name: postfix
+    state: absent
+    purge: true
+  become: true
+  notify: Restart stalwart
+
+- name: Create stalwart user
+  ansible.builtin.user:
+    name: stalwart
+    system: true
+    home: /var/lib/stalwart
+    create_home: false
+    shell: /usr/sbin/nologin
+    groups: "{{ vault_agent_group_name }}" # Allows reading the TLS certificate
+    append: true
+  become: true
+  notify: Restart stalwart
+
+- name: Create stalwart directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: stalwart
+    group: stalwart
+    mode: "0750"
+  loop:
+    - /var/lib/stalwart
+    - "{{ stalwart_blob_path }}"
+  become: true
+
+- name: Create release directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - /opt/stalwart/{{ stalwart_version }}
+    - /opt/stalwart/cli-{{ stalwart_cli_version }}
+  become: true
+
+- name: Download Stalwart
+  ansible.builtin.get_url:
+    url: https://github.com/stalwartlabs/stalwart/releases/download/v{{ stalwart_version }}/stalwart-x86_64-unknown-linux-gnu.tar.gz
+    dest: /opt/stalwart/{{ stalwart_version }}/stalwart.tar.gz
+    checksum: sha256:{{ stalwart_checksum }}
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+
+- name: Unpack Stalwart
+  ansible.builtin.unarchive:
+    src: /opt/stalwart/{{ stalwart_version }}/stalwart.tar.gz
+    dest: /opt/stalwart/{{ stalwart_version }}
+    remote_src: true
+    owner: root
+    group: root
+    creates: /opt/stalwart/{{ stalwart_version }}/stalwart
+  become: true
+
+- name: Make Stalwart executable # The release tarball ships it without the executable bit
+  ansible.builtin.file:
+    path: /opt/stalwart/{{ stalwart_version }}/stalwart
+    mode: "0755"
+  become: true
+
+- name: Select the Stalwart version
+  ansible.builtin.file:
+    src: /opt/stalwart/{{ stalwart_version }}/stalwart
+    dest: /usr/local/bin/stalwart
+    state: link
+  become: true
+  notify: Restart stalwart
+
+- name: Download Stalwart CLI
+  ansible.builtin.get_url:
+    url: https://github.com/stalwartlabs/cli/releases/download/v{{ stalwart_cli_version }}/stalwart-cli-x86_64-unknown-linux-gnu.tar.xz
+    dest: /opt/stalwart/cli-{{ stalwart_cli_version }}/stalwart-cli.tar.xz
+    checksum: sha256:{{ stalwart_cli_checksum }}
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+
+- name: Unpack Stalwart CLI
+  ansible.builtin.unarchive:
+    src: /opt/stalwart/cli-{{ stalwart_cli_version }}/stalwart-cli.tar.xz
+    dest: /opt/stalwart/cli-{{ stalwart_cli_version }}
+    remote_src: true
+    extra_opts: [--strip-components=1]
+    owner: root
+    group: root
+    creates: /opt/stalwart/cli-{{ stalwart_cli_version }}/stalwart-cli
+  become: true
+
+- name: Select the Stalwart CLI version
+  ansible.builtin.file:
+    src: /opt/stalwart/cli-{{ stalwart_cli_version }}/stalwart-cli
+    dest: /usr/local/bin/stalwart-cli
+    state: link
+  become: true
+
+### Configuration ###
+
+- name: Create configuration directory
+  ansible.builtin.file:
+    path: /etc/stalwart
+    state: directory
+    owner: root
+    group: stalwart
+    mode: "0750"
+  become: true
+
+- name: Copy data store configuration
+  ansible.builtin.template:
+    src: config.json.j2
+    dest: /etc/stalwart/config.json
+    owner: root
+    group: stalwart
+    mode: "0640"
+  become: true
+  notify: Restart stalwart
+
+- name: Copy environment file with the database password
+  ansible.builtin.template:
+    src: stalwart.env.j2
+    dest: /etc/stalwart/stalwart.env
+    owner: root
+    group: root
+    mode: "0600"
+  become: true
+  no_log: true
+  notify: Restart stalwart
+
+- name: Copy systemd unit
+  ansible.builtin.template:
+    src: stalwart.service.j2
+    dest: /etc/systemd/system/stalwart.service
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  notify: Restart stalwart
+
+# The plan is applied in recovery mode, see README.md
+- name: Copy configuration plan
+  ansible.builtin.template:
+    src: plan.ndjson.j2
+    dest: /etc/stalwart/plan.ndjson
+    owner: root
+    group: root
+    mode: "0600"
+    trim_blocks: true
+    lstrip_blocks: true
+  become: true
+  no_log: true
+  register: stalwart_plan
+
+- name: Apply configuration plan # noqa: no-handler (needs to run right now, the service is started just after)
+  when: stalwart_plan is changed
+  become: true
+  block:
+    - name: Generate a throwaway recovery password
+      ansible.builtin.set_fact:
+        stalwart_recovery_password: "{{ lookup('ansible.builtin.password', '/dev/null', length=32, chars=['ascii_letters', 'digits']) }}"
+      no_log: true
+
+    - name: Stop stalwart
+      ansible.builtin.systemd:
+        name: stalwart
+        state: stopped
+        daemon_reload: true
+
+    - name: Start stalwart in recovery mode
+      ansible.builtin.command:
+        argv:
+          - systemd-run
+          - --unit=stalwart-recovery
+          - --collect
+          - --uid=stalwart
+          - --property=EnvironmentFile=/etc/stalwart/stalwart.env
+          - --setenv=STALWART_RECOVERY_MODE=1
+          - --setenv=STALWART_RECOVERY_ADMIN=admin:{{ stalwart_recovery_password }}
+          - /usr/local/bin/stalwart
+          - --config
+          - /etc/stalwart/config.json
+      changed_when: true
+      no_log: true
+
+    - name: Wait for the recovery listener
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 8080
+        timeout: 60
+
+    - name: Apply plan
+      ansible.builtin.command:
+        argv:
+          - stalwart-cli
+          - --url
+          - http://127.0.0.1:8080
+          - --user
+          - admin
+          - apply
+          - --file
+          - /etc/stalwart/plan.ndjson
+      environment:
+        STALWART_PASSWORD: "{{ stalwart_recovery_password }}"
+      changed_when: true
+      no_log: true
+  rescue:
+    # Forget the plan so that it is rendered, hence applied, again on the next run
+    - name: Remove the plan that could not be applied
+      ansible.builtin.file:
+        path: /etc/stalwart/plan.ndjson
+        state: absent
+
+    - name: Fail
+      ansible.builtin.fail:
+        msg: Could not apply the Stalwart configuration plan, run the playbook again (use `journalctl -u stalwart-recovery` on the server)
+  always:
+    - name: Stop recovery mode
+      ansible.builtin.systemd:
+        name: stalwart-recovery
+        state: stopped
+      failed_when: false
+
+- name: Enable and start stalwart
+  ansible.builtin.systemd:
+    name: stalwart
+    state: started
+    enabled: true
+    daemon_reload: true
+  become: true
+
+### Firewall ###
+
+- name: Add firewall rules for Stalwart
+  ansible.builtin.include_role:
+    name: firewall
+    tasks_from: create_rule.yml
+  vars:
+    firewall_rules:
+      100-stalwart:
+        - rule_name: "Allow mail ports from everywhere"
+          chain: INPUT
+          protocol: tcp
+          raw_extras:
+            - "--match multiport"
+            - "--destination-ports {{ stalwart_public_ports | join(',') }}"
+          target: ACCEPT
+        - rule_name: "Allow the web interface from the reverse proxy"
+          chain: INPUT
+          protocol: tcp
+          source: "{{ stalwart_http_source }}"
+          destination_port: "{{ stalwart_listeners | selectattr('name', 'eq', 'http') | map(attribute='port') | first }}"
+          target: ACCEPT
