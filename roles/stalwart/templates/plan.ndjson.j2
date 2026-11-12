@@ -1,0 +1,42 @@
+{# NDJSON plan for `stalwart-cli apply`, one operation per line #}
+{% set domains = {} %}
+{% for domain in stalwart_domains %}
+{% set _ = domains.update({domain: {"name": domain, "certificateManagement": {"@type": "Manual"}, "dkimManagement": {"@type": "Automatic"}, "dnsManagement": {"@type": "Manual"}}}) %}
+{% endfor %}
+{{ {"@type": "upsert", "object": "Domain", "matchOn": ["name"], "value": domains} | to_json }}
+{% set listeners = {} %}
+{% for l in stalwart_listeners %}
+{% set _ = listeners.update({l.name: {"name": l.name, "bind": {"[::]:" ~ l.port: true}, "protocol": l.protocol, "implicitTls": l.implicit_tls | default(false), "useTls": l.use_tls | default(true)}}) %}
+{% endfor %}
+{{ {"@type": "upsert", "object": "NetworkListener", "matchOn": ["name"], "value": listeners} | to_json }}
+{{ {"@type": "upsert", "object": "Certificate", "matchOn": ["certificate"], "value": {"cert": {"certificate": {"@type": "File", "filePath": stalwart_certificate}, "privateKey": {"@type": "File", "filePath": stalwart_private_key}}}} | to_json }}
+{{ {"@type": "update", "object": "BlobStore", "value": {"@type": "FileSystem", "path": stalwart_blob_path}} | to_json }}
+{# Logs go to journald (journalctl -u stalwart), reconcile removes the default file logger #}
+{{ {"@type": "reconcile", "object": "Tracer", "matchOn": ["@type"], "value": {"console": {"@type": "Stdout", "enable": true, "level": "info", "ansi": false}}} | to_json }}
+{{ {"@type": "update", "object": "SystemSettings", "value": {"defaultHostname": stalwart_hostname, "defaultDomainId": "#" ~ stalwart_domains[0], "defaultCertificateId": "#cert"}} | to_json }}
+{% if stalwart_admins | length > 0 %}
+{% set admins = {} %}
+{% for address in stalwart_admins %}
+{% set _ = admins.update({address: {"@type": "User", "name": address.split("@")[0], "domainId": "#" ~ address.split("@")[1], "roles": {"@type": "Admin"}}}) %}
+{% endfor %}
+{{ {"@type": "upsert", "object": "Account", "matchOn": ["name", "domainId"], "value": admins} | to_json }}
+{% endif %}
+{% if stalwart_mailing_lists | length > 0 %}
+{% set lists = {} %}
+{% for l in stalwart_mailing_lists %}
+{% set recipients = {} %}
+{% for r in l.recipients %}
+{% set _ = recipients.update({r: true}) %}
+{% endfor %}
+{% set _ = lists.update({l.name ~ "@" ~ l.domain: {"name": l.name, "domainId": "#" ~ l.domain, "description": l.description | default(none), "recipients": recipients}}) %}
+{% endfor %}
+{{ {"@type": "upsert", "object": "MailingList", "matchOn": ["name", "domainId"], "value": lists} | to_json }}
+{% endif %}
+{% set audiences = {} %}
+{% for a in stalwart_oidc_accepted_audiences %}
+{% set _ = audiences.update({a: true}) %}
+{% endfor %}
+{# unscopedTokens=interoperable: Zitadel tokens carry no mail scopes, give them mail access but no admin rights #}
+{{ {"@type": "upsert", "object": "Directory", "matchOn": ["description"], "value": {"sso": {"@type": "Oidc", "description": "Zitadel SSO", "issuerUrl": stalwart_oidc_issuer, "claimUsername": stalwart_oidc_claim_username, "usernameDomain": stalwart_oidc_username_domain, "acceptedAudiences": audiences, "unscopedTokens": "interoperable"}}} | to_json }}
+{{ {"@type": "update", "object": "Authentication", "value": {"directoryId": "#sso"}} | to_json }}
+{{ {"@type": "upsert", "object": "Application", "matchOn": ["description"], "value": {"webui": {"description": "Stalwart Web Interface", "oauthClientId": stalwart_oidc_web_client_id}}} | to_json }}

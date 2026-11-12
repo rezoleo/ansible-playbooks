@@ -1,0 +1,64 @@
+---
+# Bump the versions together with the checksums (sha256 of the release tarballs)
+stalwart_version: 1.1.0
+stalwart_checksum: 62e6fdaf68f6ddfb45aa0dc1c28578a7e05f1e5e9a0c95fccfe1eae709d4ecbc
+stalwart_cli_version: 1.0.14
+stalwart_cli_checksum: 78584b238422b0201a7bd223ed95b3c1a7fb8735ad3fa8c884d818a66fd1bc65
+
+# Hostname announced by the server (must be covered by the certificate)
+stalwart_hostname: mail.rezoleo.fr
+
+# Domains handled by the server, the first one is the default domain
+stalwart_domains:
+  - rezoleo.fr
+  - lists.rezoleo.fr
+  - mailtest.rezoleo.fr
+
+# PostgreSQL holds everything but the mails (stalwart_blob_path), the password comes from Vault
+stalwart_db_host: pg.rezoleo.fr
+stalwart_db_port: 5432
+stalwart_db_name: stalwart
+stalwart_db_user: stalwart
+stalwart_db_tls: false
+
+stalwart_blob_path: /var/lib/stalwart/blobs
+
+stalwart_certificate: "{{ vault_agent_certificate_directory }}/fullchain.pem"
+stalwart_private_key: "{{ vault_agent_certificate_directory }}/privkey.pem"
+
+# Listeners. The HTTP one (webadmin, webmail, JMAP) is plain HTTP, TLS is done by Equestria
+stalwart_listeners:
+  - { name: smtp, port: 25, protocol: smtp }
+  - { name: submissions, port: 465, protocol: smtp, implicit_tls: true }
+  - { name: submission, port: 587, protocol: smtp }
+  - { name: imaps, port: 993, protocol: imap, implicit_tls: true }
+  - { name: http, port: 8080, protocol: http, use_tls: false }
+
+# Who can reach the mail ports (everyone) and the HTTP port (the reverse proxy)
+stalwart_http_source: 10.12.2.2/32 # TODO: Source IP should depend on the inventory
+stalwart_public_ports: [25, 465, 587, 993]
+
+# Accounts given the administrator role, their domain must be in stalwart_domains
+stalwart_admins:
+  - david@rezoleo.fr
+
+# Aliases and mailing lists are both Stalwart mailing lists: <name>@<domain> goes to every recipient
+# stalwart_mailing_lists:
+#   - name: president
+#     domain: rezoleo.fr
+#     recipients:
+#       - someone@example.org
+stalwart_mailing_lists: []
+
+# Authentication is delegated to Zitadel, see README.md
+stalwart_oidc_issuer: https://sso.rezoleo.fr # Must match the "issuer" of the discovery document exactly
+# Claim holding the login name. Without an "@", stalwart_oidc_username_domain is appended.
+stalwart_oidc_claim_username: preferred_username
+stalwart_oidc_username_domain: rezoleo.fr
+# Accepted audiences of the Zitadel access tokens: the project ID and the web UI client ID
+stalwart_oidc_accepted_audiences:
+  - "399289467585691651"
+  - "399302429528621059"
+# Client ID of the web UI application registered in Zitadel (public client, PKCE).
+# Redirect URIs: https://webmail.rezoleo.fr/{admin,account}/oauth/callback
+stalwart_oidc_web_client_id: "399302429528621059"
