@@ -60,6 +60,5 @@ All accounts live in Zitadel (`Authentication.directoryId` points to the OIDC di
 
 1. Sign in to the web UI with Zitadel, and give the admin role to the right people.
 2. Send a mail over SMTP with XOAUTH2 using a machine user token (`client_credentials` grant).
-3. Create an app password for an account created through OIDC and use it over IMAP/SMTP. If it works, apps that do
-   not speak XOAUTH2 get their own app password. Otherwise they go through a local relay on their host (Postfix with
-   per-app passwords, forwarding to Stalwart with XOAUTH2), to be written as a separate role.
+3. ~~App password on an account created through OIDC~~: works (tested over IMAP). Apps that do not speak XOAUTH2
+   get their own app password (in `/account` > Credentials), no relay needed.
