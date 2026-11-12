@@ -1,7 +1,8 @@
 {# NDJSON plan for `stalwart-cli apply`, one operation per line #}
+{# DKIM keys are published by hand: rotation cannot be disabled, so it is pushed to 50 years (ms) #}
 {% set domains = {} %}
 {% for domain in stalwart_domains %}
-{% set _ = domains.update({domain: {"name": domain, "certificateManagement": {"@type": "Manual"}, "dkimManagement": {"@type": "Automatic"}, "dnsManagement": {"@type": "Manual"}}}) %}
+{% set _ = domains.update({domain: {"name": domain, "certificateManagement": {"@type": "Manual"}, "dkimManagement": {"@type": "Automatic", "rotateAfter": 1576800000000}, "dnsManagement": {"@type": "Manual"}}}) %}
 {% endfor %}
 {{ {"@type": "upsert", "object": "Domain", "matchOn": ["name"], "value": domains} | to_json }}
 {% set listeners = {} %}
