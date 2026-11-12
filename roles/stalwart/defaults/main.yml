@@ -43,12 +43,13 @@ stalwart_admins:
   - david@rezoleo.fr
 
 # Aliases and mailing lists are both Stalwart mailing lists: <name>@<domain> goes to every recipient
-# stalwart_mailing_lists:
-#   - name: president
-#     domain: rezoleo.fr
-#     recipients:
-#       - someone@example.org
-stalwart_mailing_lists: []
+stalwart_mailing_lists:
+  # Accounts only get a @rezoleo.fr address, so the test domain receives mail through this list. Remove at the cutover
+  - name: test
+    domain: mailtest.rezoleo.fr
+    description: Inbound mail test
+    recipients:
+      - david@rezoleo.fr
 
 # Authentication is delegated to Zitadel, see README.md
 stalwart_oidc_issuer: https://sso.rezoleo.fr # Must match the "issuer" of the discovery document exactly
