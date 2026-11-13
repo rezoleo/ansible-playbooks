@@ -1,0 +1,53 @@
+- name: Install chrony package
+  ansible.builtin.apt:
+    name: chrony
+    state: present
+    update_cache: true
+  become: true
+
+- name: Remove systemd-timesyncd
+  ansible.builtin.apt:
+    name: systemd-timesyncd
+    state: absent
+  become: true
+
+- name: Configure chrony server
+  ansible.builtin.copy:
+    src: chrony.conf
+    dest: /etc/chrony/chrony.d/rezoleo.conf
+    owner: root
+    group: root
+    mode: "0644"
+    backup: true
+  become: true
+  notify: Restart chrony
+
+- name: Start chrony
+  ansible.builtin.systemd_service:
+    name: chrony
+    state: started
+    enabled: true
+  become: true
+
+- name: Check Chrony's sync
+  # Explanation and expected result of the command:
+  # l1: `chronyc -n sources` returns a list of NTP sources with status infos, e.g.:
+  #   MS  Name/IP address  Stratum  Poll  Reach LastRx  Last Sample
+  #   ^*  0.0.0.0          3        10    300   200     5000us +/- 20ms
+  #   ... other lines
+  # l2: awk checks that chrony is successfully connected (*) to a server (^) and with Reach > 0, otherwise rc = 1
+  # l3: `chronyc tracking` returns a table with debug data, and we check that
+  # l4: Leap status is set to Normal, otherwise rc = 2
+  # If one of the chrony command fails, rc = 3
+  ansible.builtin.shell: |
+    sources=$(chronyc -n sources) || exit 3
+    awk '$1 == "^*" && $5+0 > 0 {ok=1} END {exit !ok}' <<< "$sources" || exit 1
+    tracking=$(chronyc tracking) || exit 3
+    grep -Eq '^Leap status[[:space:]]*:[[:space:]]*Normal[[:space:]]*$' <<< "$tracking" || exit 2
+    exit 0
+  changed_when: false
+  retries: 2
+  delay: 5
+  until: _task.result.rc == 0
+  args:
+    executable: /usr/bin/bash
