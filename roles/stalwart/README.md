@@ -56,6 +56,8 @@ All accounts live in Zitadel (`Authentication.directoryId` points to the OIDC di
   `https://sso.rezoleo.fr/oauth/v2/token` with the scopes
   `openid profile email urn:zitadel:iam:org:project:id:<project ID>:aud`. Without `profile`, Stalwart cannot find the
   username and rejects the token (535).
+- Zitadel's own SMTP provider (XOAUTH2, host `yam.rezoleo.fr:465`): the scopes field takes **comma-separated** values,
+  and Zitadel caches its token, so restart it (`docker compose down && docker compose up -d`) after changing scopes.
 - To debug authentication, set the tracer level to `debug` in `templates/plan.ndjson.j2` and run the playbook,
   then read `journalctl -u stalwart`.
 - Stalwart's internal accounts (password, app passwords) **cannot** sign in while the OIDC directory is active (tested
