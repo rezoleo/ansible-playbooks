@@ -9,13 +9,12 @@
   ansible.builtin.apt:
     name: systemd-timesyncd
     state: absent
-    update-cache: true
   become: true
 
 - name: Configure chrony server
   ansible.builtin.copy:
     src: chrony.conf
-    dest: /etc/chrony/chrony.conf
+    dest: /etc/chrony/chrony.d/rezoleo.conf
     owner: root
     group: root
     mode: "0644"
@@ -23,7 +22,14 @@
   become: true
   notify: Restart chrony
 
-- name: Check Chrony's config
+- name: Start chrony
+  ansible.builtin.systemd_service:
+    name: chrony
+    state: started
+    enabled: true
+  become: true
+
+- name: Check Chrony's sync
   # Explanation and expected result of the command:
   # l1: `chronyc -n sources` returns a list of NTP sources with status infos, e.g.:
   #   MS  Name/IP address  Stratum  Poll  Reach LastRx  Last Sample
