@@ -51,6 +51,11 @@ All accounts live in Zitadel (`Authentication.directoryId` points to the OIDC di
 - The web UI needs the full address (`david@rezoleo.fr`) on its login page: the domain tells it to redirect to
   Zitadel. Zitadel only pre-fills it if it is a valid login name (`rezoleo.fr` as primary domain of the organization).
 - Zitadel applications and machine users must issue **JWT** access tokens, Stalwart rejects opaque tokens.
+- Machine users (apps sending mail, e.g. Zitadel's own SMTP provider): one service user per app, its username is the
+  account and the only allowed sender (`<username>@rezoleo.fr`). Token: `client_credentials` grant on
+  `https://sso.rezoleo.fr/oauth/v2/token` with the scopes
+  `openid profile email urn:zitadel:iam:org:project:id:<project ID>:aud`. Without `profile`, Stalwart cannot find the
+  username and rejects the token (535).
 - To debug authentication, set the tracer level to `debug` in `templates/plan.ndjson.j2` and run the playbook,
   then read `journalctl -u stalwart`.
 - Stalwart's internal accounts (password, app passwords) **cannot** sign in while the OIDC directory is active (tested
@@ -59,6 +64,6 @@ All accounts live in Zitadel (`Authentication.directoryId` points to the OIDC di
 ## To test on yam
 
 1. Sign in to the web UI with Zitadel, and give the admin role to the right people.
-2. Send a mail over SMTP with XOAUTH2 using a machine user token (`client_credentials` grant).
+2. ~~Send a mail over SMTP with XOAUTH2 using a machine user token~~: works (Zitadel's `noreply` service user).
 3. ~~App password on an account created through OIDC~~: works (tested over IMAP). Apps that do not speak XOAUTH2
    get their own app password (in `/account` > Credentials), no relay needed.
