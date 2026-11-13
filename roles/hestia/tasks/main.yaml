@@ -17,30 +17,25 @@
   ansible.builtin.include_tasks:
     file: paperless.yaml
 
+#### Github webhook filter
+
+- name: Install Github webhook filter
+  ansible.builtin.include_tasks:
+    file: github_webhook_filter.yaml
+
 ##### Start services #####
 
-- name: Start index
+- name: Start {{ item }}
   ansible.builtin.command:
     cmd: podman-compose up -d
-    chdir: /home/podman/index
+    chdir: "/home/podman/{{ item }}"
   become: true
   become_user: podman
-  changed_when: true
-
-- name: Start bentopdf
-  ansible.builtin.command:
-    cmd: podman-compose up -d
-    chdir: /home/podman/bentokae
-  become: true
-  become_user: podman
-  changed_when: true
-
-- name: Start paperless
-  ansible.builtin.command:
-    cmd: podman-compose up -d
-    chdir: /home/podman/paperless
-  become: true
-  become_user: podman
+  loop:
+    - index
+    - bentokae
+    - paperless
+    - github_webhook_filter
   changed_when: true
 
 - name: Add firewall rules for Hestia services
@@ -67,4 +62,10 @@
           protocol: tcp
           source: 10.12.2.2/32 # TODO: Source IP should depend on the inventory
           destination_port: 3002
+          target: ACCEPT
+        - rule_name: "Allow traffic from Equestria to port 3003"
+          chain: INPUT
+          protocol: tcp
+          source: 10.12.2.2/32 # TODO: Source IP should depend on the inventory
+          destination_port: 3003
           target: ACCEPT
