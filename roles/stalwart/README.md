@@ -14,6 +14,10 @@ SSO, mailing lists...) lives in the database and is described by `/etc/stalwart/
 `stalwart-cli apply` while the server runs in recovery mode. The service is therefore stopped for a few seconds whenever
 the plan changes. The plan is idempotent and can be applied by hand with the same command.
 
+Known issue: the mail ports are closed for about a minute during each deployment. The firewall role deletes every
+rule fragment and `monitoring` applies the rules before this role writes its own back (`knot_resolver` has the same
+problem). Senders retry, so mail is delayed, not lost. To be fixed in the firewall role.
+
 **What is in this role is changed in git only**, never in the web UI: domains, listeners, certificate, SSO, admins
 and mailing lists. Most objects are upserted, so a change made by hand stays until the plan sets the same field again,
 silently. Mailing lists are reconciled: a list created in the web UI is deleted by the next deployment. The web UI
