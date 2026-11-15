@@ -14,6 +14,12 @@ SSO, mailing lists...) lives in the database and is described by `/etc/stalwart/
 `stalwart-cli apply` while the server runs in recovery mode. The service is therefore stopped for a few seconds whenever
 the plan changes. The plan is idempotent and can be applied by hand with the same command.
 
+**What is in this role is changed in git only**, never in the web UI: domains, listeners, certificate, SSO, admins
+and mailing lists. Most objects are upserted, so a change made by hand stays until the plan sets the same field again,
+silently. Mailing lists are reconciled: a list created in the web UI is deleted by the next deployment. The web UI
+is for the rest (app passwords, reports, logs, queues). After a database wipe, delete `/etc/stalwart/plan.ndjson`
+so that the next run applies the whole plan again.
+
 ## Before the first run (manual)
 
 - Create the `stalwart` database and user on `pg.rezoleo.fr`.

@@ -22,7 +22,7 @@
 {% endfor %}
 {{ {"@type": "upsert", "object": "Account", "matchOn": ["name", "domainId"], "value": admins} | to_json }}
 {% endif %}
-{% if stalwart_mailing_lists | length > 0 %}
+{# reconcile: git is the only source of truth, lists created in the web UI are deleted (an empty list deletes them all) #}
 {% set lists = {} %}
 {% for l in stalwart_mailing_lists %}
 {% set recipients = {} %}
@@ -31,8 +31,7 @@
 {% endfor %}
 {% set _ = lists.update({l.name ~ "@" ~ l.domain: {"name": l.name, "domainId": "#" ~ l.domain, "description": l.description | default(none), "recipients": recipients}}) %}
 {% endfor %}
-{{ {"@type": "upsert", "object": "MailingList", "matchOn": ["name", "domainId"], "value": lists} | to_json }}
-{% endif %}
+{{ {"@type": "reconcile", "object": "MailingList", "matchOn": ["name", "domainId"], "value": lists} | to_json }}
 {% set audiences = {} %}
 {% for a in stalwart_oidc_accepted_audiences %}
 {% set _ = audiences.update({a: true}) %}

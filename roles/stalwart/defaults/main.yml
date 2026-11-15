@@ -43,6 +43,7 @@ stalwart_admins:
   - david@rezoleo.fr
 
 # Aliases and mailing lists are both Stalwart mailing lists: <name>@<domain> goes to every recipient
+# Only these lists exist, a list created in the web UI is deleted by the next deployment
 stalwart_mailing_lists:
   # Accounts only get a @rezoleo.fr address, so the test domain receives mail through this list. Remove at the cutover
   - name: test
