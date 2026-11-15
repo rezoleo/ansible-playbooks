@@ -1,10 +1,16 @@
 {# NDJSON plan for `stalwart-cli apply`, one operation per line #}
-{# DKIM keys are published by hand: rotation cannot be disabled, so it is pushed to 50 years (ms) #}
 {% set domains = {} %}
 {% for domain in stalwart_domains %}
-{% set _ = domains.update({domain: {"name": domain, "certificateManagement": {"@type": "Manual"}, "dkimManagement": {"@type": "Automatic", "rotateAfter": 1576800000000}, "dnsManagement": {"@type": "Manual"}}}) %}
+{% set _ = domains.update({domain: {"name": domain, "certificateManagement": {"@type": "Manual"}, "dkimManagement": {"@type": "Manual"}, "dnsManagement": {"@type": "Manual"}}}) %}
 {% endfor %}
 {{ {"@type": "upsert", "object": "Domain", "matchOn": ["name"], "value": domains} | to_json }}
+{# reconcile: only the keys from Vault sign, Stalwart never generates nor rotates any #}
+{% set dkim = {} %}
+{% for domain in stalwart_domains %}
+{% set _ = dkim.update({"rsa@" ~ domain: {"@type": "Dkim1RsaSha256", "selector": stalwart_dkim_selectors.rsa, "domainId": "#" ~ domain, "stage": "active", "privateKey": {"@type": "Text", "secret": stalwart_dkim_keys.rsa}}}) %}
+{% set _ = dkim.update({"ed25519@" ~ domain: {"@type": "Dkim1Ed25519Sha256", "selector": stalwart_dkim_selectors.ed25519, "domainId": "#" ~ domain, "stage": "active", "privateKey": {"@type": "Text", "secret": stalwart_dkim_keys.ed25519}}}) %}
+{% endfor %}
+{{ {"@type": "reconcile", "object": "DkimSignature", "matchOn": ["selector", "domainId"], "value": dkim} | to_json }}
 {% set listeners = {} %}
 {% for l in stalwart_listeners %}
 {% set _ = listeners.update({l.name: {"name": l.name, "bind": {"[::]:" ~ l.port: true}, "protocol": l.protocol, "implicitTls": l.implicit_tls | default(false), "useTls": l.use_tls | default(true)}}) %}

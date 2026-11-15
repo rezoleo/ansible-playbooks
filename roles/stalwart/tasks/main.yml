@@ -10,9 +10,23 @@
   vars:
     ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
+- name: Retrieve DKIM keys from Vault
+  community.hashi_vault.vault_kv2_get:
+    path: services/stalwart
+  register: stalwart_vault_secret
+  run_once: true
+  delegate_to: localhost
+  become: false
+  no_log: true
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
 - name: Set secrets as facts
   ansible.builtin.set_fact:
     stalwart_db_password: "{{ stalwart_vault_db_secret.secret.password }}"
+    stalwart_dkim_keys:
+      rsa: "{{ stalwart_vault_secret.secret.dkim_rsa }}"
+      ed25519: "{{ stalwart_vault_secret.secret.dkim_ed25519 }}"
   no_log: true
 
 ### Installation ###
