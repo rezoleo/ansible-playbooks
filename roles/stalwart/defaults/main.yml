@@ -14,6 +14,11 @@ stalwart_domains:
   - lists.rezoleo.fr
   - mailtest.rezoleo.fr
 
+# DKIM selectors, the keys come from Vault (services/stalwart) and are shared by all the domains
+stalwart_dkim_selectors:
+  rsa: rsa-2026
+  ed25519: ed25519-2026
+
 # PostgreSQL holds everything but the mails (stalwart_blob_path), the password comes from Vault
 stalwart_db_host: pg.rezoleo.fr
 stalwart_db_port: 5432
