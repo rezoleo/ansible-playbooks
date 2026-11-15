@@ -10,7 +10,7 @@
   vars:
     ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
-- name: Retrieve DKIM keys from Vault
+- name: Retrieve DKIM keys and API key from Vault
   community.hashi_vault.vault_kv2_get:
     path: services/stalwart
   register: stalwart_vault_secret
@@ -27,6 +27,7 @@
     stalwart_dkim_keys:
       rsa: "{{ stalwart_vault_secret.secret.dkim_rsa }}"
       ed25519: "{{ stalwart_vault_secret.secret.dkim_ed25519 }}"
+    stalwart_api_key: "{{ stalwart_vault_secret.secret.api_key | default(none) }}"
   no_log: true
 
 ### Installation ###
@@ -188,7 +189,158 @@
   become: true
   notify: Restart stalwart
 
-# The plan is applied in recovery mode, see README.md
+# Runs once (no api_key in Vault): _ansible can only get a password, hence create its API key, while OIDC is off.
+# SSO logins are down for about a minute, mail keeps flowing.
+- name: Check whether the API key exists
+  ansible.builtin.set_fact:
+    stalwart_bootstrap: "{{ stalwart_api_key is none }}" # The block below sets stalwart_api_key, its condition must not change
+
+- name: Create the API key of _ansible
+  when: stalwart_bootstrap
+  become: true
+  block:
+    - name: Generate throwaway passwords
+      ansible.builtin.set_fact:
+        stalwart_bootstrap_password: "{{ lookup('ansible.builtin.password', '/dev/null', length=32, chars=['ascii_letters', 'digits']) }}"
+        stalwart_ansible_password: "{{ lookup('ansible.builtin.password', '/dev/null', length=32, chars=['ascii_letters', 'digits']) }}"
+      no_log: true
+
+    - name: Stop stalwart
+      ansible.builtin.systemd:
+        name: stalwart
+        state: stopped
+        daemon_reload: true
+
+    - name: Start stalwart with a temporary administrator
+      ansible.builtin.command:
+        argv:
+          - systemd-run
+          - --unit=stalwart-bootstrap
+          - --collect
+          - --uid=stalwart
+          - --property=EnvironmentFile=/etc/stalwart/stalwart.env
+          - --setenv=STALWART_RECOVERY_ADMIN=admin:{{ stalwart_bootstrap_password }}
+          - /usr/local/bin/stalwart
+          - --config
+          - /etc/stalwart/config.json
+      changed_when: true
+      no_log: true
+
+    - name: Wait for the web listener
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 8080
+        timeout: 60
+
+    - name: Switch to the internal directory
+      ansible.builtin.command:
+        argv: [stalwart-cli, --url, http://127.0.0.1:8080, --user, admin, update, Authentication, --json, '{"directoryId": null}']
+      environment:
+        STALWART_PASSWORD: "{{ stalwart_bootstrap_password }}"
+      changed_when: true
+
+    - name: Restart stalwart so that the directory change takes effect
+      ansible.builtin.systemd:
+        name: stalwart-bootstrap
+        state: restarted
+
+    - name: Wait for the web listener
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 8080
+        timeout: 60
+
+    - name: Create _ansible with a throwaway password
+      ansible.builtin.command:
+        argv: [stalwart-cli, --url, http://127.0.0.1:8080, --user, admin, apply, --file, /dev/stdin]
+        stdin: |-
+          {{ {"@type": "upsert", "object": "Domain", "matchOn": ["name"], "value": {"d": {"name": stalwart_domains[0]}}} | to_json }}
+          {{ {"@type": "upsert", "object": "Account", "matchOn": ["name", "domainId"], "value": {"a": account}} | to_json }}
+      environment:
+        STALWART_PASSWORD: "{{ stalwart_bootstrap_password }}"
+      changed_when: true
+      no_log: true
+      vars:
+        account:
+          "@type": User
+          name: _ansible
+          domainId: "#d"
+          roles: {"@type": Admin}
+          credentials: {"0": {"@type": Password, secret: "{{ stalwart_ansible_password }}"}}
+
+    - name: Find the id of _ansible
+      ansible.builtin.command:
+        argv: [stalwart-cli, --url, http://127.0.0.1:8080, --user, admin, query, Account]
+      environment:
+        STALWART_PASSWORD: "{{ stalwart_bootstrap_password }}"
+      register: stalwart_accounts
+      changed_when: false
+
+    - name: Create the API key as _ansible
+      ansible.builtin.command:
+        argv:
+          - stalwart-cli
+          - --url
+          - http://127.0.0.1:8080
+          - --user
+          - _ansible@{{ stalwart_domains[0] }}
+          - create
+          - ApiKey
+          - --json
+          - '{"description": "Ansible (roles/stalwart)", "allowedIps": {"127.0.0.1/32": true}}'
+      environment:
+        STALWART_PASSWORD: "{{ stalwart_ansible_password }}"
+      register: stalwart_api_key_output
+      changed_when: true
+      no_log: true
+
+    # The password is the only credential before the key, so it is the first one
+    - name: Remove the password of _ansible, it only keeps its API key
+      ansible.builtin.command:
+        argv: [stalwart-cli, --url, http://127.0.0.1:8080, update, Account, "{{ stalwart_ansible_id }}", --json, '{"credentials/0": null}']
+      environment:
+        STALWART_TOKEN: "{{ stalwart_api_key_output.stdout | regex_search('(?<=Secret: )\\S+') }}"
+      changed_when: true
+      no_log: true
+      vars:
+        stalwart_ansible_id: "{{ stalwart_accounts.stdout | regex_search('(?m)^\\S+(?=\\s+_ansible@)') }}"
+
+    - name: Remember the API key
+      ansible.builtin.set_fact:
+        stalwart_api_key: "{{ stalwart_api_key_output.stdout | regex_search('(?<=Secret: )\\S+') }}"
+      no_log: true
+
+    - name: Store the API key in Vault
+      community.hashi_vault.vault_kv2_write:
+        path: services/stalwart
+        data: "{{ stalwart_vault_secret.secret | combine({'api_key': stalwart_api_key}) }}"
+      delegate_to: localhost
+      become: false
+      no_log: true
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+    # Forces the plan to be applied, it switches the directory back to OIDC
+    - name: Forget the applied plan
+      ansible.builtin.file:
+        path: /etc/stalwart/plan.ndjson
+        state: absent
+  always:
+    - name: Stop the temporary stalwart
+      ansible.builtin.systemd:
+        name: stalwart-bootstrap
+        state: stopped
+      failed_when: false
+
+- name: Enable and start stalwart
+  ansible.builtin.systemd:
+    name: stalwart
+    state: started
+    enabled: true
+    daemon_reload: true
+  become: true
+
+# The plan is applied with the API key of _ansible, see README.md
 - name: Copy configuration plan
   ansible.builtin.template:
     src: plan.ndjson.j2
@@ -202,38 +354,11 @@
   no_log: true
   register: stalwart_plan
 
-- name: Apply configuration plan # noqa: no-handler (needs to run right now, the service is started just after)
+- name: Apply configuration plan # noqa: no-handler (the restart handler must only run once the plan is applied)
   when: stalwart_plan is changed
   become: true
   block:
-    - name: Generate a throwaway recovery password
-      ansible.builtin.set_fact:
-        stalwart_recovery_password: "{{ lookup('ansible.builtin.password', '/dev/null', length=32, chars=['ascii_letters', 'digits']) }}"
-      no_log: true
-
-    - name: Stop stalwart
-      ansible.builtin.systemd:
-        name: stalwart
-        state: stopped
-        daemon_reload: true
-
-    - name: Start stalwart in recovery mode
-      ansible.builtin.command:
-        argv:
-          - systemd-run
-          - --unit=stalwart-recovery
-          - --collect
-          - --uid=stalwart
-          - --property=EnvironmentFile=/etc/stalwart/stalwart.env
-          - --setenv=STALWART_RECOVERY_MODE=1
-          - --setenv=STALWART_RECOVERY_ADMIN=admin:{{ stalwart_recovery_password }}
-          - /usr/local/bin/stalwart
-          - --config
-          - /etc/stalwart/config.json
-      changed_when: true
-      no_log: true
-
-    - name: Wait for the recovery listener
+    - name: Wait for the web listener
       ansible.builtin.wait_for:
         host: 127.0.0.1
         port: 8080
@@ -245,15 +370,14 @@
           - stalwart-cli
           - --url
           - http://127.0.0.1:8080
-          - --user
-          - admin
           - apply
           - --file
           - /etc/stalwart/plan.ndjson
       environment:
-        STALWART_PASSWORD: "{{ stalwart_recovery_password }}"
+        STALWART_TOKEN: "{{ stalwart_api_key }}"
       changed_when: true
       no_log: true
+      notify: Restart stalwart # Some objects (listeners) only take effect after a restart
   rescue:
     # Forget the plan so that it is rendered, hence applied, again on the next run
     - name: Remove the plan that could not be applied
@@ -263,21 +387,7 @@
 
     - name: Fail
       ansible.builtin.fail:
-        msg: Could not apply the Stalwart configuration plan, run the playbook again (use `journalctl -u stalwart-recovery` on the server)
-  always:
-    - name: Stop recovery mode
-      ansible.builtin.systemd:
-        name: stalwart-recovery
-        state: stopped
-      failed_when: false
-
-- name: Enable and start stalwart
-  ansible.builtin.systemd:
-    name: stalwart
-    state: started
-    enabled: true
-    daemon_reload: true
-  become: true
+        msg: Could not apply the Stalwart configuration plan, run the playbook again (use `journalctl -u stalwart` on the server)
 
 ### Firewall ###
 

@@ -11,8 +11,8 @@ just playbook-deploy-infra --limit yam
 
 Stalwart only keeps the data store in `/etc/stalwart/config.json`. Everything else (domains, listeners, certificate,
 SSO, mailing lists...) lives in the database and is described by `/etc/stalwart/plan.ndjson`, applied with
-`stalwart-cli apply` while the server runs in recovery mode. The service is therefore stopped for a few seconds whenever
-the plan changes. The plan is idempotent and can be applied by hand with the same command.
+`stalwart-cli apply` on the running server with the API key of `_ansible`, then the service is restarted
+(listeners only change on restart). The plan is idempotent and can be applied by hand with the same command.
 
 **What is in this role is changed in git only**, never in the web UI: domains, listeners, certificate, SSO, admins
 and mailing lists. Most objects are upserted, so a change made by hand stays until the plan sets the same field again,
@@ -24,21 +24,20 @@ so that the next run applies the whole plan again.
 
 - Create the `stalwart` database and user on `pg.rezoleo.fr`.
 - Vault: `databases/stalwart@pg.rezoleo.fr` (key `password`), `services/stalwart` (keys `dkim_rsa` and `dkim_ed25519`,
-  PEM private keys shared by all the domains, e.g. `openssl genpkey -algorithm ed25519`).
+  PEM private keys shared by all the domains, e.g. `openssl genpkey -algorithm ed25519`). The role adds `api_key`.
 - Zitadel, in one project (its ID goes in `stalwart_oidc_accepted_audiences`):
   - a public web application (PKCE) for the web UI, its client ID goes in `stalwart_oidc_web_client_id`,
   - machine users for the apps that send mail, with the access token type set to **JWT**.
 - Add `yam` to the `[mail]` group of the inventory (see `hosts.example`).
 
-## DNS and network (manual, not managed here)
+## API key of the role
 
-- lantern: `mailtest A 141.255.147.84` while testing (spare public IP), `mail A 141.255.147.86` is already there.
-- pfSense: NAT `.84` 25/465/587/993 to `10.12.1.9` for testing. For the cutover, point `.86:25` to `10.12.1.9` and add
-  465/587/993 on `.86`. Rollback = point them back to `10.12.1.6`.
-- SPF (`@ TXT "v=spf1 ip4:141.255.147.86 -all"`), DKIM (records shown in the Stalwart admin > Domains), DMARC (`_dmarc`).
-- PTR of `141.255.147.86` must be `mail.rezoleo.fr`.
-- Equestria (10.12.2.2): reverse proxy of `webmail.rezoleo.fr` to `http://10.12.1.9:8080`. For now `webmail` only
-  exists on the internal DNS (doublediamond), add `webmail A 141.255.147.86` on lantern to open it publicly.
+The role applies the plan as `_ansible@rezoleo.fr`, an internal administrator account with no password, whose API key
+only works from `127.0.0.1`. It cannot receive nor send mail. When Vault has no `api_key` (first install, or delete it to get a new key), the role creates the key and
+stores it in Vault: internal accounts only accept a password while OIDC is off, so the role switches to the internal
+directory for about a minute (SSO logins fail, mail keeps flowing), then the plan switches it back.
+
+If the key no longer works (401/403), delete `api_key` in Vault and run the playbook.
 
 ## Authentication
 
@@ -57,4 +56,4 @@ All accounts live in Zitadel (`Authentication.directoryId` points to the OIDC di
   `openid profile email urn:zitadel:iam:org:project:id:<project ID>:aud`. Without `profile`, Stalwart cannot find the
   username and rejects the token (535).
 - Stalwart's internal accounts (password, app passwords) **cannot** sign in while the OIDC directory is active (tested
-  with v1.1.0). The recovery administrator still works, it is how this role applies the plan.
+  with v1.1.0). API keys and the recovery administrator still work.
