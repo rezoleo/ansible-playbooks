@@ -44,8 +44,8 @@ All accounts live in Zitadel (`Authentication.directoryId` points to the OIDC di
 - People sign in to the web UI (`/admin`, `/account`) through SSO.
 - Mail clients and machine users authenticate with XOAUTH2/OAUTHBEARER and a Zitadel access token.
 - The login name comes from `stalwart_oidc_claim_username` (+ `stalwart_oidc_username_domain` when it has no `@`).
-  Stalwart cannot rewrite it, so the `-` -> `.` mapping of usernames must be done in Zitadel (an Action adding a claim
-  to access tokens, then point `stalwart_oidc_claim_username` to it).
+  Stalwart cannot rewrite it, so the `-` -> `.` mapping of usernames is done in Zitadel: an Action adds the
+  `mail_local_part` claim (userinfo and tokens, humans **and** service users), which Stalwart uses.
 - An account only exists in Stalwart after its first sign-in, mail sent to it before is rejected.
 - Administrators are listed in `stalwart_admins` (sign in once through SSO first, then run the playbook).
 - The web UI needs the full address (`david@rezoleo.fr`) on its login page: the domain tells it to redirect to

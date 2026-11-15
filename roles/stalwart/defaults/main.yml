@@ -54,7 +54,7 @@ stalwart_mailing_lists:
 # Authentication is delegated to Zitadel, see README.md
 stalwart_oidc_issuer: https://sso.rezoleo.fr # Must match the "issuer" of the discovery document exactly
 # Claim holding the login name. Without an "@", stalwart_oidc_username_domain is appended.
-stalwart_oidc_claim_username: preferred_username
+stalwart_oidc_claim_username: mail_local_part # Added by a Zitadel Action: username with "-" replaced by "."
 stalwart_oidc_username_domain: rezoleo.fr
 # Accepted audiences of the Zitadel access tokens: the project ID and the web UI client ID
 stalwart_oidc_accepted_audiences:
