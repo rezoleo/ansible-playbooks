@@ -2,4 +2,4 @@
 
 ## Garage
 
-- [ ] Create a task to create keys
+- [ ] Create a task to remove keys and buckets
