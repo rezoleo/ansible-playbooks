@@ -14,11 +14,32 @@ garage_architecture: "{{ ansible_architecture }}"
 
 garage_vault_path: services/garage/privileged
 garage_vault_metrics_path: services/garage/metrics
+garage_vault_keys_path: buckets
 
 # S3 config
 garage_s3_region: garage
 garage_domain: garage.rezoleo.fr
+garage_admin_api_port: 3903
 
 # Version management
 # The version tag should be in the format vX.Y.Z
 garage_version: "v2.5.0"
+
+# TODO : use host_vars
+# Buckets and keys config (note that keys and buckets are not 1 to 1 related)
+# Exemple provided below of the expected structure :
+
+garage_buckets:
+  - name: "nextcloud"
+    quotas:
+      maxObjects: null
+      maxSize: null
+
+garage_keys:
+  - name: "nextcloud"
+    buckets:
+      - name: "nextcloud"
+        access:
+          - read
+          - write
+          - owner

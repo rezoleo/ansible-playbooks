@@ -16,15 +16,15 @@
   community.hashi_vault.vault_kv2_get:
     path: "{{ nextcloud_vault_garage_path }}"
   register:
-    nextcloud_object_key: _task.result.secret.key_id
-    nextcloud_object_secret: _task.result.secret.key_secret
+    nextcloud_object_key: _task.result.secret.id
+    nextcloud_object_secret: _task.result.secret.secret
   run_once: true
   delegate_to: localhost
   become: false
   vars:
     ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
-- name: Retrieve db secrets from Vault
+- name: Retrieve database secrets from Vault
   community.hashi_vault.vault_kv2_get:
     path: "{{ nextcloud_vault_db_path }}"
   register:

@@ -1,55 +1,49 @@
 - name: Get bucket current details
   ansible.builtin.uri:
-    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v1/bucket?globalAlias={{ bucket.name }}"
+    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v2/GetBucketInfo?globalAlias={{ garage_bucket.name }}"
     return_content: true
     headers:
       Authorization: "Bearer {{ garage_admin_token }}"
     status_code:
       - 200
       - 404
-    body_format: json
-  register: bucket_details
+  register: garage_bucket_details
 
 - name: Create Garage bucket
   ansible.builtin.uri:
-    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v1/bucket"
+    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v2/CreateBucket"
     return_content: true
     headers:
       Authorization: "Bearer {{ garage_admin_token }}"
       Content-Type: application/json
     method: POST
     body:
-      globalAlias: "{{ bucket.name }}"
+      globalAlias: "{{ garage_bucket.name }}"
     body_format: json
-  register: bucket_details_new
-  when: bucket_details.status == 404
+  register: garage_bucket_details_new
+  when: garage_bucket_details.status == 404
+  changed_when: true
 
 - name: Choose what details to use
   ansible.builtin.set_fact:
-    bucket_details: "{{ bucket_details_new if bucket_details.status == 404 else bucket_details }}"
+    garage_bucket_details: "{{ garage_bucket_details_new if garage_bucket_details.status == 404 else garage_bucket_details }}"
 
-- name: Set Update list
+- name: Create quota object
   ansible.builtin.set_fact:
-    update_list:
-      quotas:
-        maxSize: "{{ bucket.quotas.max_size | default(omit) }}"
-        maxObjects: "{{ bucket.quotas.max_objects | default(omit) }}"
-
-- name: Define web acccess
-  ansible.builtin.set_fact:
-    web_access:
-      enabled: "{{ bucket.web_access.enabled | default(false) }}"
-      index_document: "{{ bucket.web_access.index_document | default('index.html') }}"
-      error_document: "{{ bucket.web_access.error_document | default('error.html') }}"
-  when: bucket.web_access is defined and not (bucket.web_access.enabled | default(false))
+    garage_bucket_desired_quotas:
+      maxSize: "{{ (garage_bucket.quotas | default({})).maxSize | default(none) }}"
+      maxObjects: "{{ (garage_bucket.quotas | default({})).maxObjects | default(none) }}"
 
 - name: Update Garage bucket
   ansible.builtin.uri:
-    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v1/bucket?id={{ bucket_details.json.id }}"
+    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v2/UpdateBucket?id={{ garage_bucket_details.json.id }}"
     return_content: true
     headers:
       Authorization: "Bearer {{ garage_admin_token }}"
       Content-Type: application/json
-    method: PUT
+    method: POST
     body_format: json
-    body: "{{ update_list | combine(web_access | default([]), recursive=True) }}"
+    body:
+      quotas: "{{ garage_bucket_desired_quotas }}"
+  when: garage_bucket_details.json.quotas != garage_bucket_desired_quotas
+  changed_when: true

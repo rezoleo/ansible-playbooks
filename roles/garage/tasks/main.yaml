@@ -44,6 +44,25 @@
   ansible.builtin.include_tasks:
     file: configure_garage.yaml
 
+- name: Create buckets
+  ansible.builtin.include_tasks:
+    file: create_bucket.yaml
+  loop: "{{ garage_buckets | default([]) }}"
+  loop_control:
+    loop_var: garage_bucket
+    label: "{{ garage_bucket.name }}"
+  when: garage_buckets is defined and garage_buckets | length > 0
+
+- name: Create Garage keys
+  ansible.builtin.include_tasks:
+    file: create_key.yaml
+  run_once: true
+  loop: "{{ garage_keys | default([]) }}"
+  loop_control:
+    loop_var: key
+    label: "{{ key.name }}"
+  when: garage_keys is defined and garage_keys | length > 0
+
 - name: Add firewall rules for Garage
   ansible.builtin.import_role:
     name: firewall

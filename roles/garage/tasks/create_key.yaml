@@ -1,32 +1,32 @@
-- name: Check if Key ID is valid
-  ansible.builtin.assert:
-    that:
-      - key.id is defined
-      - key.id | regex_search('^GK[a-f0-9]{24}$') != None
-    msg: "Key ID must be defined, non-empty, and match the pattern '^GK[a-f0-9]{24}$'."
-
-- name: Check if Key secret is valid
-  ansible.builtin.assert:
-    that:
-      - key.secret is defined
-      - key.secret | regex_search('^[a-f0-9]{64}$') != None
-    msg: "Key secret must be defined, non-empty, and match the pattern '^[a-f0-9]{64}$'."
+- name: Retrieve Garage key from Vault
+  community.hashi_vault.vault_kv2_get:
+    path: "{{ garage_vault_keys_path }}/{{ key.name }}"
+  register:
+    garage_key_id: _task.result.secret.id | default('')
+    garage_key_secret: _task.result.secret.secret | default('')
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  failed_when: >-
+    _task.result.failed | default(false) and not ((_task.result.msg | default('') | lower) is search('missing path'))
 
 - name: Get key current details
   ansible.builtin.uri:
-    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v1/key?id={{ key.id }}"
+    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v2/GetKeyInfo?id={{ garage_key_id }}&showSecretKey=true"
     return_content: true
     headers:
       Authorization: "Bearer {{ garage_admin_token }}"
-    body_format: json
     status_code:
       - 200
       - 404
   register: garage_key_details
+  when: garage_key_id | length > 0
+  no_log: true
 
 - name: Create Garage key
   ansible.builtin.uri:
-    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v1/key/import"
+    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v2/CreateKey"
     return_content: true
     headers:
       Authorization: "Bearer {{ garage_admin_token }}"
@@ -34,17 +34,29 @@
     method: POST
     body:
       name: "{{ key.name }}"
-      accessKeyId: "{{ key.id }}"
-      secretAccessKey: "{{ key.secret }}"
     body_format: json
   register: garage_key_details_new
-  when: garage_key_details.status == 404
+  when: garage_key_id | length == 0 or garage_key_details.status == 404
+  changed_when: true
   no_log: true
 
 - name: Choose what details to use
   ansible.builtin.set_fact:
-    garage_key_details: "{{ garage_key_details_new if garage_key_details.status == 404 else garage_key_details }}"
+    garage_key_details: "{{ garage_key_details_new if (garage_key_id | length == 0 or garage_key_details.status == 404) else garage_key_details }}"
   no_log: true
+
+- name: Save Garage key in Vault
+  community.hashi_vault.vault_kv2_write:
+    path: "{{ garage_vault_keys_path }}/{{ key.name }}"
+    data:
+      id: "{{ garage_key_details.json.accessKeyId }}"
+      secret: "{{ garage_key_details.json.secretAccessKey }}"
+  when: garage_key_id != garage_key_details.json.accessKeyId or garage_key_secret != garage_key_details.json.secretAccessKey
+  delegate_to: localhost
+  become: false
+  no_log: true
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
 - name: Allow Access to buckets
   loop: "{{ key.buckets | default([]) }}"
