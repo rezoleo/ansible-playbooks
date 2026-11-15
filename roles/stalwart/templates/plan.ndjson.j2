@@ -28,6 +28,8 @@
 {% endfor %}
 {{ {"@type": "upsert", "object": "Account", "matchOn": ["name", "domainId"], "value": admins} | to_json }}
 {% endif %}
+{# _ansible applies this plan with its API key (see README.md), it neither receives nor sends mail #}
+{{ {"@type": "upsert", "object": "Account", "matchOn": ["name", "domainId"], "value": {"_ansible": {"@type": "User", "name": "_ansible", "domainId": "#" ~ stalwart_domains[0], "roles": {"@type": "Admin"}, "permissions": {"@type": "Merge", "enabledPermissions": {}, "disabledPermissions": {"emailReceive": true, "emailSend": true}}}}} | to_json }}
 {# reconcile: git is the only source of truth, lists created in the web UI are deleted (an empty list deletes them all) #}
 {% set lists = {} %}
 {% for l in stalwart_mailing_lists %}
