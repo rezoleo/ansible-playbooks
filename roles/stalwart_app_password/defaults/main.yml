@@ -1,0 +1,5 @@
+---
+# Mail server where the account lives (roles/stalwart)
+stalwart_app_password_server: "{{ groups['mail'][0] }}"
+# Required: stalwart_app_password_name (description of the password, name of its Vault secret),
+# stalwart_app_password_account (address of the account) and stalwart_app_password_ip (the only IP it works from)

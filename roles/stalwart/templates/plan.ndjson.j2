@@ -21,28 +21,44 @@
 {# Logs go to journald (journalctl -u stalwart), reconcile removes the default file logger #}
 {{ {"@type": "reconcile", "object": "Tracer", "matchOn": ["@type"], "value": {"console": {"@type": "Stdout", "enable": true, "level": "info", "ansi": false}}} | to_json }}
 {{ {"@type": "update", "object": "SystemSettings", "value": {"defaultHostname": stalwart_hostname, "defaultDomainId": "#" ~ stalwart_domains[0], "defaultCertificateId": "#cert"}} | to_json }}
-{# _ansible applies this plan with its API key (see README.md). No restricted permissions: an account cannot grant what it lacks #}
-{{ {"@type": "upsert", "object": "Account", "matchOn": ["name", "domainId"], "value": {"_ansible": {"@type": "User", "name": "_ansible", "domainId": "#" ~ stalwart_domains[0], "roles": {"@type": "Admin"}}}} | to_json }}
-{% set groups = {} %}
+{% set group_accounts = {} %}
 {% for g in stalwart_groups %}
-{% set _ = groups.update({g.name ~ "@" ~ g.domain: {"@type": "Group", "name": g.name, "domainId": "#" ~ g.domain, "description": g.description | default(none)}}) %}
+{% set _ = group_accounts.update({g.name ~ "@" ~ g.domain: {"@type": "Group", "name": g.name, "domainId": "#" ~ g.domain, "description": g.description | default(none)}}) %}
 {% endfor %}
-{% if groups %}
-{{ {"@type": "upsert", "object": "Account", "matchOn": ["name", "domainId"], "value": groups} | to_json }}
+{% if group_accounts %}
+{{ {"@type": "upsert", "object": "Account", "matchOn": ["name", "domainId"], "value": group_accounts} | to_json }}
 {% endif %}
-{# One entry per person: an account upserted twice in a plan is not matched the second time, the CLI tries to create it #}
+{# All the users in one line, by address: an account upserted twice in a plan is not matched the second time, the CLI tries to create it #}
 {% set users = {} %}
-{% for address in stalwart_admins %}
-{% set _ = users.setdefault(address, {"@type": "User", "name": address.split("@")[0], "domainId": "#" ~ address.split("@")[1]}).update({"roles": {"@type": "Admin"}}) %}
+{% macro user(address) %}{{ users.setdefault(address, {"@type": "User", "name": address.split("@")[0], "domainId": "#" ~ address.split("@")[1]}) }}{% endmacro %}
+{% set internal = "@" ~ stalwart_domains[0] %}
+{% for address in stalwart_admins + ["_ansible" ~ internal] %}
+{% set _ = user(address) %}
+{% set _ = users[address].update({"roles": {"@type": "Admin"}}) %}
 {% endfor %}
 {% for g in stalwart_groups %}
 {% for m in g.members %}
-{% set _ = users.setdefault(m, {"@type": "User", "name": m.split("@")[0], "domainId": "#" ~ m.split("@")[1]}).setdefault("memberGroupIds", {}).update({"#" ~ g.name ~ "@" ~ g.domain: true}) %}
+{% set _ = user(m) %}
+{% set _ = users[m].setdefault("memberGroupIds", {}).update({"#" ~ g.name ~ "@" ~ g.domain: true}) %}
 {% endfor %}
 {% endfor %}
-{% if users %}
+{# _ansible applies this plan with its API key (see README.md). No restricted permissions: an account cannot grant what it lacks #}
+{# _groupsent: the group-sent hook (files/group-sent-hook.py) writes into the Sent Items of the groups as a member of all of them #}
+{% set _ = user("_groupsent" ~ internal) %}
+{% for address in group_accounts %}
+{% set _ = users["_groupsent" ~ internal].setdefault("memberGroupIds", {}).update({"#" ~ address: true}) %}
+{% endfor %}
+{# _servers: mail from servers (roles/mail_relay) and appliances, its aliases are the only addresses they can send from #}
+{% set senders = groups["all"] | difference(groups["mail"] | default([])) | map("extract", hostvars, "inventory_hostname_short") | list + stalwart_relay_appliances | map(attribute="name") | list %}
+{% set aliases = {} %}
+{% for name in senders | unique | sort %}
+{% set _ = aliases.update({loop.index0 | string: {"name": name, "domainId": "#" ~ stalwart_relay_domain}}) %}
+{% endfor %}
+{% set _ = user("_servers" ~ internal) %}
+{% set _ = users["_servers" ~ internal].update({"aliases": aliases}) %}
 {{ {"@type": "upsert", "object": "Account", "matchOn": ["name", "domainId"], "value": users} | to_json }}
-{% endif %}
+{# Authenticated SMTP only, Stalwart does not wait for the copy nor fails the mail when the hook is down #}
+{{ {"@type": "upsert", "object": "MtaHook", "matchOn": ["url"], "value": {"groupsent": {"url": "http://127.0.0.1:" ~ stalwart_group_sent_hook_port ~ "/", "stages": {"data": true}, "enable": {"match": {}, "else": "!is_empty(authenticated_as)"}, "tempFailOnError": false}}} | to_json }}
 {# reconcile: git is the only source of truth, lists created in the web UI are deleted (an empty list deletes them all) #}
 {% set lists = {} %}
 {% for l in stalwart_mailing_lists %}

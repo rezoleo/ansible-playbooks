@@ -26,3 +26,9 @@
   become: true
   roles:
     - stalwart
+
+- name: Relay local mail through the mail server
+  hosts: all:!mail
+  become: true
+  roles:
+    - mail_relay
