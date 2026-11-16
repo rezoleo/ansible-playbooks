@@ -56,5 +56,35 @@ All accounts live in Zitadel (`Authentication.directoryId` points to the OIDC di
   `https://sso.rezoleo.fr/oauth/v2/token` with the scopes
   `openid profile email urn:zitadel:iam:org:project:id:<project ID>:aud`. Without `profile`, Stalwart cannot find the
   username and rejects the token (535).
-- Stalwart's internal accounts (password, app passwords) **cannot** sign in while the OIDC directory is active (tested
-  with v1.1.0). API keys and the recovery administrator still work.
+- App passwords (created in `/account`) work for every account, e.g. for a mail client without XOAUTH2. Internal
+  accounts **cannot** sign in with a password while the OIDC directory is active (tested with v1.1.0), API keys and
+  the recovery administrator still work.
+
+## Shared mailboxes (groups)
+
+`stalwart_groups` creates group accounts, e.g. `contact@`: mail sent to the group lands in its own mailbox, which its
+members see as a shared folder (Thunderbird: right-click the account > *Subscribe…* > `Shared Folders`).
+
+- Members can send as the group, other accounts are refused (`501 5.5.4`). Members must be `@rezoleo.fr` accounts.
+- Flags are shared: everyone sees that a mail was read or answered.
+- Stalwart only saves a reply in the Sent folder of its author. A hook (`files/group-sent-hook.py`, service
+  `stalwart-group-sent-hook`) copies every mail sent as a group over SMTP into the group's Sent Items, as
+  `_groupsent@rezoleo.fr` (member of every group, app password only valid from `127.0.0.1`). Do not also set the
+  group's identity to save its copies there in the mail client, it would be saved twice. Not covered: mail sent from
+  the webmail. A failed copy never blocks the mail, it is logged (`journalctl -u stalwart-group-sent-hook`).
+- Membership is set on the member accounts by the plan: removing someone from every group does not remove them from
+  the last one, do it in the web UI as well.
+
+## Mail from servers and appliances
+
+Servers and appliances send through one internal account, `_servers@rezoleo.fr`, each one as `<name>@servers.rezoleo.fr` (an
+alias of `_servers`, the only addresses it can send from) with its own app password, only valid from its IP.
+
+- Inventory hosts outside `[mail]`: `roles/mail_relay` (Postfix relaying to `yam.rezoleo.fr:465`), nothing to do.
+- Appliances (TrueNAS, Synology...): add them to `stalwart_relay_appliances`, run the playbook, then type in their
+  SMTP settings: server `yam.rezoleo.fr`, port 465 (SSL/TLS), user `_servers@rezoleo.fr`, the password from Vault
+  `services/stalwart-app-passwords/<name>`, sender `<name>@servers.rezoleo.fr`.
+- Revoke one: delete its app password (description `<name>`) on `_servers` in the web UI **and** its Vault secret,
+  the next run creates a new one. Deleting only the Vault secret leaves the old password valid.
+- The price of one shared account: a compromised server can bypass its Postfix and send as any other server's
+  address, or read the `_servers` mailbox (bounces, replies). Its password still only works from its own IP.

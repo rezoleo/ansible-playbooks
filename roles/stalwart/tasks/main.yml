@@ -1,5 +1,4 @@
 ---
-# First, so that a failure later in the role does not leave the mail ports closed
 ### Firewall ###
 
 - name: Add firewall rules for Stalwart
@@ -419,3 +418,60 @@
       vars:
         # Only the error lines: they name the object and the reason, but not the secrets of the plan
         stalwart_apply_errors: "{{ (stalwart_apply.stdout_lines | default([]) + stalwart_apply.stderr_lines | default([])) | select('search', '^error') }}"
+
+# After the plan, which creates the _servers account. The servers get theirs from roles/mail_relay.
+- name: Get the app passwords of the appliances
+  ansible.builtin.include_role:
+    name: stalwart_app_password
+  vars:
+    stalwart_app_password_name: "{{ stalwart_relay_appliance.name }}"
+    stalwart_app_password_account: _servers@{{ stalwart_domains[0] }}
+    stalwart_app_password_ip: "{{ stalwart_relay_appliance.ip }}"
+    stalwart_app_password_server: "{{ inventory_hostname }}"
+  loop: "{{ stalwart_relay_appliances }}"
+  loop_control:
+    loop_var: stalwart_relay_appliance
+    label: "{{ stalwart_relay_appliance.name }}"
+
+### Group-sent hook (files/group-sent-hook.py), after the plan that creates its account ###
+
+- name: Get the app password of the group-sent hook
+  ansible.builtin.include_role:
+    name: stalwart_app_password
+  vars:
+    stalwart_app_password_name: group-sent-hook
+    stalwart_app_password_account: _groupsent@{{ stalwart_domains[0] }}
+    stalwart_app_password_ip: 127.0.0.1
+    stalwart_app_password_server: "{{ inventory_hostname }}"
+
+- name: Install the group-sent hook
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  loop:
+    - { src: group-sent-hook.py, dest: /usr/local/bin/stalwart-group-sent-hook, mode: "0755" }
+    - { src: stalwart-group-sent-hook.service, dest: /etc/systemd/system/stalwart-group-sent-hook.service, mode: "0644" }
+  notify: Restart stalwart-group-sent-hook
+
+- name: Write the credentials of the group-sent hook
+  ansible.builtin.copy:
+    content: |
+      HOOK_USER=_groupsent@{{ stalwart_domains[0] }}
+      HOOK_PASSWORD={{ stalwart_app_password_secret }}
+      HOOK_PORT={{ stalwart_group_sent_hook_port }}
+    dest: /etc/stalwart/group-sent-hook.env
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  notify: Restart stalwart-group-sent-hook
+
+- name: Enable and start the group-sent hook
+  ansible.builtin.systemd:
+    name: stalwart-group-sent-hook
+    enabled: true
+    state: started
+    daemon_reload: true

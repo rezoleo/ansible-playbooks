@@ -11,8 +11,8 @@ stalwart_hostname: mail.rezoleo.fr
 # Domains handled by the server, the first one is the default domain
 stalwart_domains:
   - rezoleo.fr
-  - lists.rezoleo.fr
   - mailtest.rezoleo.fr
+  - servers.rezoleo.fr
 
 # DKIM selectors, the keys come from Vault (services/stalwart) and are shared by all the domains
 stalwart_dkim_selectors:
@@ -66,6 +66,16 @@ stalwart_groups:
     description: Shared mailbox test
     members:
       - david@rezoleo.fr
+
+# Servers and appliances send mail through the internal account _servers@<first domain>, each one as
+# <name>@<stalwart_relay_domain> (an alias) with its own app password, only valid from its IP and kept in Vault
+# (services/stalwart-app-passwords/<name>). Every inventory host outside [mail] gets one (roles/mail_relay), appliances are listed here.
+stalwart_relay_domain: servers.rezoleo.fr
+stalwart_relay_appliances: []
+#  - { name: truenas, ip: 10.12.x.y }
+
+# Port of the hook that copies mail sent as a group into its Sent Items (files/group-sent-hook.py)
+stalwart_group_sent_hook_port: 8081
 
 # Authentication is delegated to Zitadel, see README.md
 stalwart_oidc_issuer: https://sso.rezoleo.fr # Must match the "issuer" of the discovery document exactly
