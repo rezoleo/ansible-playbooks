@@ -1,4 +1,31 @@
 ---
+# First, so that a failure later in the role does not leave the mail ports closed
+### Firewall ###
+
+- name: Add firewall rules for Stalwart
+  ansible.builtin.include_role:
+    name: firewall
+    tasks_from: create_rule.yml
+  vars:
+    firewall_rules:
+      100-stalwart:
+        - rule_name: "Allow mail ports from everywhere"
+          chain: INPUT
+          protocol: tcp
+          raw_extras:
+            - "--match multiport"
+            - "--destination-ports {{ stalwart_public_ports | join(',') }}"
+          target: ACCEPT
+        - rule_name: "Allow the web interface from the reverse proxy"
+          chain: INPUT
+          protocol: tcp
+          source: "{{ stalwart_http_source }}"
+          destination_port: "{{ stalwart_listeners | selectattr('name', 'eq', 'http') | map(attribute='port') | first }}"
+          target: ACCEPT
+
+- name: Apply the firewall rules
+  ansible.builtin.meta: flush_handlers
+
 - name: Retrieve db secrets from Vault
   community.hashi_vault.vault_kv2_get:
     path: databases/stalwart@pg.rezoleo.fr
@@ -375,6 +402,7 @@
           - /etc/stalwart/plan.ndjson
       environment:
         STALWART_TOKEN: "{{ stalwart_api_key }}"
+      register: stalwart_apply
       changed_when: true
       no_log: true
       notify: Restart stalwart # Some objects (listeners) only take effect after a restart
@@ -387,27 +415,7 @@
 
     - name: Fail
       ansible.builtin.fail:
-        msg: Could not apply the Stalwart configuration plan, run the playbook again (use `journalctl -u stalwart` on the server)
-
-### Firewall ###
-
-- name: Add firewall rules for Stalwart
-  ansible.builtin.include_role:
-    name: firewall
-    tasks_from: create_rule.yml
-  vars:
-    firewall_rules:
-      100-stalwart:
-        - rule_name: "Allow mail ports from everywhere"
-          chain: INPUT
-          protocol: tcp
-          raw_extras:
-            - "--match multiport"
-            - "--destination-ports {{ stalwart_public_ports | join(',') }}"
-          target: ACCEPT
-        - rule_name: "Allow the web interface from the reverse proxy"
-          chain: INPUT
-          protocol: tcp
-          source: "{{ stalwart_http_source }}"
-          destination_port: "{{ stalwart_listeners | selectattr('name', 'eq', 'http') | map(attribute='port') | first }}"
-          target: ACCEPT
+        msg: "Could not apply the Stalwart configuration plan: {{ stalwart_apply_errors }}"
+      vars:
+        # Only the error lines: they name the object and the reason, but not the secrets of the plan
+        stalwart_apply_errors: "{{ (stalwart_apply.stdout_lines | default([]) + stalwart_apply.stderr_lines | default([])) | select('search', '^error') }}"

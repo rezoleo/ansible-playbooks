@@ -33,7 +33,8 @@ so that the next run applies the whole plan again.
 ## API key of the role
 
 The role applies the plan as `_ansible@rezoleo.fr`, an internal administrator account with no password, whose API key
-only works from `127.0.0.1`. It cannot receive nor send mail. When Vault has no `api_key` (first install, or delete it to get a new key), the role creates the key and
+only works from `127.0.0.1`. It keeps the mail permissions of a user: an account cannot grant permissions it lacks,
+so without them it could not create accounts. When Vault has no `api_key` (first install, or delete it to get a new key), the role creates the key and
 stores it in Vault: internal accounts only accept a password while OIDC is off, so the role switches to the internal
 directory for about a minute (SSO logins fail, mail keeps flowing), then the plan switches it back.
 
