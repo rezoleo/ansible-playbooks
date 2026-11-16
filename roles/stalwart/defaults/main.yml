@@ -57,6 +57,16 @@ stalwart_mailing_lists:
     recipients:
       - david@rezoleo.fr
 
+# Shared mailboxes: members see <name>@<domain> as a shared folder and can send as it.
+# Membership is set on the member accounts, removing someone from every group does not remove them.
+stalwart_groups:
+  # Test of a shared mailbox for contact@, remove at the cutover
+  - name: contact
+    domain: mailtest.rezoleo.fr
+    description: Shared mailbox test
+    members:
+      - david@rezoleo.fr
+
 # Authentication is delegated to Zitadel, see README.md
 stalwart_oidc_issuer: https://sso.rezoleo.fr # Must match the "issuer" of the discovery document exactly
 # Claim holding the login name. Without an "@", stalwart_oidc_username_domain is appended.
