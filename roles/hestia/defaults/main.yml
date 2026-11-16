@@ -2,7 +2,7 @@
 
 # Vault paths
 hestia_services_vault_path: services
-hestia_paperless_database_vault_path: databases
+hestia_database_vault_path: databases
 
 hestia_paperless_vault_path: paperless
 hestia_github_webhook_filter_vault_path: github_webhook_filter

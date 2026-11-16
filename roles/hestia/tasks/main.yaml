@@ -25,7 +25,7 @@
 
 ##### Start services #####
 
-- name: Start {{ item }}
+- name: Start Hestia services
   ansible.builtin.command:
     cmd: podman-compose up -d
     chdir: "/home/podman/{{ item }}"
