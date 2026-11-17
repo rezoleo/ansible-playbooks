@@ -25,10 +25,12 @@
   hosts: mail
   become: true
   roles:
-    - stalwart
+    - role: stalwart
+      tags: [stalwart]
 
 - name: Relay local mail through the mail server
   hosts: all:!mail
   become: true
   roles:
-    - mail_relay
+    - role: mail_relay
+      tags: [mail_relay]

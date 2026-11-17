@@ -23,7 +23,11 @@
 {{ {"@type": "update", "object": "SystemSettings", "value": {"defaultHostname": stalwart_hostname, "defaultDomainId": "#" ~ stalwart_domains[0], "defaultCertificateId": "#cert"}} | to_json }}
 {% set group_accounts = {} %}
 {% for g in stalwart_groups %}
-{% set _ = group_accounts.update({g.name ~ "@" ~ g.domain: {"@type": "Group", "name": g.name, "domainId": "#" ~ g.domain, "description": g.description | default(none)}}) %}
+{% set aliases = {} %}
+{% for a in g.aliases | default([]) %}
+{% set _ = aliases.update({loop.index0 | string: {"name": a.split("@")[0], "domainId": "#" ~ a.split("@")[1]}}) %}
+{% endfor %}
+{% set _ = group_accounts.update({g.name ~ "@" ~ g.domain: {"@type": "Group", "name": g.name, "domainId": "#" ~ g.domain, "description": g.description | default(none), "aliases": aliases}}) %}
 {% endfor %}
 {% if group_accounts %}
 {{ {"@type": "upsert", "object": "Account", "matchOn": ["name", "domainId"], "value": group_accounts} | to_json }}
@@ -31,31 +35,27 @@
 {# All the users in one line, by address: an account upserted twice in a plan is not matched the second time, the CLI tries to create it #}
 {% set users = {} %}
 {% macro user(address) %}{{ users.setdefault(address, {"@type": "User", "name": address.split("@")[0], "domainId": "#" ~ address.split("@")[1]}) }}{% endmacro %}
-{% set internal = "@" ~ stalwart_domains[0] %}
-{% for address in stalwart_admins + ["_ansible" ~ internal] %}
+{% for address in stalwart_admins + [stalwart_ansible_account] %}
 {% set _ = user(address) %}
 {% set _ = users[address].update({"roles": {"@type": "Admin"}}) %}
 {% endfor %}
+{# Memberships are not set here but by the tasks, after the plan: it only lists the accounts that are members, so it could not remove anyone #}
 {% for g in stalwart_groups %}
 {% for m in g.members %}
 {% set _ = user(m) %}
-{% set _ = users[m].setdefault("memberGroupIds", {}).update({"#" ~ g.name ~ "@" ~ g.domain: true}) %}
 {% endfor %}
 {% endfor %}
 {# _ansible applies this plan with its API key (see README.md). No restricted permissions: an account cannot grant what it lacks #}
 {# _groupsent: the group-sent hook (files/group-sent-hook.py) writes into the Sent Items of the groups as a member of all of them #}
-{% set _ = user("_groupsent" ~ internal) %}
-{% for address in group_accounts %}
-{% set _ = users["_groupsent" ~ internal].setdefault("memberGroupIds", {}).update({"#" ~ address: true}) %}
-{% endfor %}
+{% set _ = user(stalwart_group_sent_account) %}
 {# _servers: mail from servers (roles/mail_relay) and appliances, its aliases are the only addresses they can send from #}
 {% set senders = groups["all"] | difference(groups["mail"] | default([])) | map("extract", hostvars, "inventory_hostname_short") | list + stalwart_relay_appliances | map(attribute="name") | list %}
 {% set aliases = {} %}
 {% for name in senders | unique | sort %}
 {% set _ = aliases.update({loop.index0 | string: {"name": name, "domainId": "#" ~ stalwart_relay_domain}}) %}
 {% endfor %}
-{% set _ = user("_servers" ~ internal) %}
-{% set _ = users["_servers" ~ internal].update({"aliases": aliases}) %}
+{% set _ = user(stalwart_relay_account) %}
+{% set _ = users[stalwart_relay_account].update({"aliases": aliases}) %}
 {{ {"@type": "upsert", "object": "Account", "matchOn": ["name", "domainId"], "value": users} | to_json }}
 {# Authenticated SMTP only, Stalwart does not wait for the copy nor fails the mail when the hook is down #}
 {{ {"@type": "upsert", "object": "MtaHook", "matchOn": ["url"], "value": {"groupsent": {"url": "http://127.0.0.1:" ~ stalwart_group_sent_hook_port ~ "/", "stages": {"data": true}, "enable": {"match": {}, "else": "!is_empty(authenticated_as)"}, "tempFailOnError": false}}} | to_json }}

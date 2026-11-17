@@ -1,7 +1,7 @@
 ---
 - name: Retrieve from Vault the app password of {{ stalwart_app_password_name }}
   community.hashi_vault.vault_kv2_get:
-    path: services/stalwart-app-passwords/{{ stalwart_app_password_name }}
+    path: "{{ stalwart_app_password_vault_path }}/{{ stalwart_app_password_name }}"
   register: stalwart_app_password_vault_secret
   failed_when: stalwart_app_password_vault_secret.msg is defined and 'Invalid or missing path' not in stalwart_app_password_vault_secret.msg
   delegate_to: localhost
@@ -16,8 +16,8 @@
   block:
     - name: Retrieve the API key of the mail server from Vault
       community.hashi_vault.vault_kv2_get:
-        path: services/stalwart
-      register: stalwart_app_password_stalwart_secret
+        path: "{{ stalwart_app_password_api_key_vault_path }}"
+      register: stalwart_app_password_api_key_secret # Not a projection: those are evaluated even when the task is skipped
       delegate_to: localhost
       become: false
       no_log: true
@@ -26,18 +26,18 @@
 
     - name: Find the id of the account
       ansible.builtin.command:
-        argv: [stalwart-cli, --url, http://127.0.0.1:8080, query, Account]
+        argv: [stalwart-cli, --url, "{{ stalwart_app_password_api_url }}", query, Account]
       environment:
-        STALWART_TOKEN: "{{ stalwart_app_password_stalwart_secret.secret.api_key }}"
+        STALWART_TOKEN: "{{ stalwart_app_password_api_key_secret.secret.api_key }}"
       register: stalwart_app_password_accounts
       changed_when: false
 
     - name: Create the app password
       ansible.builtin.uri:
-        url: http://127.0.0.1:8080/jmap
+        url: "{{ stalwart_app_password_api_url }}/jmap"
         method: POST
         headers:
-          Authorization: Bearer {{ stalwart_app_password_stalwart_secret.secret.api_key }}
+          Authorization: Bearer {{ stalwart_app_password_api_key_secret.secret.api_key }}
         body_format: json
         body:
           using: ["urn:ietf:params:jmap:core", "urn:stalwart:jmap"]
@@ -52,7 +52,7 @@
 
     - name: Store the app password in Vault
       community.hashi_vault.vault_kv2_write:
-        path: services/stalwart-app-passwords/{{ stalwart_app_password_name }}
+        path: "{{ stalwart_app_password_vault_path }}/{{ stalwart_app_password_name }}"
         data:
           password: "{{ stalwart_app_password_created.json.methodResponses[0][1].created.new.secret }}"
           allowed_ip: "{{ stalwart_app_password_ip }}"

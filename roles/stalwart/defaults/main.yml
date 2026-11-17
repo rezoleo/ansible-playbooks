@@ -1,92 +1,75 @@
 ---
-# Bump the versions together with the checksums (sha256 of the release tarballs)
-stalwart_version: 1.1.0
-stalwart_checksum: 62e6fdaf68f6ddfb45aa0dc1c28578a7e05f1e5e9a0c95fccfe1eae709d4ecbc
-stalwart_cli_version: 1.0.14
-stalwart_cli_checksum: 78584b238422b0201a7bd223ed95b3c1a7fb8735ad3fa8c884d818a66fd1bc65
+# Parameters. The commented ones must be set per host (host_vars), the others have a default.
 
 # Hostname announced by the server (must be covered by the certificate)
-stalwart_hostname: mail.rezoleo.fr
+# stalwart_hostname: mail.example.org
 
-# Domains handled by the server, the first one is the default domain
-stalwart_domains:
-  - rezoleo.fr
-  - mailtest.rezoleo.fr
-  - servers.rezoleo.fr
+# Domains handled by the server, the first one is the default domain (and the one of the internal accounts)
+# stalwart_domains:
+#   - example.org
 
-# DKIM selectors, the keys come from Vault (services/stalwart) and are shared by all the domains
+# DKIM selectors, the keys come from Vault (stalwart_vault_path) and are shared by all the domains
 stalwart_dkim_selectors:
   rsa: rsa-2026
   ed25519: ed25519-2026
 
-# PostgreSQL holds everything but the mails (stalwart_blob_path), the password comes from Vault
-stalwart_db_host: pg.rezoleo.fr
+# Mails (blobs) stay on the local disk
+stalwart_blob_path: /var/lib/stalwart/blobs
+
+# PostgreSQL holds everything but the mails, the password comes from Vault
+# stalwart_db_host: pg.example.org
 stalwart_db_port: 5432
 stalwart_db_name: stalwart
 stalwart_db_user: stalwart
 stalwart_db_tls: false
 
-stalwart_blob_path: /var/lib/stalwart/blobs
+# Vault: <stalwart_database_vault_path>/<db name>@<db host> (key password), stalwart_vault_path (DKIM keys, API key)
+stalwart_database_vault_path: databases
+stalwart_vault_path: services/stalwart
 
-stalwart_certificate: "{{ vault_agent_certificate_directory }}/fullchain.pem"
-stalwart_private_key: "{{ vault_agent_certificate_directory }}/privkey.pem"
-
-# Listeners. The HTTP one (webadmin, webmail, JMAP) is plain HTTP, TLS is done by Equestria
-stalwart_listeners:
-  - { name: smtp, port: 25, protocol: smtp }
-  - { name: submissions, port: 465, protocol: smtp, implicit_tls: true }
-  - { name: submission, port: 587, protocol: smtp }
-  - { name: imaps, port: 993, protocol: imap, implicit_tls: true }
-  - { name: http, port: 8080, protocol: http, use_tls: false }
-
-# Who can reach the mail ports (everyone) and the HTTP port (the reverse proxy)
-stalwart_http_source: 10.12.2.2/32 # TODO: Source IP should depend on the inventory
-stalwart_public_ports: [25, 465, 587, 993]
+# Source of the HTTP port (webadmin, webmail, JMAP): the reverse proxy
+# stalwart_http_source: 10.0.0.1/32
 
 # Accounts given the administrator role, their domain must be in stalwart_domains
-stalwart_admins:
-  - david@rezoleo.fr
+stalwart_admins: []
 
 # Aliases and mailing lists are both Stalwart mailing lists: <name>@<domain> goes to every recipient
 # Only these lists exist, a list created in the web UI is deleted by the next deployment
-stalwart_mailing_lists:
-  # Accounts only get a @rezoleo.fr address, so the test domain receives mail through this list. Remove at the cutover
-  - name: test
-    domain: mailtest.rezoleo.fr
-    description: Inbound mail test
-    recipients:
-      - david@rezoleo.fr
+stalwart_mailing_lists: []
+#  - name: contact
+#    domain: example.org
+#    description: Contact
+#    recipients:
+#      - someone@example.org
 
-# Shared mailboxes: members see <name>@<domain> as a shared folder and can send as it.
-# Membership is set on the member accounts, removing someone from every group does not remove them.
-stalwart_groups:
-  # Test of a shared mailbox for contact@, remove at the cutover
-  - name: contact
-    domain: mailtest.rezoleo.fr
-    description: Shared mailbox test
-    members:
-      - david@rezoleo.fr
+# Shared mailboxes: members see <name>@<domain> as a shared folder and can send as it (and as its aliases).
+# Memberships are reconciled on every run: whoever is not listed in members loses access. Group names must be unique.
+stalwart_groups: []
+#  - name: postmaster # Required by RFC 5321 on every domain, it also gets the mail of root on the servers
+#    domain: example.org
+#    description: Postmaster
+#    aliases:
+#      - postmaster@lists.example.org
+#    members:
+#      - someone@example.org
 
-# Servers and appliances send mail through the internal account _servers@<first domain>, each one as
+# Servers and appliances (devices Ansible does not manage) send mail through stalwart_relay_account, each one as
 # <name>@<stalwart_relay_domain> (an alias) with its own app password, only valid from its IP and kept in Vault
-# (services/stalwart-app-passwords/<name>). Every inventory host outside [mail] gets one (roles/mail_relay), appliances are listed here.
-stalwart_relay_domain: servers.rezoleo.fr
+# (roles/stalwart_app_password). Every inventory host outside [mail] gets one (roles/mail_relay), appliances are listed here.
+# Must be in stalwart_domains
+stalwart_relay_domain: servers.{{ stalwart_domains[0] }}
 stalwart_relay_appliances: []
-#  - { name: truenas, ip: 10.12.x.y }
+#  - { name: truenas, ip: 10.0.0.2 }
 
-# Port of the hook that copies mail sent as a group into its Sent Items (files/group-sent-hook.py)
-stalwart_group_sent_hook_port: 8081
-
-# Authentication is delegated to Zitadel, see README.md
-stalwart_oidc_issuer: https://sso.rezoleo.fr # Must match the "issuer" of the discovery document exactly
+# Authentication is delegated to an OIDC provider
+# stalwart_oidc_issuer: https://sso.example.org # Must match the "issuer" of the discovery document exactly
 # Claim holding the login name. Without an "@", stalwart_oidc_username_domain is appended.
-stalwart_oidc_claim_username: mail_local_part # Added by a Zitadel Action: username with "-" replaced by "."
-stalwart_oidc_username_domain: rezoleo.fr
+stalwart_oidc_claim_username: preferred_username
+stalwart_oidc_username_domain: "{{ stalwart_domains[0] }}"
 stalwart_oidc_claim_name: name
-# Accepted audiences of the Zitadel access tokens: the project ID and the web UI client ID
-stalwart_oidc_accepted_audiences:
-  - "399289467585691651"
-  - "399302429528621059"
-# Client ID of the web UI application registered in Zitadel (public client, PKCE).
-# Redirect URIs: https://webmail.rezoleo.fr/{admin,account}/oauth/callback
-stalwart_oidc_web_client_id: "399302429528621059"
+# Accepted audiences of the access tokens: the project ID and the web UI client ID
+# stalwart_oidc_accepted_audiences:
+#   - "123456789"
+# Client ID of the web UI application (public client, PKCE).
+# Redirect URIs: https://<webmail>/{admin,account}/oauth/callback
+# stalwart_oidc_web_client_id: "123456789"
