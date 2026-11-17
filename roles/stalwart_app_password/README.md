@@ -1,7 +1,8 @@
 # Stalwart app password
 
 Creates an app password on an account of the mail server (`roles/stalwart`), only valid from one IP, and keeps it in
-Vault (`services/stalwart-app-passwords/<name>`, keys `password` and `allowed_ip`). Runs once: the next runs read Vault.
+Vault (`<stalwart_app_password_vault_path>/<name>`, keys `password` and `allowed_ip`). Runs once: the next runs read
+Vault.
 Sets the fact `stalwart_app_password_secret`.
 
 ```yaml

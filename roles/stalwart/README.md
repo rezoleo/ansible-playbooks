@@ -4,7 +4,7 @@ Installs the [Stalwart](https://stalw.art) mail server on `yam`: pinned binary +
 data in PostgreSQL (`pg.rezoleo.fr`), mails on the local disk, TLS certificate from the `vault_agent` role.
 
 ```sh
-just playbook-deploy-infra --limit yam
+just playbook-deploy-infra --limit mail
 ```
 
 ## How the configuration works
@@ -43,12 +43,13 @@ If the key no longer works, delete `api_key` in Vault and run the playbook.
 
 ## Authentication
 
-All accounts live in Zitadel (`Authentication.directoryId` points to the OIDC directory):
+People and machine users live in Zitadel (`Authentication.directoryId` points to the OIDC directory):
 
 - People sign in to the web UI (`/admin`, `/account`) through SSO.
 - Mail clients and machine users authenticate with XOAUTH2/OAUTHBEARER and a Zitadel access token.
 - The login name comes from `stalwart_oidc_claim_username` (+ `stalwart_oidc_username_domain` when it has no `@`).
-- An account only exists in Stalwart after its first sign-in, mail sent to it before is rejected.
+- An account is created in Stalwart at its first sign-in, unless this role creates it (`stalwart_admins`, members of
+  `stalwart_groups`, and the internal accounts).
 - The web UI needs the full address (`david@rezoleo.fr`) on its login page: the domain tells it to redirect to
   Zitadel. Zitadel only pre-fills it if it is a valid login name (`rezoleo.fr` as primary domain of the organization).
 - Zitadel applications and machine users must issue **JWT** access tokens, Stalwart rejects opaque tokens.
@@ -64,19 +65,21 @@ All accounts live in Zitadel (`Authentication.directoryId` points to the OIDC di
 `stalwart_groups` creates group accounts, e.g. `contact@`: mail sent to the group lands in its own mailbox, which its
 members see as a shared folder (Thunderbird: right-click the account > *Subscribe…* > `Shared Folders`).
 
-- Members can send as the group, other accounts are refused. Members must be `@rezoleo.fr` accounts.
+- Members can send as the group, other accounts are refused. Members must be accounts of the main domain
+  (`stalwart_domains[0]`).
 - Flags are shared: everyone sees that a mail was read or answered.
 - Stalwart only saves a reply in the Sent folder of its author. A hook (`files/group-sent-hook.py`, service
   `stalwart-group-sent-hook`) copies every mail sent as a group over SMTP into the group's Sent Items, as
-  `_groupsent@rezoleo.fr` (member of every group, app password only valid from `127.0.0.1`). A failed copy doesn't block the mail, it is logged (`journalctl -u stalwart-group-sent-hook`).
+  `stalwart_group_sent_account` (`_groupsent@rezoleo.fr`, member of every group, app password only valid from
+  `127.0.0.1`). A failed copy doesn't block the mail, it is logged (`journalctl -u stalwart-group-sent-hook`).
 - Memberships are reconciled on every run (not by the plan): git is the source of truth, a member removed from
   `members` loses access to the group at the next run, and memberships added in the web UI are removed too.
 
 ## Mail from servers and appliances
 
 Servers and appliances send through one internal account, `_servers@rezoleo.fr`, each one as `<name>@servers.rezoleo.fr`
-(an
-alias of `_servers`, the only addresses it can send from) with its own app password, only valid from its IP.
+(`stalwart_relay_domain`, an alias of `_servers`: the only addresses it can send from) with its own app password, only
+valid from its IP.
 
 - Inventory hosts outside `[mail]`: `roles/mail_relay` (Postfix relaying to `yam.rezoleo.fr:465`), nothing to do.
 - Appliances (TrueNAS, Synology...): add them to `stalwart_relay_appliances`, run the playbook, then type in their
