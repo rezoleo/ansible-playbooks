@@ -1,0 +1,3 @@
+---
+# Submission with implicit TLS on the mail server (roles/stalwart)
+mail_relay_port: 465

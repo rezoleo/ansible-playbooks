@@ -1,14 +1,14 @@
 ---
 # The mail server (roles/stalwart) that relays the mail, its certificate must cover this name
 mail_relay_server: "{{ groups['mail'][0] }}"
-mail_relay_port: 465
 
-# Every mail leaves as <name>@<domain>, an alias of the account created by roles/stalwart (stalwart_relay_domain)
-mail_relay_account: _servers@rezoleo.fr
+# Every mail leaves as <name>@<domain>, an alias of the relay account (stalwart_relay_account of roles/stalwart).
+# The account and the domain come from the parameters of the mail server.
+mail_relay_account: _servers@{{ hostvars[mail_relay_server].stalwart_domains[0] }}
+mail_relay_domain: "{{ hostvars[mail_relay_server].stalwart_relay_domain }}"
 mail_relay_name: "{{ inventory_hostname_short }}"
-mail_relay_domain: servers.rezoleo.fr
 # Source IP of this server as seen by the mail server, the only one its app password works from
 mail_relay_ip: "{{ ansible_facts['default_ipv4']['address'] }}"
 
-# Mail to local users (root: cron, unattended-upgrades...) goes to this address
-mail_relay_root_recipient: david@rezoleo.fr
+# Mail to local users (root: cron, unattended-upgrades...) goes there
+mail_relay_root_recipient: postmaster@{{ hostvars[mail_relay_server].stalwart_domains[0] }}
