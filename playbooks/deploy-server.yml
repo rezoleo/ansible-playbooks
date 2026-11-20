@@ -12,8 +12,14 @@
 
 - name: Deploy DNS resolver
   hosts: dns_resolvers
+  become: true
+  vars:
+    keepalived_check_script: |
+        #!/bin/sh
+        dig @{{ ansible_host }} . NS > /dev/null 2>&1
   roles:
     - knot_resolver
+    - keepalived
 
 - name: Deploy UPS monitoring
   hosts: ups
