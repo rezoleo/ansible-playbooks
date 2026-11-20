@@ -1,0 +1,79 @@
+{# NDJSON plan for `stalwart-cli apply`, one operation per line #}
+{% set domains = {} %}
+{% for domain in stalwart_domains %}
+{% set _ = domains.update({domain: {"name": domain, "certificateManagement": {"@type": "Manual"}, "dkimManagement": {"@type": "Manual"}, "dnsManagement": {"@type": "Manual"}}}) %}
+{% endfor %}
+{{ {"@type": "upsert", "object": "Domain", "matchOn": ["name"], "value": domains} | to_json }}
+{# reconcile: only the keys from Vault sign, Stalwart never generates nor rotates any #}
+{% set dkim = {} %}
+{% for domain in stalwart_domains %}
+{% set _ = dkim.update({"rsa@" ~ domain: {"@type": "Dkim1RsaSha256", "selector": stalwart_dkim_selectors.rsa, "domainId": "#" ~ domain, "stage": "active", "privateKey": {"@type": "Text", "secret": stalwart_dkim_keys.rsa}}}) %}
+{% set _ = dkim.update({"ed25519@" ~ domain: {"@type": "Dkim1Ed25519Sha256", "selector": stalwart_dkim_selectors.ed25519, "domainId": "#" ~ domain, "stage": "active", "privateKey": {"@type": "Text", "secret": stalwart_dkim_keys.ed25519}}}) %}
+{% endfor %}
+{{ {"@type": "reconcile", "object": "DkimSignature", "matchOn": ["selector", "domainId"], "value": dkim} | to_json }}
+{% set listeners = {} %}
+{% for l in stalwart_listeners %}
+{% set _ = listeners.update({l.name: {"name": l.name, "bind": {"[::]:" ~ l.port: true}, "protocol": l.protocol, "implicitTls": l.implicit_tls | default(false), "useTls": l.use_tls | default(true)}}) %}
+{% endfor %}
+{{ {"@type": "upsert", "object": "NetworkListener", "matchOn": ["name"], "value": listeners} | to_json }}
+{{ {"@type": "upsert", "object": "Certificate", "matchOn": ["certificate"], "value": {"cert": {"certificate": {"@type": "File", "filePath": stalwart_certificate}, "privateKey": {"@type": "File", "filePath": stalwart_private_key}}}} | to_json }}
+{{ {"@type": "update", "object": "BlobStore", "value": {"@type": "FileSystem", "path": stalwart_blob_path}} | to_json }}
+{# Logs go to journald (journalctl -u stalwart), reconcile removes the default file logger #}
+{{ {"@type": "reconcile", "object": "Tracer", "matchOn": ["@type"], "value": {"console": {"@type": "Stdout", "enable": true, "level": "info", "ansi": false}}} | to_json }}
+{{ {"@type": "update", "object": "SystemSettings", "value": {"defaultHostname": stalwart_hostname, "defaultDomainId": "#" ~ stalwart_domains[0], "defaultCertificateId": "#cert"}} | to_json }}
+{% set group_accounts = {} %}
+{% for g in stalwart_groups %}
+{% set aliases = {} %}
+{% for a in g.aliases | default([]) %}
+{% set _ = aliases.update({loop.index0 | string: {"name": a.split("@")[0], "domainId": "#" ~ a.split("@")[1]}}) %}
+{% endfor %}
+{% set _ = group_accounts.update({g.name ~ "@" ~ g.domain: {"@type": "Group", "name": g.name, "domainId": "#" ~ g.domain, "description": g.description | default(none), "aliases": aliases}}) %}
+{% endfor %}
+{% if group_accounts %}
+{{ {"@type": "upsert", "object": "Account", "matchOn": ["name", "domainId"], "value": group_accounts} | to_json }}
+{% endif %}
+{# All the users in one line, by address: an account upserted twice in a plan is not matched the second time, the CLI tries to create it #}
+{% set users = {} %}
+{% macro user(address) %}{{ users.setdefault(address, {"@type": "User", "name": address.split("@")[0], "domainId": "#" ~ address.split("@")[1]}) }}{% endmacro %}
+{% for address in stalwart_admins + [stalwart_ansible_account] %}
+{% set _ = user(address) %}
+{% set _ = users[address].update({"roles": {"@type": "Admin"}}) %}
+{% endfor %}
+{# Memberships are not set here but by the tasks, after the plan: it only lists the accounts that are members, so it could not remove anyone #}
+{% for g in stalwart_groups %}
+{% for m in g.members %}
+{% set _ = user(m) %}
+{% endfor %}
+{% endfor %}
+{# _ansible applies this plan with its API key (see README.md). No restricted permissions: an account cannot grant what it lacks #}
+{# _groupsent: the group-sent hook (files/group-sent-hook.py) writes into the Sent Items of the groups as a member of all of them #}
+{% set _ = user(stalwart_group_sent_account) %}
+{# _servers: mail from servers (roles/mail_relay) and appliances, its aliases are the only addresses they can send from #}
+{% set senders = groups["all"] | difference(groups["mail"] | default([])) | map("extract", hostvars, "inventory_hostname_short") | list + stalwart_relay_appliances | map(attribute="name") | list %}
+{% set aliases = {} %}
+{% for name in senders | unique | sort %}
+{% set _ = aliases.update({loop.index0 | string: {"name": name, "domainId": "#" ~ stalwart_relay_domain}}) %}
+{% endfor %}
+{% set _ = user(stalwart_relay_account) %}
+{% set _ = users[stalwart_relay_account].update({"aliases": aliases}) %}
+{{ {"@type": "upsert", "object": "Account", "matchOn": ["name", "domainId"], "value": users} | to_json }}
+{# Authenticated SMTP only, Stalwart does not wait for the copy nor fails the mail when the hook is down #}
+{{ {"@type": "upsert", "object": "MtaHook", "matchOn": ["url"], "value": {"groupsent": {"url": "http://127.0.0.1:" ~ stalwart_group_sent_hook_port ~ "/", "stages": {"data": true}, "enable": {"match": {}, "else": "!is_empty(authenticated_as)"}, "tempFailOnError": false}}} | to_json }}
+{# reconcile: git is the only source of truth, lists created in the web UI are deleted (an empty list deletes them all) #}
+{% set lists = {} %}
+{% for l in stalwart_mailing_lists %}
+{% set recipients = {} %}
+{% for r in l.recipients %}
+{% set _ = recipients.update({r: true}) %}
+{% endfor %}
+{% set _ = lists.update({l.name ~ "@" ~ l.domain: {"name": l.name, "domainId": "#" ~ l.domain, "description": l.description | default(none), "recipients": recipients}}) %}
+{% endfor %}
+{{ {"@type": "reconcile", "object": "MailingList", "matchOn": ["name", "domainId"], "value": lists} | to_json }}
+{% set audiences = {} %}
+{% for a in stalwart_oidc_accepted_audiences %}
+{% set _ = audiences.update({a: true}) %}
+{% endfor %}
+{# unscopedTokens=interoperable: Zitadel tokens carry no mail scopes, give them mail access but no admin rights #}
+{{ {"@type": "upsert", "object": "Directory", "matchOn": ["description"], "value": {"sso": {"@type": "Oidc", "description": "Zitadel SSO", "issuerUrl": stalwart_oidc_issuer, "claimUsername": stalwart_oidc_claim_username, "claimName": stalwart_oidc_claim_name, "usernameDomain": stalwart_oidc_username_domain, "acceptedAudiences": audiences, "unscopedTokens": "interoperable"}}} | to_json }}
+{{ {"@type": "update", "object": "Authentication", "value": {"directoryId": "#sso"}} | to_json }}
+{{ {"@type": "upsert", "object": "Application", "matchOn": ["description"], "value": {"webui": {"description": "Stalwart Web Interface", "oauthClientId": stalwart_oidc_web_client_id}}} | to_json }}

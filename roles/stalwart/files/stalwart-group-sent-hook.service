@@ -1,0 +1,16 @@
+[Unit]
+Description=Stalwart hook: copies mail sent as a group into its Sent Items
+After=stalwart.service
+
+[Service]
+ExecStart=/usr/local/bin/stalwart-group-sent-hook
+EnvironmentFile=/etc/stalwart/group-sent-hook.env
+DynamicUser=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

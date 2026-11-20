@@ -1,0 +1,22 @@
+# {{ ansible_managed }}
+# Local mail only (sendmail, or SMTP on 127.0.0.1), relayed through the mail server, see roles/mail_relay
+compatibility_level = 3.6
+myhostname = {{ inventory_hostname }}
+mydestination =
+inet_interfaces = loopback-only
+alias_maps =
+alias_database =
+
+# The app password may only send from <name>@<domain>: every sender is rewritten to it
+sender_canonical_maps = static:{{ mail_relay_name }}@{{ mail_relay_domain }}
+# Local users (root...) have no mailbox
+recipient_canonical_maps = regexp:/etc/postfix/recipient_canonical
+
+relayhost = [{{ mail_relay_server }}]:{{ mail_relay_port }}
+smtp_tls_wrappermode = yes
+smtp_tls_security_level = secure
+smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = texthash:/etc/postfix/sasl_passwd
+smtp_sasl_security_options = noanonymous
+smtp_sasl_tls_security_options = noanonymous

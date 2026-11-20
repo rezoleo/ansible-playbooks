@@ -1,0 +1,9 @@
+{{ {
+  "@type": "PostgreSql",
+  "host": stalwart_db_host,
+  "port": stalwart_db_port,
+  "database": stalwart_db_name,
+  "authUsername": stalwart_db_user,
+  "authSecret": {"@type": "EnvironmentVariable", "variableName": "STALWART_DB_PASSWORD"},
+  "useTls": stalwart_db_tls
+} | to_nice_json }}
