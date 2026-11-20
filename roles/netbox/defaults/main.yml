@@ -1,0 +1,18 @@
+---
+netbox_database_host: "pg.rezoleo.fr"
+netbox_database_port: "5432"
+netbox_database_user: "netbox_test"
+netbox_database_db: "netbox_test"
+
+netbox_hostname: "netbox.rezoleo.fr"
+
+netbox_vault_path: "test/baptiste/netbox"
+netbox_database_vault_path: "databases"
+
+# Netbox directories, data_directory should not be in directory
+netbox_directory: "/opt/netbox"
+netbox_data_directory: "/var/lib/netbox"
+
+# Netbox superuser configuration
+netbox_superuser_name: admin
+netbox_superuser_email: admin@example.com

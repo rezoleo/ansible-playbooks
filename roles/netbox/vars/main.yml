@@ -1,0 +1,6 @@
+---
+netbox_working_directory: "{{ netbox_directory }}-{{ netbox_version }}"
+netbox_upgrade_marker: "{{ netbox_working_directory }}/.ansible-upgrade-complete"
+netbox_user: "netbox"
+netbox_group: "netbox"
+netbox_version: "4.7.4"
