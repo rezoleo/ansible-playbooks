@@ -22,3 +22,17 @@
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
+
+- name: Ensure Garage is started and enabled
+  ansible.builtin.systemd:
+    name: garage
+    state: started
+    enabled: true
+    daemon_reload: true
+  become: true
+
+- name: Wait for Garage admin API to be available
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: "{{ garage_admin_api_port }}"
+    timeout: 60

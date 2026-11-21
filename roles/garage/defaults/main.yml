@@ -8,7 +8,7 @@ garage_metadata_snapshot_directory: "{{ garage_metadata_directory }}/snapshots"
 
 # System architecture to determine what binary to install
 # should be x86_64 for us
-garage_architecture: "{{ ansible_architecture }}"
+garage_architecture: "{{ ansible_facts['architecture'] }}"
 
 # Secrets path:
 
