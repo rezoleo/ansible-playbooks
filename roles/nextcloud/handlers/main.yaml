@@ -1,6 +1,6 @@
 - name: Restart CODE
   ansible.builtin.command:
-    cmd: podman-compose up -d
+    cmd: podman-compose up -d --force-recreate
     chdir: /home/podman/code
   become: true
   become_user: podman
@@ -8,7 +8,7 @@
 
 - name: Restart Nextcloud
   ansible.builtin.command:
-    cmd: podman-compose up -d
+    cmd: podman-compose up -d --force-recreate
     chdir: /home/podman/nextcloud
   become: true
   become_user: podman

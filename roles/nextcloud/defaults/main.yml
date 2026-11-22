@@ -14,7 +14,7 @@ nextcloud_vault_secret_path: services/nextcloud
 # Database
 
 nextcloud_vault_db_path: databases/nextcloud@pg.rezoleo.fr
-nextcloud_db_host: pg.rezoleo.fr
+nextcloud_db_host: db:5432
 nextcloud_db_name: nextcloud
 nextcloud_db_user: nextcloud
 

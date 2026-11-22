@@ -36,6 +36,20 @@ services:
       nextcloud:
         condition: service_healthy
 
+  db:
+    image: docker.io/library/postgres:18.7@sha256:e754b839f447639b7004895f4d8a4bfcb4e9dbe3a1bc035f27f646562a16fd61
+    restart: always
+    networks:
+      - nextcloud_net
+    volumes:
+      - ./nextcloud-db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB'"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    env_file: nextcloud.env
+
   broker:
     image: docker.io/library/redis:8@sha256:a7efd4ed5037dcfe1543c0e50b9f06293d3e88827005544bf37f381eea5f01cf
     restart: always

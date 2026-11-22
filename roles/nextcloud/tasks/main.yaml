@@ -5,7 +5,7 @@
     nextcloud_admin_username: _task.result.secret.admin_username
     nextcloud_admin_password: _task.result.secret.admin_password
     nextcloud_smtp_password: _task.result.secret.smtp_password
-    nextcloud_smtp_address: _task.result.secret.smtp_address
+    nextcloud_smtp_mail_address: _task.result.secret.smtp_mail_address
   run_once: true
   delegate_to: localhost
 
