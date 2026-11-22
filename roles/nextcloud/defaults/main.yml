@@ -30,9 +30,9 @@ nextcloud_object_bucket: nextcloud
 # Garage's default region is garage
 nextcloud_object_region: garage
 # For Garage we must set it to true
-nextcloud_object_usepath_style: true
+nextcloud_object_usepath_style: 'true'
 # Garage does not support autocreate
-nextcloud_object_autocreate: false
+nextcloud_object_autocreate: 'false'
 nextcloud_object_host: s3.rezoleo.fr
 # The buckets are behind a reverse proxy
 nextcloud_object_port: 443
