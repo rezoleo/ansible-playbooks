@@ -14,7 +14,7 @@ stalwart_dkim_selectors:
   ed25519: ed25519-2026
 
 # Mails (blobs) stay on the local disk
-stalwart_blob_path: /var/lib/stalwart/blobs
+stalwart_blob_path: "{{ stalwart_data_path }}/blobs"
 
 # PostgreSQL holds everything but the mails, the password comes from Vault
 # stalwart_db_host: pg.example.org

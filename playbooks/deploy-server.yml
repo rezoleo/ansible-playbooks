@@ -23,14 +23,10 @@
 
 - name: Deploy mail server
   hosts: mail
-  become: true
   roles:
-    - role: stalwart
-      tags: [stalwart]
+    - stalwart
 
 - name: Relay local mail through the mail server
   hosts: all:!mail
-  become: true
   roles:
-    - role: mail_relay
-      tags: [mail_relay]
+    - mail_relay

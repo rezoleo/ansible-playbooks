@@ -7,6 +7,11 @@ stalwart_checksum: 62e6fdaf68f6ddfb45aa0dc1c28578a7e05f1e5e9a0c95fccfe1eae709d4e
 stalwart_cli_version: 1.0.14
 stalwart_cli_checksum: 78584b238422b0201a7bd223ed95b3c1a7fb8735ad3fa8c884d818a66fd1bc65
 
+# Releases are unpacked in <stalwart_install_path>/<version> and /usr/local/bin links to the selected one
+stalwart_install_path: /opt/stalwart
+stalwart_config_path: /etc/stalwart
+stalwart_data_path: /var/lib/stalwart
+
 # Listeners. The HTTP one (webadmin, webmail, JMAP) is plain HTTP, TLS is done by Equestria
 stalwart_http_port: 8080
 stalwart_listeners:

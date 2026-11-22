@@ -4,7 +4,7 @@ After=stalwart.service
 
 [Service]
 ExecStart=/usr/local/bin/stalwart-group-sent-hook
-EnvironmentFile=/etc/stalwart/group-sent-hook.env
+EnvironmentFile={{ stalwart_config_path }}/group-sent-hook.env
 DynamicUser=yes
 ProtectSystem=strict
 ProtectHome=yes

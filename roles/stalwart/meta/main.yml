@@ -2,6 +2,7 @@
 
 dependencies:
   - role: vault_agent
+    tags: [stalwart]
     # Certificate renewals restart Stalwart (no-op if it is not installed yet)
     vault_agent_service_reload_command:
       - /bin/sh

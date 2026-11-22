@@ -2,8 +2,9 @@
 - name: Retrieve from Vault the app password of {{ stalwart_app_password_name }}
   community.hashi_vault.vault_kv2_get:
     path: "{{ stalwart_app_password_vault_path }}/{{ stalwart_app_password_name }}"
-  register: stalwart_app_password_vault_secret
-  failed_when: stalwart_app_password_vault_secret.msg is defined and 'Invalid or missing path' not in stalwart_app_password_vault_secret.msg
+  register:
+    stalwart_app_password_vault_secret: _task.result.secret | default(none)
+  failed_when: _task.result.msg is defined and 'Invalid or missing path' not in _task.result.msg
   delegate_to: localhost
   become: false
   no_log: true
@@ -11,7 +12,7 @@
     ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
 - name: Create the app password of {{ stalwart_app_password_name }}
-  when: stalwart_app_password_vault_secret.secret is not defined
+  when: stalwart_app_password_vault_secret is none
   delegate_to: "{{ stalwart_app_password_server }}"
   block:
     - name: Retrieve the API key of the mail server from Vault
@@ -65,6 +66,6 @@
 - name: Remember the app password of {{ stalwart_app_password_name }}
   ansible.builtin.set_fact:
     stalwart_app_password_secret: >-
-      {{ stalwart_app_password_vault_secret.secret.password if stalwart_app_password_vault_secret.secret is defined
+      {{ stalwart_app_password_vault_secret.password if stalwart_app_password_vault_secret is not none
       else stalwart_app_password_created.json.methodResponses[0][1].created.new.secret }}
   no_log: true

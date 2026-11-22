@@ -2,12 +2,10 @@
 ### Firewall ###
 
 - name: Add firewall rules for Stalwart
-  tags: [firewall]
-  ansible.builtin.include_role:
-    apply:
-      tags: [stalwart, firewall]
+  ansible.builtin.import_role:
     name: firewall
     tasks_from: create_rule.yml
+  tags: [stalwart, firewall]
   vars:
     firewall_rules:
       100-stalwart:
@@ -26,11 +24,10 @@
           target: ACCEPT
 
 - name: Apply the firewall rules
-  tags: [firewall]
   ansible.builtin.meta: flush_handlers
+  tags: [stalwart, firewall]
 
 - name: Check the parameters that must be set per host
-  tags: [always]
   ansible.builtin.assert:
     that: lookup("ansible.builtin.vars", item, default=none) is not none
     fail_msg: "{{ item }} must be set for this host (see roles/stalwart/defaults/main.yml)"
@@ -43,16 +40,16 @@
     - stalwart_oidc_issuer
     - stalwart_oidc_accepted_audiences
     - stalwart_oidc_web_client_id
+  tags: [stalwart, always]
 
 
 - name: Check that the relay domain is handled by the server
-  tags: [always]
   ansible.builtin.assert:
     that: stalwart_relay_domain in stalwart_domains
     fail_msg: stalwart_relay_domain ({{ stalwart_relay_domain }}) must be in stalwart_domains
     quiet: true
+  tags: [stalwart, always]
 - name: Retrieve db secrets from Vault
-  tags: [always] # Needed by the configuration and by the plan
   community.hashi_vault.vault_kv2_get:
     path: "{{ stalwart_database_vault_path }}/{{ stalwart_db_name }}@{{ stalwart_db_host }}"
   register:
@@ -61,11 +58,11 @@
   delegate_to: localhost
   become: false
   no_log: true
+  tags: [stalwart, configuration]
   vars:
     ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
 - name: Retrieve DKIM keys and API key from Vault
-  tags: [always] # Needed by the configuration and by the plan
   community.hashi_vault.vault_kv2_get:
     path: "{{ stalwart_vault_path }}"
   register:
@@ -76,13 +73,13 @@
   delegate_to: localhost
   become: false
   no_log: true
+  tags: [stalwart, configuration]
   vars:
     ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
 ### Installation ###
 
 - name: Install tools needed to unpack the releases
-  tags: [package]
   ansible.builtin.apt:
     update_cache: true
     name:
@@ -90,30 +87,30 @@
       - ca-certificates
     state: present
   become: true
+  tags: [stalwart, package]
 
 - name: Remove Postfix # Shipped by the Debian CT template, it takes port 25
-  tags: [package]
   ansible.builtin.apt:
     name: postfix
     state: absent
     purge: true
   become: true
   notify: Restart stalwart
+  tags: [stalwart, package]
 
 - name: Create stalwart user
-  tags: [package]
   ansible.builtin.user:
     name: stalwart
     system: true
-    home: /var/lib/stalwart
+    home: "{{ stalwart_data_path }}"
     create_home: false
     shell: /usr/sbin/nologin
     groups: "{{ vault_agent_group_name }}" # Allows reading the TLS certificate
   become: true
   notify: Restart stalwart
+  tags: [stalwart, package]
 
 - name: Create stalwart directories
-  tags: [package]
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
@@ -121,12 +118,12 @@
     group: stalwart
     mode: "0750"
   loop:
-    - /var/lib/stalwart
+    - "{{ stalwart_data_path }}"
     - "{{ stalwart_blob_path }}"
   become: true
+  tags: [stalwart, package]
 
 - name: Create release directories
-  tags: [package]
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
@@ -134,110 +131,110 @@
     group: root
     mode: "0755"
   loop:
-    - /opt/stalwart/{{ stalwart_version }}
-    - /opt/stalwart/cli-{{ stalwart_cli_version }}
+    - "{{ stalwart_install_path }}/{{ stalwart_version }}"
+    - "{{ stalwart_install_path }}/cli-{{ stalwart_cli_version }}"
   become: true
+  tags: [stalwart, package]
 
 - name: Download Stalwart
-  tags: [package]
   ansible.builtin.get_url:
     url: https://github.com/stalwartlabs/stalwart/releases/download/v{{ stalwart_version }}/stalwart-x86_64-unknown-linux-gnu.tar.gz
-    dest: /opt/stalwart/{{ stalwart_version }}/stalwart.tar.gz
+    dest: "{{ stalwart_install_path }}/{{ stalwart_version }}/stalwart.tar.gz"
     checksum: sha256:{{ stalwart_checksum }}
     owner: root
     group: root
     mode: "0644"
   become: true
+  tags: [stalwart, package]
 
 - name: Unpack Stalwart
-  tags: [package]
   ansible.builtin.unarchive:
-    src: /opt/stalwart/{{ stalwart_version }}/stalwart.tar.gz
-    dest: /opt/stalwart/{{ stalwart_version }}
+    src: "{{ stalwart_install_path }}/{{ stalwart_version }}/stalwart.tar.gz"
+    dest: "{{ stalwart_install_path }}/{{ stalwart_version }}"
     remote_src: true
     owner: root
     group: root
     mode: "0755" # The release tarball ships the binary without the executable bit
-    creates: /opt/stalwart/{{ stalwart_version }}/stalwart
+    creates: "{{ stalwart_install_path }}/{{ stalwart_version }}/stalwart"
   become: true
+  tags: [stalwart, package]
 
 - name: Select the Stalwart version
-  tags: [package]
   ansible.builtin.file:
-    src: /opt/stalwart/{{ stalwart_version }}/stalwart
+    src: "{{ stalwart_install_path }}/{{ stalwart_version }}/stalwart"
     dest: /usr/local/bin/stalwart
     state: link
   become: true
   notify: Restart stalwart
+  tags: [stalwart, package]
 
 - name: Download Stalwart CLI
-  tags: [package]
   ansible.builtin.get_url:
     url: https://github.com/stalwartlabs/cli/releases/download/v{{ stalwart_cli_version }}/stalwart-cli-x86_64-unknown-linux-gnu.tar.xz
-    dest: /opt/stalwart/cli-{{ stalwart_cli_version }}/stalwart-cli.tar.xz
+    dest: "{{ stalwart_install_path }}/cli-{{ stalwart_cli_version }}/stalwart-cli.tar.xz"
     checksum: sha256:{{ stalwart_cli_checksum }}
     owner: root
     group: root
     mode: "0644"
   become: true
+  tags: [stalwart, package]
 
 - name: Unpack Stalwart CLI
-  tags: [package]
   ansible.builtin.unarchive:
-    src: /opt/stalwart/cli-{{ stalwart_cli_version }}/stalwart-cli.tar.xz
-    dest: /opt/stalwart/cli-{{ stalwart_cli_version }}
+    src: "{{ stalwart_install_path }}/cli-{{ stalwart_cli_version }}/stalwart-cli.tar.xz"
+    dest: "{{ stalwart_install_path }}/cli-{{ stalwart_cli_version }}"
     remote_src: true
     extra_opts: [--strip-components=1]
     owner: root
     group: root
-    creates: /opt/stalwart/cli-{{ stalwart_cli_version }}/stalwart-cli
+    creates: "{{ stalwart_install_path }}/cli-{{ stalwart_cli_version }}/stalwart-cli"
   become: true
+  tags: [stalwart, package]
 
 - name: Select the Stalwart CLI version
-  tags: [package]
   ansible.builtin.file:
-    src: /opt/stalwart/cli-{{ stalwart_cli_version }}/stalwart-cli
+    src: "{{ stalwart_install_path }}/cli-{{ stalwart_cli_version }}/stalwart-cli"
     dest: /usr/local/bin/stalwart-cli
     state: link
   become: true
+  tags: [stalwart, package]
 
 ### Configuration ###
 
 - name: Create configuration directory
-  tags: [configuration]
   ansible.builtin.file:
-    path: /etc/stalwart
+    path: "{{ stalwart_config_path }}"
     state: directory
     owner: root
     group: stalwart
     mode: "0750"
   become: true
+  tags: [stalwart, configuration]
 
 - name: Copy data store configuration
-  tags: [configuration]
   ansible.builtin.template:
     src: config.json.j2
-    dest: /etc/stalwart/config.json
+    dest: "{{ stalwart_config_path }}/config.json"
     owner: root
     group: stalwart
     mode: "0640"
   become: true
   notify: Restart stalwart
+  tags: [stalwart, configuration]
 
 - name: Copy environment file with the database password
-  tags: [configuration]
   ansible.builtin.template:
     src: stalwart.env.j2
-    dest: /etc/stalwart/stalwart.env
+    dest: "{{ stalwart_config_path }}/stalwart.env"
     owner: root
     group: root
     mode: "0600"
   become: true
   no_log: true
   notify: Restart stalwart
+  tags: [stalwart, configuration]
 
 - name: Copy systemd unit
-  tags: [configuration]
   ansible.builtin.template:
     src: stalwart.service.j2
     dest: /etc/systemd/system/stalwart.service
@@ -246,18 +243,19 @@
     mode: "0644"
   become: true
   notify: Restart stalwart
+  tags: [stalwart, configuration]
 
 # Runs once (no api_key in Vault): _ansible can only get a password, hence create its API key, while OIDC is off.
 # SSO logins are down for about a minute, mail keeps flowing.
 - name: Check whether the API key exists
-  tags: [configuration]
   ansible.builtin.set_fact:
     stalwart_bootstrap: "{{ stalwart_api_key is none }}" # The block below sets stalwart_api_key, its condition must not change
+  tags: [stalwart, configuration]
 
 - name: Create the API key of _ansible
-  tags: [configuration]
   when: stalwart_bootstrap
   become: true
+  tags: [stalwart, configuration]
   block:
     - name: Generate throwaway passwords
       ansible.builtin.set_fact:
@@ -266,7 +264,7 @@
       no_log: true
 
     - name: Stop stalwart
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: stalwart
         state: stopped
         daemon_reload: true
@@ -278,11 +276,11 @@
           - --unit=stalwart-bootstrap
           - --collect
           - --uid=stalwart
-          - --property=EnvironmentFile=/etc/stalwart/stalwart.env
+          - --property=EnvironmentFile={{ stalwart_config_path }}/stalwart.env
           - --setenv=STALWART_RECOVERY_ADMIN=admin:{{ stalwart_bootstrap_password }}
           - /usr/local/bin/stalwart
           - --config
-          - /etc/stalwart/config.json
+          - "{{ stalwart_config_path }}/config.json"
       changed_when: true
       no_log: true
 
@@ -300,7 +298,7 @@
       changed_when: true
 
     - name: Restart stalwart so that the directory change takes effect
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: stalwart-bootstrap
         state: restarted
 
@@ -383,30 +381,29 @@
     # Forces the plan to be applied, it switches the directory back to OIDC
     - name: Forget the applied plan
       ansible.builtin.file:
-        path: /etc/stalwart/plan.ndjson
+        path: "{{ stalwart_config_path }}/plan.ndjson"
         state: absent
   always:
     - name: Stop the temporary stalwart
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: stalwart-bootstrap
         state: stopped
       failed_when: false
 
 - name: Enable and start stalwart
-  tags: [configuration]
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: stalwart
     state: started
     enabled: true
     daemon_reload: true
   become: true
+  tags: [stalwart, configuration]
 
 # The plan is applied with the API key of _ansible, see README.md
 - name: Copy configuration plan
-  tags: [configuration]
   ansible.builtin.template:
     src: plan.ndjson.j2
-    dest: /etc/stalwart/plan.ndjson
+    dest: "{{ stalwart_config_path }}/plan.ndjson"
     owner: root
     group: root
     mode: "0600"
@@ -415,11 +412,12 @@
   become: true
   no_log: true
   register: stalwart_plan
+  tags: [stalwart, configuration]
 
 - name: Apply configuration plan # noqa: no-handler (the restart handler must only run once the plan is applied)
-  tags: [configuration]
   when: stalwart_plan is changed
   become: true
+  tags: [stalwart, configuration]
   block:
     - name: Wait for the web listener
       ansible.builtin.wait_for:
@@ -435,7 +433,7 @@
           - "{{ stalwart_api_url }}"
           - apply
           - --file
-          - /etc/stalwart/plan.ndjson
+          - "{{ stalwart_config_path }}/plan.ndjson"
       environment:
         STALWART_TOKEN: "{{ stalwart_api_key }}"
       register: stalwart_apply
@@ -446,7 +444,7 @@
     # Forget the plan so that it is rendered, hence applied, again on the next run
     - name: Remove the plan that could not be applied
       ansible.builtin.file:
-        path: /etc/stalwart/plan.ndjson
+        path: "{{ stalwart_config_path }}/plan.ndjson"
         state: absent
 
     - name: Fail
@@ -458,11 +456,11 @@
 
 # After the plan, which creates the _servers account. The servers get theirs from roles/mail_relay.
 - name: Get the app passwords of the appliances
-  tags: [configuration]
   ansible.builtin.include_role:
     apply:
       tags: [stalwart, configuration]
     name: stalwart_app_password
+  tags: [stalwart, configuration]
   vars:
     stalwart_app_password_name: "{{ stalwart_relay_appliance.name }}"
     stalwart_app_password_account: "{{ stalwart_relay_account }}"
@@ -474,7 +472,6 @@
     label: "{{ stalwart_relay_appliance.name }}"
 
 - name: Read the group memberships
-  tags: [configuration]
   ansible.builtin.command:
     argv: [stalwart-cli, --url, "{{ stalwart_api_url }}", query, Account, --json, --fields, "name,memberGroupIds"]
   environment:
@@ -482,9 +479,9 @@
   register: stalwart_memberships
   changed_when: false
   no_log: true
+  tags: [stalwart, configuration]
 
 - name: Set the group memberships
-  tags: [configuration]
   ansible.builtin.command:
     argv: [stalwart-cli, --url, "{{ stalwart_api_url }}", update, Account, "{{ item.id }}", --json, "{{ member_group_ids | to_json }}"]
   environment:
@@ -495,6 +492,7 @@
   changed_when: true
   no_log: true
   when: item.memberGroupIds.keys() | sort != want_ids | sort
+  tags: [stalwart, configuration]
   vars:
     accounts: "{{ stalwart_memberships.stdout_lines | map('from_json') | list }}"
     ids: "{{ dict(accounts | map(attribute='name') | zip(accounts | map(attribute='id'))) }}"
@@ -509,11 +507,9 @@
 ### Group-sent hook (files/group-sent-hook.py), after the plan that creates its account ###
 
 - name: Get the app password of the group-sent hook
-  tags: [configuration]
-  ansible.builtin.include_role:
-    apply:
-      tags: [stalwart, configuration]
+  ansible.builtin.import_role:
     name: stalwart_app_password
+  tags: [stalwart, configuration]
   vars:
     stalwart_app_password_name: group-sent-hook
     stalwart_app_password_account: "{{ stalwart_group_sent_account }}"
@@ -521,37 +517,48 @@
     stalwart_app_password_server: "{{ inventory_hostname }}"
 
 - name: Install the group-sent hook
-  tags: [configuration]
   ansible.builtin.copy:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
+    src: group-sent-hook.py
+    dest: /usr/local/bin/stalwart-group-sent-hook
     owner: root
     group: root
-    mode: "{{ item.mode }}"
-  loop:
-    - { src: group-sent-hook.py, dest: /usr/local/bin/stalwart-group-sent-hook, mode: "0755" }
-    - { src: stalwart-group-sent-hook.service, dest: /etc/systemd/system/stalwart-group-sent-hook.service, mode: "0644" }
+    mode: "0755"
   notify: Restart stalwart-group-sent-hook
+  become: true
+  tags: [stalwart, configuration]
+
+- name: Copy the systemd unit of the group-sent hook
+  ansible.builtin.template:
+    src: stalwart-group-sent-hook.service.j2
+    dest: /etc/systemd/system/stalwart-group-sent-hook.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart stalwart-group-sent-hook
+  become: true
+  tags: [stalwart, configuration]
 
 - name: Write the credentials of the group-sent hook
-  tags: [configuration]
   ansible.builtin.copy:
     content: |
       HOOK_USER={{ stalwart_group_sent_account }}
       JMAP_URL={{ stalwart_api_url }}
       HOOK_PASSWORD={{ stalwart_app_password_secret }}
       HOOK_PORT={{ stalwart_group_sent_hook_port }}
-    dest: /etc/stalwart/group-sent-hook.env
+    dest: "{{ stalwart_config_path }}/group-sent-hook.env"
     owner: root
     group: root
     mode: "0600"
   no_log: true
   notify: Restart stalwart-group-sent-hook
+  become: true
+  tags: [stalwart, configuration]
 
 - name: Enable and start the group-sent hook
-  tags: [configuration]
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: stalwart-group-sent-hook
     enabled: true
     state: started
     daemon_reload: true
+  become: true
+  tags: [stalwart, configuration]
