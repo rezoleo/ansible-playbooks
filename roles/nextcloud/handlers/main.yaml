@@ -6,7 +6,6 @@
   become_user: podman
   changed_when: true
 
-# When the compose file is changed we recreate the whole stack
 - name: Restart Nextcloud
   ansible.builtin.command:
     cmd: podman-compose up -d --force-recreate
@@ -14,13 +13,3 @@
   become: true
   become_user: podman
   changed_when: true
-
-# When the env file is changed only Nextcloud should be affected
-- name: Restart Nextcloud service
-  ansible.builtin.command:
-    cmd: podman-compose up -d --force-recreate nextcloud
-    chdir: /home/podman/nextcloud
-  become: true
-  become_user: podman
-  changed_when: true
-  when: not nextcloud_compose.changed

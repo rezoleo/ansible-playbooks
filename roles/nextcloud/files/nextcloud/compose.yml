@@ -1,5 +1,6 @@
 services:
   nextcloud:
+    container_name: nextcloud
     image: docker.io/library/nextcloud:35.0.1-apache@sha256:a588aa5353703b44106a6129adaaf7bf22521b7a4754f9f529b3228d6aa390c5
     restart: always
     ports:
@@ -20,11 +21,24 @@ services:
     depends_on:
       broker:
         condition: service_healthy
+
+  cron:
+    container_name: nextcloud-cron
+    image: docker.io/library/nextcloud:35.0.1-apache@sha256:a588aa5353703b44106a6129adaaf7bf22521b7a4754f9f529b3228d6aa390c5
+    restart: always
+    entrypoint: /cron.sh
+    volumes:
+      - ./nextcloud:/var/www/html
+    env_file: nextcloud.env
+    environment:
+      PHP_MEMORY_LIMIT: 2G
+    depends_on:
+      nextcloud:
+        condition: service_healthy
+
   broker:
     image: docker.io/library/redis:8@sha256:a7efd4ed5037dcfe1543c0e50b9f06293d3e88827005544bf37f381eea5f01cf
     restart: always
-    volumes:
-      - redisdata:/data
     networks:
       - nextcloud_net
     mem_limit: 1G
@@ -32,9 +46,6 @@ services:
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: "5s"
-
-volumes:
-  redisdata:
 
 networks:
   nextcloud_net:

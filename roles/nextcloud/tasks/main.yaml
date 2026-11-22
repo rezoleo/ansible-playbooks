@@ -8,9 +8,6 @@
     nextcloud_smtp_address: _task.result.secret.smtp_address
   run_once: true
   delegate_to: localhost
-  become: false
-  vars:
-    ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
 - name: Retrieve S3 secrets from Vault
   community.hashi_vault.vault_kv2_get:
@@ -20,9 +17,6 @@
     nextcloud_object_secret: _task.result.secret.secret
   run_once: true
   delegate_to: localhost
-  become: false
-  vars:
-    ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
 - name: Retrieve database secrets from Vault
   community.hashi_vault.vault_kv2_get:
@@ -31,9 +25,6 @@
     nextcloud_db_password: _task.result.secret.nextcloud
   run_once: true
   delegate_to: localhost
-  become: false
-  vars:
-    ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
 - name: Create nextcloud directory
   ansible.builtin.file:
@@ -63,7 +54,7 @@
   become: true
   notify: Restart CODE
 
-- name: Copy compose file for nextcloud
+- name: Copy compose file for Nextcloud
   ansible.builtin.copy:
     src: nextcloud/compose.yml
     dest: /home/podman/nextcloud/compose.yml
@@ -71,10 +62,9 @@
     group: podman
     mode: "0644"
   become: true
-  register: nextcloud_compose
   notify: Restart Nextcloud
 
-- name: Copy and fill .env file for nextcloud
+- name: Copy and fill .env file for Nextcloud
   ansible.builtin.template:
     src: nextcloud.env.j2
     dest: /home/podman/nextcloud/nextcloud.env
@@ -82,7 +72,7 @@
     group: podman
     mode: "0600"
   become: true
-  notify: Restart Nextcloud service
+  notify: Restart Nextcloud
 
 - name: Copy and fill .env file for CODE
   ansible.builtin.template:

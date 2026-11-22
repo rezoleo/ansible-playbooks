@@ -5,7 +5,5 @@ services:
       - 3001:9980
     env_file: code.env
     restart: always
-    cap_add:
-      - MKNOD
     mem_limit: 4G
     cpus: 2
