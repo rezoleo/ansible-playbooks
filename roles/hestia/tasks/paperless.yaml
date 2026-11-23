@@ -9,9 +9,6 @@
     hestia_paperless_sso_client_secret: _task.result.secret.sso_secret
   run_once: true
   delegate_to: localhost
-  become: false
-  vars:
-    ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
 - name: Retrieve database secrets from Vault
   community.hashi_vault.vault_kv2_get:
@@ -20,9 +17,6 @@
     hestia_paperless_database_password: _task.result.secret.paperless
   run_once: true
   delegate_to: localhost
-  become: false
-  vars:
-    ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
 - name: Create paperless directory
   ansible.builtin.file:
