@@ -2,10 +2,10 @@
 # Internals of the role, not meant to change per host (see defaults/main.yml for the parameters)
 
 # Bump the versions together with the checksums (sha256 of the release tarballs)
-stalwart_version: 1.1.0
-stalwart_checksum: 62e6fdaf68f6ddfb45aa0dc1c28578a7e05f1e5e9a0c95fccfe1eae709d4ecbc
-stalwart_cli_version: 1.0.14
-stalwart_cli_checksum: 78584b238422b0201a7bd223ed95b3c1a7fb8735ad3fa8c884d818a66fd1bc65
+stalwart_version: 1.2.0
+stalwart_checksum: ee79b1552acc3c89e4354405c7a716874826e4db7537a4b32c7b1677e08688c8
+stalwart_cli_version: 2.0.0
+stalwart_cli_checksum: 1cd3da6a9d7c0153a660346314e09d6e0536ab9b0440bf123a56d16d680926d2
 
 # Releases are unpacked in <stalwart_install_path>/<version> and /usr/local/bin links to the selected one
 stalwart_install_path: /opt/stalwart

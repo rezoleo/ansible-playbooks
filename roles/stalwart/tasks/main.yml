@@ -35,6 +35,7 @@
   loop:
     - stalwart_hostname
     - stalwart_domains
+    - stalwart_relay_domain
     - stalwart_db_host
     - stalwart_http_source
     - stalwart_oidc_issuer
@@ -328,28 +329,47 @@
 
     - name: Find the id of _ansible
       ansible.builtin.command:
-        argv: [stalwart-cli, --url, "{{ stalwart_api_url }}", --user, admin, query, Account]
+        argv: [stalwart-cli, --url, "{{ stalwart_api_url }}", --user, admin, query, Account, --json, --fields, emailAddress]
       environment:
         STALWART_PASSWORD: "{{ stalwart_bootstrap_password }}"
       register: stalwart_accounts
       changed_when: false
 
+    - name: Remember the id of _ansible
+      ansible.builtin.set_fact:
+        stalwart_ansible_id: "{{ (stalwart_accounts.stdout_lines | map('from_json') | selectattr('emailAddress', 'eq', stalwart_ansible_account) | first).id }}"
+
     - name: Create the API key as _ansible
-      ansible.builtin.command:
-        argv:
-          - stalwart-cli
-          - --url
-          - "{{ stalwart_api_url }}"
-          - --user
-          - "{{ stalwart_ansible_account }}"
-          - create
-          - ApiKey
-          - --json
-          - '{"description": "Ansible (roles/stalwart)", "allowedIps": {"127.0.0.1/32": true}}'
-      environment:
-        STALWART_PASSWORD: "{{ stalwart_ansible_password }}"
-      register: stalwart_api_key_output
+      ansible.builtin.uri:
+        url: "{{ stalwart_api_url }}/jmap"
+        method: POST
+        url_username: "{{ stalwart_ansible_account }}"
+        url_password: "{{ stalwart_ansible_password }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          using: ["urn:ietf:params:jmap:core", "urn:stalwart:jmap"]
+          methodCalls:
+            - - x:ApiKey/set
+              - accountId: "{{ stalwart_ansible_id }}"
+                create: {new: {description: "Ansible (roles/stalwart)", allowedIps: {"127.0.0.1/32": true}}}
+              - "0"
+      register: stalwart_api_key_created
       changed_when: true
+      no_log: true
+
+    # Separate from the creation, whose output (the secret) is hidden. Without "new" the response holds no secret.
+    # A refused creation still answers with "created" (null or without "new"), the reason is in "notCreated".
+    - name: Check that the API key was created
+      ansible.builtin.fail:
+        msg: "Could not create the API key: {{ stalwart_api_key_response }}"
+      when: "'new' not in (stalwart_api_key_response[1].created | default(none) or {})"
+      vars:
+        stalwart_api_key_response: "{{ stalwart_api_key_created.json.methodResponses[0] }}"
+
+    - name: Remember the API key
+      ansible.builtin.set_fact:
+        stalwart_api_key: "{{ stalwart_api_key_created.json.methodResponses[0][1].created.new.secret }}"
       no_log: true
 
     # The password is the only credential before the key, so it is the first one
@@ -357,15 +377,8 @@
       ansible.builtin.command:
         argv: [stalwart-cli, --url, "{{ stalwart_api_url }}", update, Account, "{{ stalwart_ansible_id }}", --json, '{"credentials/0": null}']
       environment:
-        STALWART_TOKEN: "{{ stalwart_api_key_output.stdout | regex_search('(?<=Secret: )\\S+') }}"
+        STALWART_TOKEN: "{{ stalwart_api_key }}"
       changed_when: true
-      no_log: true
-      vars:
-        stalwart_ansible_id: "{{ stalwart_accounts.stdout | regex_search('(?m)^\\S+(?=\\s+' ~ stalwart_ansible_account | regex_escape ~ ')') }}"
-
-    - name: Remember the API key
-      ansible.builtin.set_fact:
-        stalwart_api_key: "{{ stalwart_api_key_output.stdout | regex_search('(?<=Secret: )\\S+') }}"
       no_log: true
 
     - name: Store the API key in Vault
@@ -434,6 +447,7 @@
           - apply
           - --file
           - "{{ stalwart_config_path }}/plan.ndjson"
+          - --json
       environment:
         STALWART_TOKEN: "{{ stalwart_api_key }}"
       register: stalwart_apply
@@ -451,8 +465,11 @@
       ansible.builtin.fail:
         msg: "Could not apply the Stalwart configuration plan: {{ stalwart_apply_errors }}"
       vars:
-        # Only the error lines: they name the object and the reason, but not the secrets of the plan
-        stalwart_apply_errors: "{{ (stalwart_apply.stdout_lines | default([]) + stalwart_apply.stderr_lines | default([])) | select('search', '^error') }}"
+        # Only the errors: they name the object and the reason, but not the secrets of the plan.
+        stalwart_apply_errors: >-
+          {{ stalwart_apply.stdout_lines | default([]) | select('match', '{') | map('from_json')
+          | selectattr('status', 'defined') | selectattr('status', 'eq', 'error') | list
+          + stalwart_apply.stderr_lines | default([]) | select('search', '^error') | list }}
 
 # After the plan, which creates the _servers account. The servers get theirs from roles/mail_relay.
 - name: Get the app passwords of the appliances

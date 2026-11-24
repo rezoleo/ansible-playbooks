@@ -27,7 +27,7 @@
 
     - name: Find the id of the account
       ansible.builtin.command:
-        argv: [stalwart-cli, --url, "{{ stalwart_app_password_api_url }}", query, Account]
+        argv: [stalwart-cli, --url, "{{ stalwart_app_password_api_url }}", query, Account, --json, --fields, emailAddress]
       environment:
         STALWART_TOKEN: "{{ stalwart_app_password_api_key_secret.secret.api_key }}"
       register: stalwart_app_password_accounts
@@ -44,12 +44,22 @@
           using: ["urn:ietf:params:jmap:core", "urn:stalwart:jmap"]
           methodCalls:
             - - x:AppPassword/set
-              - accountId: "{{ stalwart_app_password_accounts.stdout | regex_search('(?m)^\\S+(?=\\s+' ~ stalwart_app_password_account | regex_escape ~ ')') }}"
+              - accountId: >-
+                  {{ (stalwart_app_password_accounts.stdout_lines | map('from_json')
+                  | selectattr('emailAddress', 'eq', stalwart_app_password_account) | first).id }}
                 create: {new: {description: "{{ stalwart_app_password_name }}", allowedIps: "{{ {stalwart_app_password_ip: true} }}"}} # Keys are not templated
               - "0"
       register: stalwart_app_password_created
-      failed_when: stalwart_app_password_created.json.methodResponses[0][1].created is not defined
       no_log: true
+
+    # Separate from the creation, whose output (the secret) is hidden. Without "new" the response holds no secret.
+    # A refused creation still answers with "created" (null or without "new"), the reason is in "notCreated".
+    - name: Check that the app password was created
+      ansible.builtin.fail:
+        msg: "Could not create the app password: {{ stalwart_app_password_response }}"
+      when: "'new' not in (stalwart_app_password_response[1].created | default(none) or {})"
+      vars:
+        stalwart_app_password_response: "{{ stalwart_app_password_created.json.methodResponses[0] }}"
 
     - name: Store the app password in Vault
       community.hashi_vault.vault_kv2_write:

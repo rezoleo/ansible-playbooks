@@ -56,8 +56,9 @@ stalwart_groups: []
 # Servers and appliances (devices Ansible does not manage) send mail through stalwart_relay_account, each one as
 # <name>@<stalwart_relay_domain> (an alias) with its own app password, only valid from its IP and kept in Vault
 # (roles/stalwart_app_password). Every inventory host outside [mail] gets one (roles/mail_relay), appliances are listed here.
-# Must be in stalwart_domains
-stalwart_relay_domain: servers.{{ stalwart_domains[0] }}
+# Must be in stalwart_domains. No default: roles/mail_relay reads it from the other servers through hostvars,
+# which only sees the inventory (host_vars), not the defaults of this role
+# stalwart_relay_domain: servers.example.org
 stalwart_relay_appliances: []
 #  - { name: truenas, ip: 10.0.0.2 }
 
