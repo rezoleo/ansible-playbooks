@@ -1,0 +1,19 @@
+# Managed by Ansible: {{ vault_agent_fqdn }} may only request a certificate for itself
+path "{{ vault_agent_pki_mount }}/issue/{{ vault_agent_pki_role }}" {
+  capabilities = ["update"]
+  allowed_parameters = {
+    "common_name" = ["{{ vault_agent_fqdn }}"]
+    "ip_sans"     = ["{{ vault_agent_ip_sans | join(',') }}"]
+{% if vault_agent_extra_dns_sans | length > 0 %}
+    "alt_names"   = ["{{ vault_agent_extra_dns_sans | join(',') }}"]
+{% endif %}
+    "*"           = []
+  }
+  denied_parameters = {
+{% if vault_agent_extra_dns_sans | length == 0 %}
+    "alt_names"  = []
+{% endif %}
+    "uri_sans"   = []
+    "other_sans" = []
+  }
+}

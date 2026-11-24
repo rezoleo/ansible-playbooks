@@ -1,18 +1,56 @@
 ---
-# Location of approle files
-vault_agent_working_directory: /root/vault_agent_certificates
+# Every host (the CA is installed everywhere, even without any certificate):
+# vault_agent_pki_mount: pki_int
+vault_agent_pki_mount: pki_test
 
-# Version of vault agent
-vault_agent_vault_version: 1.18.2
+# Hosts with vault_agent_host_cert_enabled or vault_agent_wildcard_enabled:
+# vault_agent_domain: example.internal
+vault_agent_domain: zeroleo.fr
 
-# Location where the certificate will be stored
-vault_agent_certificate_directory: "/var/lib/vault_agent_certificates"
+# Hosts with vault_agent_wildcard_enabled (KV v2 path, relative to the mount):
+# vault_agent_wildcard_kv_path: letsencrypt/wildcard.example.internal
+vault_agent_wildcard_kv_path: test/baptiste/ssltest
 
-# Name of the group that is allowed to read certificate
-vault_agent_group_name: "vault-certs"
+# vault_agent_vault_addr: "vault.example.com"
+vault_agent_vault_addr: "https://vault.rezoleo.fr"
 
-# Command to execute after certificate update
-# vault_agent_service_reload_command:
-#   - systemctl
-#   - restart
-#   - mon_super_service
+# Host enabled certificates
+vault_agent_host_cert_enabled: true
+vault_agent_wildcard_enabled: false
+
+# Host identity: hostname@domain + IPs + the names below. Vault policy will be strictly bound to this parameters
+vault_agent_fqdn: "{{ ansible_facts['hostname'] }}.{{ vault_agent_domain }}"
+vault_agent_ip_sans:
+  - "{{ ansible_facts['default_ipv4']['address'] }}"
+vault_agent_extra_dns_sans: []           # For allowed Alternative Names
+
+# Approle mount
+vault_agent_approle_mount: approle
+# Secret_id and tokens are only valid from these addresses. Set to [] behind NAT.
+vault_agent_approle_bound_cidrs: "{{ vault_agent_ip_sans | ipaddr('host') }}"
+vault_agent_token_ttl: 1h
+vault_agent_token_max_ttl: 24h
+# For automated secret rotation
+vault_agent_rotate_secret_id: false
+
+vault_agent_pki_role: servers
+# Extra SANs outside vault_agent_domain must be allowed by the PKI role too.
+# The PKI role is shared: set this in group_vars/all, not per host.
+vault_agent_pki_extra_allowed_domains: []
+
+# Certificates files
+vault_agent_host_cert_dir: /opt/certificates/host
+vault_agent_host_cert_group: ssl-host-cert
+vault_agent_wildcard_cert_dir: /opt/certificates/wildcard
+vault_agent_wildcard_cert_group: ssl-wildcard-cert
+vault_agent_ca_file: /opt/certificates/vault-ca.crt
+vault_agent_fullchain_filename: fullchain.pem
+vault_agent_privkey_filename: privkey.pem
+
+# Wildcard stored in Vault KV v2
+vault_agent_wildcard_kv_mount: secret
+vault_agent_wildcard_refresh_interval: 5m
+
+# Vault agent parameters
+vault_agent_hook_timeout: 60s            # for ALL hooks of one certificate together
+vault_agent_first_render_timeout: 120

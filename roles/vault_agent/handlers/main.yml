@@ -1,6 +1,6 @@
 ---
-- name: Restart vault-agent-certificates
+- name: Restart vault agent
   ansible.builtin.systemd:
-    name: vault-agent-certificates
+    name: "{{ vault_agent_service_name }}"
     state: restarted
   become: true

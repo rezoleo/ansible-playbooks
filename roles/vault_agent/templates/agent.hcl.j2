@@ -1,0 +1,33 @@
+# Managed by Ansible
+vault {
+  address = {{ vault_agent_vault_addr | to_json }}
+}
+
+auto_auth {
+  method "approle" {
+    mount_path = "auth/{{ vault_agent_approle_mount }}"
+    config = {
+      role_id_file_path                   = "{{ vault_agent_config_dir }}/role_id"
+      secret_id_file_path                 = "{{ vault_agent_config_dir }}/secret_id"
+      remove_secret_id_file_after_reading = false
+    }
+  }
+}
+{% if vault_agent_wildcard_enabled | bool %}
+
+template_config {
+  static_secret_render_interval = "{{ vault_agent_wildcard_refresh_interval }}"
+}
+{% endif %}
+{% for vault_agent_cert in vault_agent_certs %}
+
+# {{ vault_agent_cert.name }}: hooks in {{ vault_agent_hooks_dir }}/{{ vault_agent_cert.name }}
+template {
+  source               = "{{ vault_agent_config_dir }}/{{ vault_agent_cert.name }}.ctmpl"
+  destination          = "{{ vault_agent_cert.dir }}/{{ vault_agent_fullchain_filename }}"
+  perms                = "0644"
+  error_on_missing_key = true
+  command              = "/usr/bin/run-parts {{ vault_agent_hooks_dir }}/{{ vault_agent_cert.name }}"
+  command_timeout      = "{{ vault_agent_hook_timeout }}"
+}
+{% endfor %}

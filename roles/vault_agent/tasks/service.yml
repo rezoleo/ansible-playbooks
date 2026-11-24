@@ -1,0 +1,51 @@
+---
+- name: Deploy the agent template of each certificate
+  ansible.builtin.template:
+    src: "{{ vault_agent_cert.name }}.ctmpl.j2"
+    dest: "{{ vault_agent_config_dir }}/{{ vault_agent_cert.name }}.ctmpl"
+    owner: root
+    group: root
+    mode: "0640"
+  become: true
+  loop: "{{ vault_agent_certs }}"
+  loop_control:
+    loop_var: vault_agent_cert
+    label: "{{ vault_agent_cert.name }}"
+  notify: Restart vault agent
+
+- name: Deploy the agent configuration
+  ansible.builtin.template:
+    src: agent.hcl.j2
+    dest: "{{ vault_agent_config_dir }}/agent.hcl"
+    owner: root
+    group: root
+    mode: "0640"
+  become: true
+  notify: Restart vault agent
+
+- name: Deploy the hardened systemd unit
+  ansible.builtin.template:
+    src: vault-agent.service.j2
+    dest: "/etc/systemd/system/{{ vault_agent_service_name }}.service"
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  notify: Restart vault agent
+
+- name: Enable and start the agent
+  ansible.builtin.systemd:
+    name: "{{ vault_agent_service_name }}"
+    enabled: true
+    state: started
+  become: true
+
+# - name: Wait for the first certificates to be rendered
+#   ansible.builtin.wait_for:
+#     path: "{{ vault_agent_cert.dir }}/{{ vault_agent_fullchain_filename }}"
+#     timeout: "{{ vault_agent_first_render_timeout }}"
+#   become: true
+#   loop: "{{ vault_agent_certs }}"
+#   loop_control:
+#     loop_var: vault_agent_cert
+#     label: "{{ vault_agent_cert.name }}"

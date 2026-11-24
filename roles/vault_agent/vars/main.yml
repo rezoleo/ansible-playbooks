@@ -1,0 +1,51 @@
+---
+# Package version
+vault_agent_vault_version: "2.2.2"
+vault_agent_hashicorp_gpg_checksum: "sha256:1df7d66b79352bab45388511079f74987568672a8ed6395053a050b61f6c5430"
+
+vault_agent_service_name: vault-agent
+vault_agent_vault_bin: /usr/bin/vault
+vault_agent_config_dir: /etc/vault-agent
+vault_agent_hooks_dir: "{{ vault_agent_config_dir }}/hooks"
+
+# One AppRole and one policy per host; ONE wildcard policy for every host.
+vault_agent_approle_name: "host-{{ vault_agent_fqdn }}"
+vault_agent_host_policy: "host-cert-{{ vault_agent_fqdn }}"
+vault_agent_wildcard_policy: wildcard-cert
+vault_agent_wildcard_read_path: "{{ vault_agent_wildcard_kv_mount }}/data/{{ vault_agent_wildcard_kv_path }}"
+vault_agent_approle_path: "auth/{{ vault_agent_approle_mount }}/role/{{ vault_agent_approle_name }}"
+vault_agent_wildcard_fullchain_field: fullchain
+vault_agent_wildcard_key_field: privkey
+
+vault_agent_cert_ttl: "168h"
+
+# Certificates this host gets; consumers and templates iterate over this list.
+vault_agent_certs: >-
+  {{
+    ([{'name': 'host',
+       'dir': vault_agent_host_cert_dir,
+       'group': vault_agent_host_cert_group,
+       'policy': vault_agent_host_policy}]
+      if (vault_agent_host_cert_enabled | bool) else [])
+    +
+    ([{'name': 'wildcard',
+       'dir': vault_agent_wildcard_cert_dir,
+       'group': vault_agent_wildcard_cert_group,
+       'policy': vault_agent_wildcard_policy}]
+      if (vault_agent_wildcard_enabled | bool) else [])
+  }}
+
+# Security-relevant PKI role settings: not meant to be overridden.
+vault_agent_pki_role_params:
+  allowed_domains: "{{ [vault_agent_domain] + vault_agent_pki_extra_allowed_domains }}"
+  allow_subdomains: true
+  allow_bare_domains: false
+  allow_ip_sans: true
+  enforce_hostnames: true
+  server_flag: true
+  client_flag: false
+  key_type: "ec"
+  key_bits: "256"
+  ttl: "{{ vault_agent_cert_ttl }}"
+  max_ttl: "{{ vault_agent_cert_ttl }}"
+  no_store: true

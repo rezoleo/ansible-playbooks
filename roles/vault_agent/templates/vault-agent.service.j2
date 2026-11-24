@@ -1,0 +1,44 @@
+# Managed by Ansible
+[Unit]
+Description=Vault Agent (certificate and secret renewal)
+Documentation=https://developer.hashicorp.com/vault/docs/agent-and-proxy/agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart={{ vault_agent_vault_bin }} agent -config={{ vault_agent_config_dir }}/agent.hcl
+Restart=on-failure
+RestartSec=10
+
+StateDirectory={{ vault_agent_service_name }}
+StateDirectoryMode=0700
+Environment=HOME=/var/lib/{{ vault_agent_service_name }}
+
+# Runs as root: it has to chown keys to their group and run the reload hooks.
+# Everything else is taken away. Hooks inherit these restrictions, so they
+# should reload services through systemctl (executed by PID 1, not by us).
+NoNewPrivileges=yes
+CapabilityBoundingSet=CAP_CHOWN CAP_FOWNER CAP_KILL
+ProtectSystem=strict
+ReadWritePaths={{ vault_agent_certs | map(attribute='dir') | join(' ') }}
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+
+[Install]
+WantedBy=multi-user.target

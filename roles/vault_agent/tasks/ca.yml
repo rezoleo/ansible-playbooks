@@ -1,0 +1,24 @@
+---
+- name: Read the CA chain from Vault
+  community.hashi_vault.vault_read:
+    path: "{{ vault_agent_pki_mount }}/cert/ca_chain"
+  register:
+    vault_agent_ca_chain: _task.result.data.data.certificate
+  delegate_to: localhost
+  become: false
+
+- name: Create CA parent directory
+  ansible.builtin.file:
+    state: directory
+    dest: "{{ vault_agent_ca_file | dirname }}"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install the CA in the system trust store
+  ansible.builtin.copy:
+    content: "{{ vault_agent_ca_chain }}\n"
+    dest: "{{ vault_agent_ca_file }}"
+    owner: root
+    group: root
+    mode: "0644"
