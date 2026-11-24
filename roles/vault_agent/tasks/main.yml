@@ -39,10 +39,11 @@
   community.hashi_vault.vault_kv2_get:
     path: certificat-web-id
   register:
-    vault_agent_role_id: _task.result.secret.role_id
-    vault_agent_secret_id: _task.result.secret.secret_id
+    vault_agent_role_id: _task.result.secret.role_id | register_secret
+    vault_agent_secret_id: _task.result.secret.secret_id | register_secret
   run_once: true
   delegate_to: localhost
+  no_log: true
   become: false
 
 - name: Create vault agent workdir

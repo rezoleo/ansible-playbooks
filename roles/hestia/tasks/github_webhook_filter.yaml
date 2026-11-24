@@ -2,7 +2,7 @@
   community.hashi_vault.vault_kv2_get:
     path: "{{ hestia_services_vault_path }}/{{ hestia_github_webhook_filter_vault_path }}"
   register:
-    hestia_github_webhook_filter_url: _task.result.secret.url
+    hestia_github_webhook_filter_url: _task.result.secret.url | register_secret
   run_once: true
   delegate_to: localhost
   become: false
@@ -39,6 +39,7 @@
     owner: podman
     group: podman
     mode: "0600"
-  register: hestia_github_webhook_filter_env
+  register:
+    hestia_github_webhook_filter_env | register_secret # noqa: var-naming[pattern]
   no_log: true
   become: true
