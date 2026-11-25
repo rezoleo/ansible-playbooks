@@ -54,13 +54,20 @@ stalwart_groups: []
 #      - someone@example.org
 
 # Servers and appliances (devices Ansible does not manage) send mail through stalwart_relay_account, each one as
-# <name>@<stalwart_relay_domain> (an alias) with its own app password, only valid from its IP and kept in Vault
-# (roles/stalwart_app_password). Every inventory host outside [mail] gets one (roles/mail_relay), appliances are listed here.
+# <name>@<stalwart_relay_domain> (an alias) with its own app password, only valid from its IP and kept in Vault under
+# that address (roles/stalwart_app_password). Every inventory host outside [mail] gets one (roles/mail_relay), appliances are listed here.
 # Must be in stalwart_domains. No default: roles/mail_relay reads it from the other servers through hostvars,
 # which only sees the inventory (host_vars), not the defaults of this role
 # stalwart_relay_domain: servers.example.org
 stalwart_relay_appliances: []
 #  - { name: truenas, ip: 10.0.0.2 }
+
+# Services that send as their own address, for clients without OAuth: each one gets an internal
+# account <address> (no SSO) with an app password only valid from its IP, kept in Vault under its address.
+# The local part must not be a username in the SSO: that user would log into the service's account.
+# Removing a service from the list does not delete its account.
+stalwart_services: []
+#  - { address: nextcloud@example.org, ip: 10.0.0.3, description: Nextcloud }
 
 # Authentication is delegated to an OIDC provider
 # stalwart_oidc_issuer: https://sso.example.org # Must match the "issuer" of the discovery document exactly

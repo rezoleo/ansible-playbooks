@@ -56,6 +56,11 @@
 {% endfor %}
 {% set _ = user(stalwart_relay_account) %}
 {% set _ = users[stalwart_relay_account].update({"aliases": aliases}) %}
+{# Services: their own address is the one they send from, authenticated by an app password (tasks, after the plan) #}
+{% for s in stalwart_services %}
+{% set _ = user(s.address) %}
+{% set _ = users[s.address].update({"description": s.description | default(none)}) %}
+{% endfor %}
 {{ {"@type": "upsert", "object": "Account", "matchOn": ["name", "domainId"], "value": users} | to_json }}
 {# Authenticated SMTP only, Stalwart does not wait for the copy nor fails the mail when the hook is down #}
 {{ {"@type": "upsert", "object": "MtaHook", "matchOn": ["url"], "value": {"groupsent": {"url": "http://127.0.0.1:" ~ stalwart_group_sent_hook_port ~ "/", "stages": {"data": true}, "enable": {"match": {}, "else": "!is_empty(authenticated_as)"}, "tempFailOnError": false}}} | to_json }}

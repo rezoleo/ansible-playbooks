@@ -4,7 +4,7 @@
     name: stalwart_app_password
   tags: [mail_relay, configuration]
   vars:
-    stalwart_app_password_name: "{{ mail_relay_name }}"
+    stalwart_app_password_name: "{{ mail_relay_name }}@{{ mail_relay_domain }}"
     stalwart_app_password_account: "{{ mail_relay_account }}"
     stalwart_app_password_ip: "{{ mail_relay_ip }}"
     stalwart_app_password_server: "{{ mail_relay_server }}"

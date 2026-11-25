@@ -81,11 +81,21 @@ Servers and appliances send through one internal account, `_servers@rezoleo.fr`,
 (`stalwart_relay_domain`, an alias of `_servers`: the only addresses it can send from) with its own app password, only
 valid from its IP.
 
-- Inventory hosts outside `[mail]`: `roles/mail_relay` (Postfix relaying to `yam.rezoleo.fr:465`), nothing to do.
-- Appliances (TrueNAS, Synology...): add them to `stalwart_relay_appliances`, run the playbook, then type in their
+- Inventory hosts outside `[mail]`: `roles/mail_relay` (Postfix relaying to `yam.rezoleo.fr:465`).
+- Appliances: add them to `stalwart_relay_appliances`, run the playbook, then type in their
   SMTP settings: server `yam.rezoleo.fr`, port 465 (SSL/TLS), user `_servers@rezoleo.fr`, the password from Vault
-  `<stalwart_app_password_vault_path>/<name>`, sender `<name>@servers.rezoleo.fr`.
-- Revoke one: delete its app password (description `<name>`) on `_servers` in the web UI **and** its Vault secret,
+  `<stalwart_app_password_vault_path>/<name>@servers.rezoleo.fr`, sender `<name>@servers.rezoleo.fr`.
+- Revoke one: delete its app password (description `<name>@servers.rezoleo.fr`) on `_servers` in the web UI **and** its Vault secret,
   the next run creates a new one. Deleting only the Vault secret leaves the old password valid.
-- The price of one shared account: a compromised server can bypass its Postfix and send as any other server's
-  address, or read the `_servers` mailbox (bounces, replies). Its password still only works from its own IP.
+
+## Mail from services
+
+A service that must send as its own address (`nextcloud@rezoleo.fr`) and has no OAuth support gets its own internal account, named by that address.
+
+- Add it to `stalwart_services` (`address`, `ip`, optional `description`), run the playbook, then type in its SMTP
+  settings: server `yam.rezoleo.fr`, port 465 (SSL/TLS), user and sender the address, the password from Vault
+  `<stalwart_app_password_vault_path>/<address>`.
+- The local part must not be a username in Zitadel: that user's SSO login would land in the service's account.
+- Replies and bounces land in the account's mailbox: set a `Reply-To` in the service if needed.
+- Remove one: delete it from `stalwart_services`, then delete its account in the web UI and its Vault secret. The plan
+  only upserts accounts, so the account and its app password stay valid until deleted.

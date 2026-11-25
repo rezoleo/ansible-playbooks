@@ -471,22 +471,25 @@
           | selectattr('status', 'defined') | selectattr('status', 'eq', 'error') | list
           + stalwart_apply.stderr_lines | default([]) | select('search', '^error') | list }}
 
-# After the plan, which creates the _servers account. The servers get theirs from roles/mail_relay.
-- name: Get the app passwords of the appliances
+# After the plan, which creates the accounts. The servers get theirs from roles/mail_relay.
+# Appliances use _servers, services their own account. Every app password is named by the address it sends as.
+- name: Get the app passwords of the appliances and services
   ansible.builtin.include_role:
     apply:
       tags: [stalwart, configuration]
     name: stalwart_app_password
   tags: [stalwart, configuration]
   vars:
-    stalwart_app_password_name: "{{ stalwart_relay_appliance.name }}"
-    stalwart_app_password_account: "{{ stalwart_relay_account }}"
-    stalwart_app_password_ip: "{{ stalwart_relay_appliance.ip }}"
+    stalwart_app_password_name: >-
+      {{ stalwart_relay_sender.address if 'address' in stalwart_relay_sender
+      else stalwart_relay_sender.name ~ '@' ~ stalwart_relay_domain }}
+    stalwart_app_password_account: "{{ stalwart_relay_sender.address | default(stalwart_relay_account) }}"
+    stalwart_app_password_ip: "{{ stalwart_relay_sender.ip }}"
     stalwart_app_password_server: "{{ inventory_hostname }}"
-  loop: "{{ stalwart_relay_appliances }}"
+  loop: "{{ stalwart_relay_appliances + stalwart_services }}"
   loop_control:
-    loop_var: stalwart_relay_appliance
-    label: "{{ stalwart_relay_appliance.name }}"
+    loop_var: stalwart_relay_sender
+    label: "{{ stalwart_app_password_name }}"
 
 - name: Read the group memberships
   ansible.builtin.command:
