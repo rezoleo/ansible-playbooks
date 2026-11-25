@@ -114,7 +114,7 @@ requires-dist = [
     { name = "lolcat", specifier = "==1.4" },
     { name = "pydantic", specifier = ">=2.14.2" },
     { name = "pyfiglet", specifier = "==1.0.4" },
-    { name = "pysnmp", specifier = "==7.1.30" },
+    { name = "pysnmp", specifier = "==7.1.34" },
 ]
 
 [package.metadata.requires-dev]
@@ -840,14 +840,14 @@ wheels = [
 
 [[package]]
 name = "pysnmp"
-version = "7.1.30"
+version = "7.1.34"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyasn1" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/55/2a/ab68df5b1a2f673da731da7caf39c29d924735359e7d50eacb80d2d38e53/pysnmp-7.1.30.tar.gz", hash = "sha256:db72f439b066725d2586dff068478dc8e9b303a4dba3294462b0e76b3cb63bc2", size = 268625, upload-time = "2026-09-28T07:51:09.188Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/42/03/d9ae0f66fb66080557cd3e49319000c09740c4933bc793f70eed93b4d082/pysnmp-7.1.34.tar.gz", hash = "sha256:611396f52c4f38aa13597da57195078a6a09dfd1d86ca776d1fa0ef65c1475a5", size = 270776, upload-time = "2026-11-24T09:59:33.48Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/41/6e/5ba915d4aa285d7ca7c8c3db0dddb5d848e9f85e383de064122fb0702c7b/pysnmp-7.1.30-py3-none-any.whl", hash = "sha256:1f648b7e38fc400e63b493a45d06581d837d07cddd901e6dc9c45be03e9ed685", size = 355559, upload-time = "2026-09-28T07:51:07.606Z" },
+    { url = "https://files.pythonhosted.org/packages/b4/62/631b695c7bc742fce6a7b5aa619004cae04f3ddbbd4db012695d7b3981db/pysnmp-7.1.34-py3-none-any.whl", hash = "sha256:9097abff09312cffc83b8cb2e36b72e3e9a8f986dc4e7d1218745d2fca94390b", size = 357598, upload-time = "2026-11-24T09:59:32.166Z" },
 ]
 
 [[package]]
