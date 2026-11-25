@@ -1,0 +1,61 @@
+---
+- name: Validate the service declaration
+  ansible.builtin.assert:
+    that:
+      - vault_agent_service_name is match('^[A-Za-z0-9_-]+$')
+      - vault_agent_service_certs | length > 0
+      - (vault_agent_service_certs | difference(vault_agent_certs | map(attribute='name') | list)) | length == 0
+    fail_msg: >-
+      vault_agent_service_name must match [A-Za-z0-9_-]+ (run-parts rule) and
+      vault_agent_service_certs must only list certificates enabled on this host
+    quiet: true
+  tags:
+    - vault_agent
+    - hooks
+
+- name: Give the service user read access to the requested certificates
+  ansible.builtin.user:
+    name: "{{ vault_agent_service_user }}"
+    groups: "{{ vault_agent_certs | selectattr('name', 'in', vault_agent_service_certs) | map(attribute='group') | list }}"
+    append: true
+  become: true
+  when: vault_agent_service_user | default('') | length > 0
+  tags:
+    - vault_agent
+    - users
+
+- name: Install the reload hook for the requested certificates
+  ansible.builtin.copy:
+    content: |
+      #!/bin/sh
+      {{ vault_agent_service_reload_command }}
+    dest: "{{ vault_agent_hooks_dir }}/{{ vault_agent_cert.name }}/{{ vault_agent_service_name }}"
+    owner: root
+    group: root
+    mode: "0750"
+  become: true
+  loop: "{{ vault_agent_certs | selectattr('name', 'in', vault_agent_service_certs) | list }}"
+  loop_control:
+    loop_var: vault_agent_cert
+    label: "{{ vault_agent_cert.name }}"
+  when: vault_agent_service_reload_command | default('') | length > 0
+  tags:
+    - vault_agent
+    - hooks
+
+- name: Register hooks that would be kept and triggered at the end of the play
+  ansible.builtin.set_fact:
+    vault_agent_pending_hooks: >-
+      {{ vault_agent_pending_hooks | default([])
+         | union([vault_agent_hooks_dir ~ '/' ~ vault_agent_service_certs[0] ~ '/' ~ vault_agent_service_name]) }}
+    vault_agent_kept_hooks: >-
+      {{ vault_agent_kept_hooks | default([])
+         | union(vault_agent_service_certs
+                 | map('regex_replace', '^', vault_agent_hooks_dir ~ '/')
+                 | map('regex_replace', '$', '/' ~ vault_agent_service_name)
+                 | list) }}
+  when:
+    - vault_agent_service_reload_command | default('') | length > 0
+  tags:
+    - vault_agent
+    - hooks

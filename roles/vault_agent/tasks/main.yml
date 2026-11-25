@@ -1,130 +1,70 @@
 ---
-- name: Download Vault Hashicorp gpg key
-  ansible.builtin.get_url:
-    url: https://apt.releases.hashicorp.com/gpg
-    dest: /usr/share/keyrings/hashicorp-archive-keyring.asc
-    mode: "0644"
-    owner: root
-    checksum: sha256:1df7d66b79352bab45388511079f74987568672a8ed6395053a050b61f6c5430
-  become: true
+- name: Check the variables required on every host
+  ansible.builtin.assert:
+    that:
+      - vault_agent_vault_addr is defined
+      - vault_agent_pki_mount is defined
+    fail_msg: Check the README of the role.
+    quiet: true
+  tags:
+    - vault_agent
+    - configuration
 
-- name: Pin Vault package
-  ansible.builtin.template:
-    src: vault.pref.j2
-    dest: /etc/apt/preferences.d/vault.pref
-    mode: "0644"
-    owner: root
-    group: root
-  become: true
-
-- name: Add Vault repository
-  ansible.builtin.deb822_repository:
-    name: hashicorp
-    types: deb
-    uris: https://apt.releases.hashicorp.com
-    suites: "{{ ansible_facts['distribution_release'] }}"
-    components: main
-    signed_by: /usr/share/keyrings/hashicorp-archive-keyring.asc
-    state: present
-  become: true
-
-- name: Install Vault
-  ansible.builtin.apt:
-    update_cache: true
-    name:
-      - vault
-  become: true
-
-- name: Retrieve role_id and secret_id from Vault
-  community.hashi_vault.vault_kv2_get:
-    path: certificat-web-id
-  register:
-    vault_agent_role_id: _task.result.secret.role_id
-    vault_agent_secret_id: _task.result.secret.secret_id
-  run_once: true
-  delegate_to: localhost
+- name: Certificates will be deployed?
+  ansible.builtin.set_fact:
+    vault_agent_cert_deployment: "{{ vault_agent_certs | length > 0 }}"
   become: false
+  delegate_to: localhost
 
-- name: Create vault agent workdir
-  ansible.builtin.file:
-    path: "{{ vault_agent_working_directory }}"
-    state: directory
-    mode: "0755"
-    owner: root
-    group: root
-  become: true
+- name: Check the variables required to deploy a certificate
+  ansible.builtin.assert:
+    that:
+      - vault_agent_domain is defined
+      - (not (vault_agent_wildcard_enabled | bool)) or (vault_agent_wildcard_kv_path is defined)
+    fail_msg: Check the README of the role.
+    quiet: true
+  when: vault_agent_cert_deployment
+  tags:
+    - vault_agent
+    - configuration
 
-- name: Create role_id file
-  vars:
-    content: "{{ vault_agent_role_id }}"
-  ansible.builtin.template:
-    src: content.j2
-    dest: "{{ vault_agent_working_directory }}/role_id"
-    mode: "0600"
-    owner: root
-    group: root
-  become: true
+- name: Install Vault from the HashiCorp repository
+  ansible.builtin.import_tasks: package.yml
+  when: vault_agent_cert_deployment
+  tags:
+    - vault_agent
+    - package
 
-- name: Create secret_id file
-  vars:
-    content: "{{ vault_agent_secret_id }}"
-  ansible.builtin.template:
-    src: content.j2
-    dest: "{{ vault_agent_working_directory }}/secret_id"
-    mode: "0600"
-    owner: root
-    group: root
+- name: Deploy the CA
+  ansible.builtin.import_tasks: ca.yml
   become: true
+  tags:
+    - vault_agent
+    - ca
 
-- name: Copy agent-config.hcl
-  ansible.builtin.template:
-    src: agent-config.hcl.j2
-    dest: "{{ vault_agent_working_directory }}/agent-config.hcl"
-    mode: "0644"
-    owner: root
-    group: root
-  notify: Restart vault-agent-certificates
-  become: true
+- name: Create groups, directories and hook directories
+  ansible.builtin.include_tasks:
+    file: layout.yml
+    apply:
+      tags:
+        - vault_agent
+        - configuration
+  when: vault_agent_cert_deployment
 
-- name: Copy retrieving_cert.tmpl
-  ansible.builtin.template:
-    src: retrieving_cert.tmpl.j2
-    dest: "{{ vault_agent_working_directory }}/retrieving_cert.tmpl"
-    mode: "0644"
-    owner: root
-    group: root
-    variable_start_string: "<<"
-    variable_end_string: ">>"
-  notify: Restart vault-agent-certificates
-  become: true
+- name: Create the Vault identity of this host
+  ansible.builtin.include_tasks:
+    file: identity.yml
+    apply:
+      tags:
+        - vault_agent
+        - credentials
+  when: vault_agent_cert_deployment
 
-- name: Copy vault-agent-certificates.service
-  ansible.builtin.template:
-    src: vault-agent-certificates.service.j2
-    dest: /etc/systemd/system/vault-agent-certificates.service
-    mode: "0644"
-    owner: root
-    group: root
-  become: true
-
-- name: Create read-access group
-  ansible.builtin.group:
-    name: "{{ vault_agent_group_name }}"
-  become: true
-
-- name: Create directory for certificates
-  ansible.builtin.file:
-    state: directory
-    dest: "{{ vault_agent_certificate_directory }}"
-    mode: "0755"
-    owner: root
-    group: "{{ vault_agent_group_name }}"
-  become: true
-
-- name: Start vault-agent-certificates service
-  ansible.builtin.systemd:
-    name: vault-agent-certificates
-    state: started
-    enabled: true
-    daemon_reload: true
-  become: true
+- name: Configure and start the agent
+  ansible.builtin.include_tasks:
+    file: service.yml
+    apply:
+      tags:
+        - vault_agent
+        - service
+  when: vault_agent_cert_deployment

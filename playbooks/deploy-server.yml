@@ -10,6 +10,12 @@
     # - podman
     # - hestia
 
+  post_tasks:
+    - name: Run vault_agent
+      ansible.builtin.import_role:
+        name: vault_agent
+        tasks_from: post_tasks.yml
+
 - name: Deploy DNS resolver
   hosts: dns_resolvers
   roles:

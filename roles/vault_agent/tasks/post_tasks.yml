@@ -1,0 +1,35 @@
+---
+- name: List the hooks present on the host
+  ansible.builtin.find:
+    paths: "{{ vault_agent_hooks_dir }}"
+    recurse: true
+    file_type: file
+  become: true
+  register:
+    vault_agent_hooks_on_disk: _task.result.files | map(attribute='path') | list
+  tags:
+    - vault_agent
+    - hooks
+
+- name: Remove the hooks that were not registered during this play
+  ansible.builtin.file:
+    path: "{{ vault_agent_hook }}"
+    state: absent
+  become: true
+  loop: "{{ vault_agent_hooks_on_disk | difference(vault_agent_kept_hooks | default([])) }}"
+  loop_control:
+    loop_var: vault_agent_hook
+  tags:
+    - vault_agent
+    - hooks
+
+- name: Trigger the hooks registered during this play
+  ansible.builtin.command: "{{ vault_agent_hook }}"
+  become: true
+  loop: "{{ vault_agent_pending_hooks | default([]) }}"
+  loop_control:
+    loop_var: vault_agent_hook
+  changed_when: false
+  tags:
+    - vault_agent
+    - hooks

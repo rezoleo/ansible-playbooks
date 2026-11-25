@@ -1,0 +1,90 @@
+---
+- name: Look for an existing secret_id on the host
+  ansible.builtin.stat:
+    path: "{{ vault_agent_config_dir }}/secret_id"
+  become: true
+  register:
+    vault_agent_secret_id_present: _task.result.stat.exists
+
+- name: Write the PKI role shared by all servers
+  community.hashi_vault.vault_write:
+    path: "{{ vault_agent_pki_mount }}/roles/{{ vault_agent_pki_role }}"
+    data: "{{ vault_agent_pki_role_params }}"
+  delegate_to: localhost
+  become: false
+  run_once: true
+
+- name: Write the wildcard policy shared by all servers
+  community.hashi_vault.vault_write:
+    path: "sys/policies/acl/{{ vault_agent_wildcard_policy }}"
+    data:
+      policy: "{{ lookup('ansible.builtin.template', 'wildcard.policy.hcl.j2') }}"
+  delegate_to: localhost
+  become: false
+  run_once: true
+  when: vault_agent_wildcard_kv_path is defined
+
+- name: Write the policy of this host
+  community.hashi_vault.vault_write:
+    path: "sys/policies/acl/{{ vault_agent_host_policy }}"
+    data:
+      policy: "{{ lookup('ansible.builtin.template', 'host.policy.hcl.j2') }}"
+  delegate_to: localhost
+  become: false
+  when: vault_agent_host_cert_enabled | bool
+
+- name: Write the AppRole of this host
+  community.hashi_vault.vault_write:
+    path: "{{ vault_agent_approle_path }}"
+    data:
+      token_policies: "{{ vault_agent_certs | map(attribute='policy') | list }}"
+      token_ttl: "{{ vault_agent_token_ttl }}"
+      token_max_ttl: "{{ vault_agent_token_max_ttl }}"
+      secret_id_ttl: 0
+      secret_id_num_uses: 0
+      secret_id_bound_cidrs: "{{ vault_agent_approle_bound_cidrs }}"
+      token_bound_cidrs: "{{ vault_agent_approle_bound_cidrs }}"
+  delegate_to: localhost
+  become: false
+
+- name: Read the role_id of this host
+  community.hashi_vault.vault_read:
+    path: "{{ vault_agent_approle_path }}/role-id"
+  register:
+    vault_agent_role_id: _task.result.data.data.role_id
+  delegate_to: localhost
+  changed_when: false
+  become: false
+
+- name: Deploy role_id
+  ansible.builtin.copy:
+    content: "{{ vault_agent_role_id }}\n"
+    dest: "{{ vault_agent_config_dir }}/role_id"
+    owner: root
+    group: root
+    mode: "0400"
+  become: true
+  notify: Restart vault agent
+
+- name: Issue and deploy a secret_id (first run or rotation)
+  when: (not (vault_agent_secret_id_present | bool)) or (vault_agent_rotate_secret_id | bool)
+  block:
+    - name: Generate a secret_id
+      community.hashi_vault.vault_write:
+        path: "{{ vault_agent_approle_path }}/secret-id"
+      register:
+        vault_agent_secret_id: _task.result.data.data.secret_id | default("")
+      delegate_to: localhost
+      become: false
+      no_log: true
+
+    - name: Deploy secret_id
+      ansible.builtin.copy:
+        content: "{{ vault_agent_secret_id }}\n"
+        dest: "{{ vault_agent_config_dir }}/secret_id"
+        owner: root
+        group: root
+        mode: "0400"
+      become: true
+      no_log: true
+      notify: Restart vault agent

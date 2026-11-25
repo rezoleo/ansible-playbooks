@@ -1,0 +1,46 @@
+---
+- name: Create the group allowed to read each certificate key
+  ansible.builtin.group:
+    name: "{{ vault_agent_cert.group }}"
+    system: true
+    state: present
+  become: true
+  loop: "{{ vault_agent_certs }}"
+  loop_control:
+    loop_var: vault_agent_cert
+    label: "{{ vault_agent_cert.name }}"
+
+- name: Create the certificate directories
+  ansible.builtin.file:
+    path: "{{ vault_agent_cert.dir }}"
+    state: directory
+    owner: root
+    group: "{{ vault_agent_cert.group }}"
+    mode: "0750"
+  become: true
+  loop: "{{ vault_agent_certs }}"
+  loop_control:
+    loop_var: vault_agent_cert
+    label: "{{ vault_agent_cert.name }}"
+
+- name: Create the agent configuration directory
+  ansible.builtin.file:
+    path: "{{ vault_agent_config_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+  become: true
+
+- name: Create one hook directory per certificate
+  ansible.builtin.file:
+    path: "{{ vault_agent_hooks_dir }}/{{ vault_agent_cert.name }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+  become: true
+  loop: "{{ vault_agent_certs }}"
+  loop_control:
+    loop_var: vault_agent_cert
+    label: "{{ vault_agent_cert.name }}"

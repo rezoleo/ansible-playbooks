@@ -1,0 +1,5 @@
+#jinja2: variable_start_string:'[[', variable_end_string:']]', block_start_string:'[%', block_end_string:'%]'
+{{- with secret "[[ vault_agent_wildcard_read_path ]]" -}}
+{{ index .Data.data "[[ vault_agent_wildcard_fullchain_field ]]" }}
+{{ index .Data.data "[[ vault_agent_wildcard_key_field ]]" | writeToFile "[[ vault_agent_wildcard_cert_dir ]]/[[ vault_agent_privkey_filename ]]" "root" "[[ vault_agent_wildcard_cert_group ]]" "0640" "newline" }}
+{{- end -}}

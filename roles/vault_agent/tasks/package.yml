@@ -1,0 +1,36 @@
+---
+- name: Download Vault Hashicorp gpg key
+  ansible.builtin.get_url:
+    url: https://apt.releases.hashicorp.com/gpg
+    dest: /usr/share/keyrings/hashicorp-archive-keyring.asc
+    mode: "0644"
+    owner: root
+    checksum: "{{ vault_agent_hashicorp_gpg_checksum }}"
+  become: true
+
+- name: Pin Vault package version
+  ansible.builtin.template:
+    src: vault.pref.j2
+    dest: /etc/apt/preferences.d/vault.pref
+    mode: "0644"
+    owner: root
+    group: root
+  become: true
+
+- name: Add Vault repository
+  ansible.builtin.deb822_repository:
+    name: hashicorp
+    types: deb
+    uris: https://apt.releases.hashicorp.com
+    suites: "{{ ansible_facts['distribution_release'] }}"
+    components: main
+    signed_by: /usr/share/keyrings/hashicorp-archive-keyring.asc
+    state: present
+  become: true
+
+- name: Install Vault
+  ansible.builtin.apt:
+    update_cache: true
+    name:
+      - vault
+  become: true
