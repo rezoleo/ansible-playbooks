@@ -10,6 +10,7 @@ dependencies = [
     "lolcat==1.4",
     "pyfiglet==1.0.4",
     "netaddr==1.3.0",
+    "pydantic>=2.14.2",
 ]
 
 [dependency-groups]
