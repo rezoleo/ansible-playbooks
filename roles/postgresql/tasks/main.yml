@@ -94,10 +94,13 @@
   loop_control:
     label: "{{ item.key }}"
   register:
-    postgresql_vault_result: dict(
-        _task.loop_result.results | map(attribute='item.key') | zip(_task.loop_result.results | map(attribute='secret.password', default=''))
+    postgresql_vault_result: >-
+      dict(
+        _task.loop_result.results | map(attribute='item.key')
+        | zip(_task.loop_result.results | map(attribute='secret.password', default='') | map('register_secret') )
       )
   delegate_to: localhost
+  no_log: true
   failed_when: >-
     _task.result.failed | default(false) and not ((_task.result.msg | default('') | lower) is search('missing path'))
 
@@ -105,12 +108,13 @@
   community.hashi_vault.vault_kv2_write:
     path: "{{ postgresql_vault_path }}/{{ item.key }}@{{ postgresql_hostname }}"
     data:
-      password: "{{ lookup('ansible.builtin.password', '/dev/null length=32 chars=ascii_letters,digit') }}"
+      password: "{{ lookup('ansible.builtin.password', '/dev/null length=32 chars=ascii_letters,digit') | register_secret }}"
   loop: "{{ postgresql_vault_result | dict2items(value_name='password') }}"
   loop_control:
     label: "{{ item.key }}"
   when: item.password | length == 0
   delegate_to: localhost
+  no_log: true
 
 - name: Re-read internal accounts passwords from Vault
   community.hashi_vault.vault_kv2_get:
@@ -120,9 +124,10 @@
     label: "{{ item.key }}"
   register:
     postgresql_internal_credentials: dict(
-        _task.loop_result.results | map(attribute='item.key') | zip(_task.loop_result.results | map(attribute='secret.password'))
+        _task.loop_result.results | map(attribute='item.key') | zip( _task.loop_result.results | map(attribute='secret.password') | map('register_secret'))
       )
   delegate_to: localhost
+  no_log: true
 
 - name: Remove roles not declared in postgresql_users
   become: true
@@ -216,12 +221,14 @@
              | difference(postgresql_existing_users) }}
         postgresql_external_new: {}
 
+    # register_secret is not used here because we need to display them at the end of the play.
     - name: Generate passwords for new external roles
       ansible.builtin.set_fact:
         postgresql_external_new: >-
           {{ postgresql_external_new | combine({item: lookup('ansible.builtin.password',
              '/dev/null length=32 chars=ascii_letters,digits')}) }}
       loop: "{{ postgresql_external_missing }}"
+      no_log: true
 
     - name: Create new external users
       community.postgresql.postgresql_user:
