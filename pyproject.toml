@@ -14,7 +14,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "ansible-lint==26.11.0",
+    "ansible-lint==26.11.1",
     "pre-commit==4.7.0",
     "ruff==0.17.6",
     "ty==0.0.110",
