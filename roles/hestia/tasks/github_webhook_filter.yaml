@@ -39,7 +39,6 @@
     owner: podman
     group: podman
     mode: "0600"
-  register:
-    hestia_github_webhook_filter_env | register_secret # noqa: var-naming[pattern]
+  register: hestia_github_webhook_filter_env
   no_log: true
   become: true
