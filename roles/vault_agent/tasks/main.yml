@@ -5,7 +5,8 @@
     dest: /usr/share/keyrings/hashicorp-archive-keyring.asc
     mode: "0644"
     owner: root
-    checksum: sha256:cafb01beac341bf2a9ba89793e6dd2468110291adfbb6c62ed11a0cde6c09029
+    checksum: sha256:1df7d66b79352bab45388511079f74987568672a8ed6395053a050b61f6c5430
+  become: true
 
 - name: Pin Vault package
   ansible.builtin.template:
@@ -14,6 +15,7 @@
     mode: "0644"
     owner: root
     group: root
+  become: true
 
 - name: Add Vault repository
   ansible.builtin.deb822_repository:
@@ -24,12 +26,14 @@
     components: main
     signed_by: /usr/share/keyrings/hashicorp-archive-keyring.asc
     state: present
+  become: true
 
 - name: Install Vault
   ansible.builtin.apt:
     update_cache: true
     name:
       - vault
+  become: true
 
 - name: Retrieve role_id and secret_id from Vault
   community.hashi_vault.vault_kv2_get:
@@ -48,6 +52,7 @@
     mode: "0755"
     owner: root
     group: root
+  become: true
 
 - name: Create role_id file
   vars:
@@ -58,6 +63,7 @@
     mode: "0600"
     owner: root
     group: root
+  become: true
 
 - name: Create secret_id file
   vars:
@@ -68,6 +74,7 @@
     mode: "0600"
     owner: root
     group: root
+  become: true
 
 - name: Copy agent-config.hcl
   ansible.builtin.template:
@@ -77,6 +84,7 @@
     owner: root
     group: root
   notify: Restart vault-agent-certificates
+  become: true
 
 - name: Copy retrieving_cert.tmpl
   ansible.builtin.template:
@@ -88,6 +96,7 @@
     variable_start_string: "<<"
     variable_end_string: ">>"
   notify: Restart vault-agent-certificates
+  become: true
 
 - name: Copy vault-agent-certificates.service
   ansible.builtin.template:
@@ -96,10 +105,12 @@
     mode: "0644"
     owner: root
     group: root
+  become: true
 
 - name: Create read-access group
   ansible.builtin.group:
     name: "{{ vault_agent_group_name }}"
+  become: true
 
 - name: Create directory for certificates
   ansible.builtin.file:
@@ -108,6 +119,7 @@
     mode: "0755"
     owner: root
     group: "{{ vault_agent_group_name }}"
+  become: true
 
 - name: Start vault-agent-certificates service
   ansible.builtin.systemd:
@@ -115,3 +127,4 @@
     state: started
     enabled: true
     daemon_reload: true
+  become: true
