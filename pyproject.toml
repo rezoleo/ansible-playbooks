@@ -6,6 +6,7 @@ requires-python = ">=3.13, <4"
 dependencies = [
     "ansible==14.6.0",
     "hvac==2.4.0",
+    "netaddr==1.3.0",
     "pysnmp==7.1.30",
     "lolcat==1.4",
     "pyfiglet==1.0.4",

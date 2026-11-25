@@ -62,6 +62,7 @@ venv:
     if [[ ! -d .venv ]]; then
       {{ venv_command }}
       {{ install_command }}
+      {{ venv_bin }}/ansible-galaxy collection install --requirements-file requirements.yml
       pre-commit install
     fi
 

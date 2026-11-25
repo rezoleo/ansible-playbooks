@@ -1,3 +1,4 @@
+---
 - name: Retrieve Nextcloud secrets from Vault
   community.hashi_vault.vault_kv2_get:
     path: "{{ nextcloud_vault_secret_path }}"
@@ -26,63 +27,38 @@
   run_once: true
   delegate_to: localhost
 
-- name: Create nextcloud directory
-  ansible.builtin.file:
-    path: /home/podman/nextcloud
-    state: directory
-    owner: podman
-    group: podman
-    mode: "0755"
-  become: true
+- name: Install and configure Nextcloud
+  ansible.builtin.include_role:
+    name: nextcloud.admin.install_nextcloud
+  vars:
+    php_install_external_repos: "{{ nextcloud_php_install_external_repos }}"
+    php_ver: "{{ nextcloud_php_ver }}"
+    nextcloud_admin_name: "{{ nextcloud_admin_username }}"
+    nextcloud_admin_pwd: "{{ nextcloud_admin_password }}"
+    nextcloud_db_pwd: "{{ nextcloud_db_password }}"
+    nextcloud_config_settings:
+      - { name: "overwriteprotocol", value: "https" }
+      - { name: "overwritehost", value: "{{ nextcloud_host }}" }
+      - { name: "overwrite.cli.url", value: "https://{{ nextcloud_host }}" }
+      - { name: "memcache.local", value: '\OC\Memcache\APCu' }
 
-- name: Create CODE directory
-  ansible.builtin.file:
-    path: /home/podman/code
-    state: directory
-    owner: podman
-    group: podman
-    mode: "0755"
-  become: true
-
-- name: Copy compose file for CODE
-  ansible.builtin.copy:
-    src: code/compose.yml
-    dest: /home/podman/code/compose.yml
-    owner: podman
-    group: podman
-    mode: "0644"
-  become: true
-  notify: Restart CODE
-
-- name: Copy compose file for Nextcloud
-  ansible.builtin.copy:
-    src: nextcloud/compose.yml
-    dest: /home/podman/nextcloud/compose.yml
-    owner: podman
-    group: podman
-    mode: "0644"
-  become: true
-  notify: Restart Nextcloud
-
-- name: Copy and fill .env file for Nextcloud
+- name: Configure Nextcloud SMTP settings
   ansible.builtin.template:
-    src: nextcloud.env.j2
-    dest: /home/podman/nextcloud/nextcloud.env
-    owner: podman
-    group: podman
-    mode: "0600"
+    src: smtp.config.php.j2
+    dest: "{{ nextcloud_webroot }}/config/smtp.config.php"
+    owner: www-data
+    group: www-data
+    mode: "0640"
   become: true
-  notify: Restart Nextcloud
 
-- name: Copy and fill .env file for CODE
+- name: Configure Garage S3 primary object storage
   ansible.builtin.template:
-    src: code.env.j2
-    dest: /home/podman/code/code.env
-    owner: podman
-    group: podman
-    mode: "0600"
+    src: s3.config.php.j2
+    dest: "{{ nextcloud_webroot }}/config/s3.config.php"
+    owner: www-data
+    group: www-data
+    mode: "0640"
   become: true
-  notify: Restart CODE
 
 - name: Add firewall rules for Nextcloud
   ansible.builtin.import_role:
@@ -91,15 +67,9 @@
   vars:
     firewall_rules:
       050-equestria:
-        - rule_name: "Allow traffic from Equestria to port 3000"
+        - rule_name: "Allow traffic from Equestria to port 80"
           chain: INPUT
           protocol: tcp
           source: "{{ reverse_proxy_address }}"
-          destination_port: 3000
-          target: ACCEPT
-        - rule_name: "Allow traffic from Equestria to port 3001"
-          chain: INPUT
-          protocol: tcp
-          source: "{{ reverse_proxy_address }}"
-          destination_port: 3001
+          destination_port: 80
           target: ACCEPT

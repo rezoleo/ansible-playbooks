@@ -1,42 +1,66 @@
 ---
 # Config for nextcloud
-# The following secret are to fetched from vault at runtime, see tasks/main.yaml
-# db_password
-# admin_username and admin_password
-# smtp_password and smtp_address
-# object_key and object_secret
+# The following secrets are fetched from Vault at runtime, see tasks/main.yaml:
+# - db_password
+# - admin_username and admin_password
+# - smtp_password and smtp_mail_address
+# - object_key and object_secret
 
-# Nextcloud
+# Nextcloud & Reverse Proxy
 
 nextcloud_host: nextcloud.rezoleo.fr
 nextcloud_vault_secret_path: services/nextcloud
 
-# Database
+nextcloud_trusted_domain:
+  - "{{ nextcloud_host }}"
+# We trust the subnet on which is the reverse proxy, but only the reverse proxy host will be able to connect to this VM
+nextcloud_trusted_proxies:
+  - "10.12.0.0/16"
+
+# TLS is terminated by the reverse proxy (Equestria)
+nextcloud_install_tls: false
+nextcloud_tls_enforce: false
+
+# Web server, PHP & Paths
+
+nextcloud_php_install_external_repos: false
+nextcloud_php_ver: "8.4"
+nextcloud_install_websrv: true
+nextcloud_websrv: apache2
+nextcloud_webroot: /opt/nextcloud
+nextcloud_data_dir: /var/ncdata
+
+# Redis (local caching and transactional file locking)
+
+nextcloud_install_redis_server: true
+
+# Database (external PostgreSQL VM)
 
 nextcloud_vault_db_path: databases/nextcloud@pg.rezoleo.fr
-nextcloud_db_host: db:5432
+nextcloud_install_db: false
+nextcloud_db_backend: pgsql
+nextcloud_db_host: pg.rezoleo.fr
 nextcloud_db_name: nextcloud
-nextcloud_db_user: nextcloud
+nextcloud_db_admin: nextcloud
 
 # SMTP
 
 nextcloud_smtp_host: mail.rezoleo.fr
+nextcloud_smtp_port: 25
 nextcloud_smtp_secure: "" # "" (none), "ssl" or "tls"
+nextcloud_smtp_authtype: PLAIN
 
-# Object storage
+# Object storage (Garage S3)
 
 nextcloud_vault_garage_path: buckets/nextcloud
 nextcloud_object_bucket: nextcloud
 # Garage's default region is garage
 nextcloud_object_region: garage
 # For Garage we must set it to true
-nextcloud_object_usepath_style: 'true'
+nextcloud_object_usepath_style: "true"
 # Garage does not support autocreate
-nextcloud_object_autocreate: 'false'
+nextcloud_object_autocreate: "false"
 nextcloud_object_host: s3.rezoleo.fr
 # The buckets are behind a reverse proxy
 nextcloud_object_port: 443
-
-# Collabora Online
-
-nextcloud_code_host: collabora.rezoleo.fr
+nextcloud_object_use_ssl: "true"

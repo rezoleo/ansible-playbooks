@@ -1,0 +1,17 @@
+<?php
+// Official references:
+// - Nextcloud Docker image template: https://github.com/nextcloud/docker/blob/master/.config/smtp.config.php
+// - Nextcloud Email configuration docs: https://docs.nextcloud.com/server/latest/admin_manual/configuration_server/email_configuration.html
+// - Nextcloud config.sample.php: https://github.com/nextcloud/server/blob/master/config/config.sample.php
+$CONFIG = array (
+  'mail_smtpmode' => 'smtp',
+  'mail_smtphost' => '{{ nextcloud_smtp_host }}',
+  'mail_smtpport' => {{ nextcloud_smtp_port }},
+  'mail_smtpsecure' => '{{ nextcloud_smtp_secure }}',
+  'mail_smtpauth' => true,
+  'mail_smtpauthtype' => '{{ nextcloud_smtp_authtype }}',
+  'mail_smtpname' => '{{ nextcloud_smtp_mail_address }}',
+  'mail_smtppassword' => '{{ nextcloud_smtp_password }}',
+  'mail_from_address' => '{{ nextcloud_smtp_mail_address.split("@") | first }}',
+  'mail_domain' => '{{ nextcloud_smtp_mail_address.split("@") | last }}',
+);

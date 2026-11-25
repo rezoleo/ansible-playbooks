@@ -11,7 +11,6 @@
 - name: Install podman
   hosts:
     - podman_vm
-    - nextcloud
     - hestia
   roles:
     - podman

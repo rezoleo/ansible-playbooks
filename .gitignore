@@ -6,8 +6,8 @@ hosts.*
 !hosts.example
 host_vars/
 
-# Ignore lock file
-.ansible/.lock
+# Ignore local Ansible cache and collections
+.ansible/
 
 # Ignore ansible-cmdb files
 out/
