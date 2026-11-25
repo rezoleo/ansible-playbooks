@@ -1,0 +1,62 @@
+services:
+{% for service_name in hermes_compose_services.keys() %}
+    {{ service_name }}:
+{% if 'image' in hermes_compose_services[service_name] %}
+        image: {{hermes_compose_services[service_name].image}}
+{% endif %}
+{% if 'need_user' in hermes_compose_services[service_name] %}
+        user: "{{ userdata.uid }}"
+        userns_mode: "host"
+{% endif %}
+        restart: always
+{% if 'label' in hermes_compose_services[service_name] %}
+        labels:
+            - "traefik.enable=true"
+{% if "url" in hermes_compose_services[service_name].label %}
+            - "traefik.frontend.rule=Host:{{ hermes_compose_services[service_name].label.url }}"
+{% endif %}
+{% if not "url" in hermes_compose_services[service_name].label and "port" in hermes_compose_services[service_name].label %}
+            - "traefik.frontend.rule=Host:{{ hermes_compose_default_url }}"
+{% endif %}
+            - "traefik.port={{ hermes_compose_services[service_name].label.port }}"
+            - "traefik.network=proxy"
+{% endif %}
+{% if "volumes" in hermes_compose_services[service_name] %}
+        volumes:
+            - "{{ hermes_account_home_path }}/writable:/app"
+{% endif %}
+{% if "environment" in hermes_compose_services[service_name]%}
+        environment:
+{% for environment_name in hermes_compose_services[service_name].environment.keys() %}
+           - {{ environment_name }}={{ hermes_compose_services[service_name].environment[environment_name] }}
+{% endfor %}
+{% endif %}
+{% if "depends_on" in hermes_compose_services[service_name] %}
+       depends_on:
+{% for dependencies in hermes_compose_services[service_name].depends_on %}
+             - dependencies
+{% endfor %}
+{% endif %}
+{% if "networks" in hermes_compose_services[service_name] %}
+        networks:
+{% for network in hermes_compose_services[service_name].networks %}
+            - {{ network }}
+{% endfor %}
+{% endif %}
+{% if "entrypoint" in hermes_compose_services[service_name] %}
+        entrypoint: {{ hermes_compose_services[service_name].entrypoint }}
+{%endif%}
+{% if "container_name" in hermes_compose_services[service_name] %}
+        container_name: {{hermes_compose_services[service_name].container_name}}
+{% endif %}
+{% if "command" in hermes_compose_services[service_name] %}
+        command: "{{hermes_compose_services[service_name].command}}"
+{% endif %}
+{% if "working_dir" in hermes_compose_services[service_name] %}
+        working_dir: {{hermes_compose_services[service_name].working_dir }}
+{% endif %}
+{% endfor %}
+
+networks:
+    proxy:
+        external: true

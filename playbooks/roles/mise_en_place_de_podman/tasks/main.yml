@@ -1,0 +1,20 @@
+- name: Install podman and podman-compose
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+    state: present
+    name:
+      - podman
+      - podman-compose
+- name: Create a docker user
+  become: true
+  ansible.builtin.user:
+    name: docker-manager
+
+- name: Create  a docker folder in docker-manager path
+  become: true
+  ansible.builtin.file:
+    state: directory
+    path: "/home/docker-manager/docker"
+    mode: ug+rwX
+    owner: "docker-manager"
