@@ -35,7 +35,7 @@
   notify: Restart keepalived
 
 - name: Enable and start keepalived service
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: keepalived
     enabled: true
     state: started
