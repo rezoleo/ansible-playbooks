@@ -1,0 +1,45 @@
+---
+- name: Get the app password of this server
+  ansible.builtin.import_role:
+    name: stalwart_app_password
+  tags: [mail_relay, configuration]
+  vars:
+    stalwart_app_password_name: "{{ mail_relay_name }}@{{ mail_relay_domain }}"
+    stalwart_app_password_account: "{{ mail_relay_account }}"
+    stalwart_app_password_ip: "{{ mail_relay_ip }}"
+    stalwart_app_password_server: "{{ mail_relay_server }}"
+
+- name: Install Postfix
+  ansible.builtin.apt:
+    name:
+      - postfix
+      - libsasl2-modules
+    state: present
+  become: true
+  tags: [mail_relay, package]
+
+- name: Configure Postfix
+  ansible.builtin.template:
+    src: "{{ item.name }}.j2"
+    dest: /etc/postfix/{{ item.name }}
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  loop:
+    - { name: main.cf, mode: "0644" }
+    - { name: recipient_canonical, mode: "0644" }
+    - { name: sasl_passwd, mode: "0600" }
+  loop_control:
+    label: "{{ item.name }}"
+  notify: Restart postfix
+  no_log: true # sasl_passwd
+  become: true
+  tags: [mail_relay, configuration]
+
+- name: Enable and start Postfix
+  ansible.builtin.systemd_service:
+    name: postfix
+    enabled: true
+    state: started
+  become: true
+  tags: [mail_relay, configuration]

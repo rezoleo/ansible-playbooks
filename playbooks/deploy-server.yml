@@ -20,3 +20,13 @@
   become: true
   roles:
     - nut
+
+- name: Deploy mail server
+  hosts: mail
+  roles:
+    - stalwart
+
+- name: Relay local mail through the mail server
+  hosts: all:!mail
+  roles:
+    - mail_relay

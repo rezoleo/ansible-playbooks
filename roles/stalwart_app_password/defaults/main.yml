@@ -1,0 +1,11 @@
+---
+# Mail server where the account lives (roles/stalwart)
+stalwart_app_password_server: "{{ groups['mail'][0] }}"
+# Management API of the mail server, called from the mail server itself
+stalwart_app_password_api_url: http://127.0.0.1:8080
+# Vault: the app passwords (one secret per name) and the API key of _ansible (stalwart_vault_path of roles/stalwart)
+stalwart_app_password_vault_path: services/stalwart-app-passwords
+stalwart_app_password_api_key_vault_path: services/stalwart
+
+# Required: stalwart_app_password_name (description of the password, name of its Vault secret),
+# stalwart_app_password_account (address of the account) and stalwart_app_password_ip (the only IP it works from)

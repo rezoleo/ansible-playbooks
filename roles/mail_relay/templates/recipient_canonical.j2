@@ -1,0 +1,2 @@
+# {{ ansible_managed }}
+/^[^@]+@({{ inventory_hostname | regex_escape }}|localhost)$/ {{ mail_relay_root_recipient }}

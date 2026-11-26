@@ -1,0 +1,37 @@
+---
+# Internals of the role, not meant to change per host (see defaults/main.yml for the parameters)
+
+# Bump the versions together with the checksums (sha256 of the release tarballs)
+stalwart_version: 1.2.0
+stalwart_checksum: ee79b1552acc3c89e4354405c7a716874826e4db7537a4b32c7b1677e08688c8
+stalwart_cli_version: 2.0.0
+stalwart_cli_checksum: 1cd3da6a9d7c0153a660346314e09d6e0536ab9b0440bf123a56d16d680926d2
+
+# Releases are unpacked in <stalwart_install_path>/<version> and /usr/local/bin links to the selected one
+stalwart_install_path: /opt/stalwart
+stalwart_config_path: /etc/stalwart
+stalwart_data_path: /var/lib/stalwart
+
+# Listeners. The HTTP one (webadmin, webmail, JMAP) is plain HTTP, TLS is done by Equestria
+stalwart_http_port: 8080
+stalwart_listeners:
+  - { name: smtp, port: 25, protocol: smtp }
+  - { name: submissions, port: 465, protocol: smtp, implicit_tls: true }
+  - { name: submission, port: 587, protocol: smtp }
+  - { name: imaps, port: 993, protocol: imap, implicit_tls: true }
+  - { name: http, port: "{{ stalwart_http_port }}", protocol: http, use_tls: false }
+# Open to everyone, the HTTP port only to stalwart_http_source
+stalwart_public_ports: [25, 465, 587, 993]
+# Management API, only used from the server itself (the API key of _ansible only works from 127.0.0.1)
+stalwart_api_url: http://127.0.0.1:{{ stalwart_http_port }}
+
+stalwart_certificate: "{{ vault_agent_certificate_directory }}/fullchain.pem"
+stalwart_private_key: "{{ vault_agent_certificate_directory }}/privkey.pem"
+
+# Internal accounts (no SSO)
+stalwart_ansible_account: _ansible@{{ stalwart_domains[0] }} # Applies the plan with its API key
+stalwart_relay_account: _servers@{{ stalwart_domains[0] }} # Mail from the servers and appliances
+stalwart_group_sent_account: _groupsent@{{ stalwart_domains[0] }} # The group-sent hook
+
+# Port of the hook that copies mail sent as a group into its Sent Items (files/group-sent-hook.py)
+stalwart_group_sent_hook_port: 8081

@@ -1,0 +1,81 @@
+---
+- name: Retrieve from Vault the app password of {{ stalwart_app_password_name }}
+  community.hashi_vault.vault_kv2_get:
+    path: "{{ stalwart_app_password_vault_path }}/{{ stalwart_app_password_name }}"
+  register:
+    stalwart_app_password_vault_secret: _task.result.secret | default(none)
+  failed_when: _task.result.msg is defined and 'Invalid or missing path' not in _task.result.msg
+  delegate_to: localhost
+  become: false
+  no_log: true
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+- name: Create the app password of {{ stalwart_app_password_name }}
+  when: stalwart_app_password_vault_secret is none
+  delegate_to: "{{ stalwart_app_password_server }}"
+  block:
+    - name: Retrieve the API key of the mail server from Vault
+      community.hashi_vault.vault_kv2_get:
+        path: "{{ stalwart_app_password_api_key_vault_path }}"
+      register: stalwart_app_password_api_key_secret # Not a projection: those are evaluated even when the task is skipped
+      delegate_to: localhost
+      become: false
+      no_log: true
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+    - name: Find the id of the account
+      ansible.builtin.command:
+        argv: [stalwart-cli, --url, "{{ stalwart_app_password_api_url }}", query, Account, --json, --fields, emailAddress]
+      environment:
+        STALWART_TOKEN: "{{ stalwart_app_password_api_key_secret.secret.api_key }}"
+      register: stalwart_app_password_accounts
+      changed_when: false
+
+    - name: Create the app password
+      ansible.builtin.uri:
+        url: "{{ stalwart_app_password_api_url }}/jmap"
+        method: POST
+        headers:
+          Authorization: Bearer {{ stalwart_app_password_api_key_secret.secret.api_key }}
+        body_format: json
+        body:
+          using: ["urn:ietf:params:jmap:core", "urn:stalwart:jmap"]
+          methodCalls:
+            - - x:AppPassword/set
+              - accountId: >-
+                  {{ (stalwart_app_password_accounts.stdout_lines | map('from_json')
+                  | selectattr('emailAddress', 'eq', stalwart_app_password_account) | first).id }}
+                create: {new: {description: "{{ stalwart_app_password_name }}", allowedIps: "{{ {stalwart_app_password_ip: true} }}"}} # Keys are not templated
+              - "0"
+      register: stalwart_app_password_created
+      no_log: true
+
+    # Separate from the creation, whose output (the secret) is hidden. Without "new" the response holds no secret.
+    # A refused creation still answers with "created" (null or without "new"), the reason is in "notCreated".
+    - name: Check that the app password was created
+      ansible.builtin.fail:
+        msg: "Could not create the app password: {{ stalwart_app_password_response }}"
+      when: "'new' not in (stalwart_app_password_response[1].created | default(none) or {})"
+      vars:
+        stalwart_app_password_response: "{{ stalwart_app_password_created.json.methodResponses[0] }}"
+
+    - name: Store the app password in Vault
+      community.hashi_vault.vault_kv2_write:
+        path: "{{ stalwart_app_password_vault_path }}/{{ stalwart_app_password_name }}"
+        data:
+          password: "{{ stalwart_app_password_created.json.methodResponses[0][1].created.new.secret }}"
+          allowed_ip: "{{ stalwart_app_password_ip }}"
+      delegate_to: localhost
+      become: false
+      no_log: true
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+- name: Remember the app password of {{ stalwart_app_password_name }}
+  ansible.builtin.set_fact:
+    stalwart_app_password_secret: >-
+      {{ stalwart_app_password_vault_secret.password if stalwart_app_password_vault_secret is not none
+      else stalwart_app_password_created.json.methodResponses[0][1].created.new.secret }}
+  no_log: true
