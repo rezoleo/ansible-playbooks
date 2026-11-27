@@ -14,7 +14,7 @@
 - name: Configure chrony server
   ansible.builtin.copy:
     src: chrony.conf
-    dest: /etc/chrony/chrony.d/rezoleo.conf
+    dest: /etc/chrony/conf.d/rezoleo.conf
     owner: root
     group: root
     mode: "0644"
@@ -28,6 +28,9 @@
     state: started
     enabled: true
   become: true
+
+- name: Wait for chrony to start
+  ansible.builtin.meta: flush_handlers
 
 - name: Check Chrony's sync
   # Explanation and expected result of the command:
@@ -47,7 +50,34 @@
     exit 0
   changed_when: false
   retries: 2
-  delay: 5
+  delay: 30
   until: _task.result.rc == 0
+  become: true
   args:
     executable: /usr/bin/bash
+
+- name: Add firewall rules
+  ansible.builtin.import_role:
+    name: firewall
+    tasks_from: create_rule.yml
+  vars:
+    firewall_rules:
+      050-ntp-server:
+        - rule_name: "Allow traffic from 10.10 subnet"
+          chain: INPUT
+          protocol: udp
+          source: 10.10.0.0/16
+          destination_port: 123
+          target: ACCEPT
+        - rule_name: "Allow traffic from 10.11 subnet"
+          chain: INPUT
+          protocol: udp
+          source: 10.10.0.0/16
+          destination_port: 123
+          target: ACCEPT
+        - rule_name: "Allow traffic from 10.12 subnet"
+          chain: INPUT
+          protocol: udp
+          source: 10.12.0.0/16
+          destination_port: 123
+          target: ACCEPT

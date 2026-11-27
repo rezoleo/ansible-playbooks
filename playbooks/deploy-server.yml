@@ -3,12 +3,33 @@
   hosts: all
   roles:
     - common
-    - monitoring # firewall will be installed alongside (dependency)
+    - firewall
+    - monitoring # note that firewall is a dependency
+    - ssh
+
+- name: Install ntp client
+  hosts: all:!ntp_server
+  roles:
     - role: ntp
       when: ansible_facts['virtualization_type'] != "lxc"
-    - ssh
-    # - podman
-    # - hestia
+
+- name: Install NTP server
+  hosts:
+    - ntp_server
+  roles:
+    - ntp_server
+
+- name: Install podman
+  hosts:
+    - podman_vm
+    - hestia
+  roles:
+    - podman
+
+- name: Deploy Hestia
+  hosts: hestia
+  roles:
+    - hestia
 
 - name: Deploy DNS resolver
   hosts: dns_resolvers
