@@ -9,11 +9,12 @@
   community.hashi_vault.vault_kv2_get:
     path: infrastructure/nut
   become: false
+  no_log: true
   run_once: true
   delegate_to: localhost
   register:
-    nut_admin_pass: _task.result.secret.admin
-    nut_nutcli_pass: _task.result.secret.nutcli
+    nut_admin_pass: _task.result.secret.admin | register_secret
+    nut_nutcli_pass: _task.result.secret.nutcli | register_secret
 
 - name: Configure NUT
   ansible.builtin.template:

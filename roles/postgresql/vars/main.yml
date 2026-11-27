@@ -1,0 +1,4 @@
+# Should not be changed except if default installation user change
+postgresql_user: postgres
+postgresql_group: postgres
+postgresql_default_database: postgres

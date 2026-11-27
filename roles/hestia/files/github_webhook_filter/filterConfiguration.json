@@ -1,0 +1,4 @@
+{
+  "$schema": "https://raw.githubusercontent.com/rezoleo/github-webhook-filter/main/schemas/filter_configuration.schema.json",
+  "users_black_listed": ["codecov[bot]", "dependabot[bot]", "renovate[bot]"]
+}

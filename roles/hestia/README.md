@@ -13,6 +13,7 @@ The following services run on Hestia :
 - https://index.rezoleo.fr (port 3000)
 - https://pdf.rezoleo.fr (port 3001)
 - https://vanadis.rezoleo.fr (port 3002)
+- Github webhook filter (port 3003)
 
 A description of the services is written below, more information in [our internal documentation is available](https://poly.rezoleo.fr/doku.php?id=private:serveurs:vm:hestia).
 
@@ -40,6 +41,12 @@ Puis en 2026, a été proposé de manière indépendante de le faire. Il aura fa
 > Paperless-ngx is a document management system that transforms your physical documents into a searchable online archive so you can keep, well, less paper.
 
 Pour plus d'information sur les features, consultez [la documentation](https://docs.paperless-ngx.com/#features).
+
+### Github webhook filter
+
+Filtre les webhooks GitHub (par exemple ceux des bots comme Renovate ou Dependabot) avant de les transférer vers `WEBHOOK_URL`, récupérée depuis Vault. Les filtres sont définis dans `filterConfiguration.json`.
+
+Le code source est disponible sur [GitHub](https://github.com/rezoleo/github-webhook-filter).
 
 [^1]: Le bureau de cette année, et ma liste était très nippophile.
 [^2]: Il y avait au début Paperless et Paperless-NG, puis les deux projets ont fussionés pour donner Paperless-NGX mais la fusion est trop ancienne pour que la nuance subsiste dans le langage. Paperless désigne presque toujours Paperless-NGX dans la "communauté" de l'auto-hébergement
