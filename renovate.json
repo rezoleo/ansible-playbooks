@@ -13,6 +13,24 @@
   "pre-commit": {
     "enabled": true
   },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["roles/nextcloud/defaults/main.yml"],
+      "matchStrings": ["nextcloud_version: \"(?<currentValue>.*?)\""],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "nextcloud/server",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["roles/garage/defaults/main.yml"],
+      "matchStrings": ["garage_version: \"(?<currentValue>.*?)\""],
+      "datasourceTemplate": "forgejo-releases",
+      "depNameTemplate": "Deuxfleurs/garage",
+      "registryUrlTemplate": "https://git.deuxfleurs.fr"
+    }
+  ],
   "packageRules": [
     {
       "matchPackageNames": ["ansible-lint", "pre-commit", "ruff", "ty"],
