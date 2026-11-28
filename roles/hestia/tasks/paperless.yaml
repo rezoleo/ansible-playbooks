@@ -8,6 +8,7 @@
     hestia_paperless_sso_client_id: _task.result.secret.sso_id | register_secret
     hestia_paperless_sso_client_secret: _task.result.secret.sso_secret | register_secret
   run_once: true
+  no_log: true
   delegate_to: localhost
 
 - name: Retrieve database secrets from Vault
@@ -17,6 +18,7 @@
     hestia_paperless_database_password: _task.result.secret.paperless | register_secret
   run_once: true
   delegate_to: localhost
+  no_log: true
 
 - name: Create paperless directory
   ansible.builtin.file:
