@@ -1,4 +1,11 @@
 ---
+- name: Enable rootless mode for podman
+  ansible.builtin.command:
+    cmd: podman system migrate
+  become: true
+  become_user: podman
+  changed_when: true
+
 - name: Reload systemd
   become: true
   become_user: podman
