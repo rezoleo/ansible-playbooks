@@ -1,0 +1,110 @@
+---
+# Adapted for Debian from:
+# https://github.com/nextcloud/ansible-collection-nextcloud-admin/blob/main/roles/install_nextcloud/defaults/main.yml
+#
+# The following secrets are fetched from Vault at runtime, see tasks/main.yaml:
+# - db_password
+# - admin_username and admin_password
+# - smtp_password and smtp_mail_address
+# - sso_id
+# - object_key and object_secret
+
+# [NEXTCLOUD CONFIG]
+nextcloud_host: nextcloud.rezoleo.fr
+nextcloud_vault_secret_path: services/nextcloud
+
+nextcloud_trusted_domain:
+  - "{{ nextcloud_host }}"
+# We trust the subnet on which is the reverse proxy, but only the reverse proxy host will be able to connect to this VM
+nextcloud_trusted_proxies:
+  - "10.12.0.0/16"
+
+nextcloud_instance_name: "{{ nextcloud_trusted_domain | first }}"
+nextcloud_websrv_user: "www-data"
+nextcloud_websrv_group: "www-data"
+nextcloud_webroot: "/opt/nextcloud"
+nextcloud_data_dir: "/var/ncdata"
+nextcloud_max_upload_size: 512m
+
+# [DOWNLOAD]
+nextcloud_version: "35.0.3"
+nextcloud_archive_url: "https://download.nextcloud.com/server/releases/nextcloud-{{ nextcloud_version }}.tar.bz2"
+
+# [PHP CONFIG AND EXTENSIONS]
+nextcloud_php_ver: "8.4"
+nextcloud_php_dir: "/etc/php/{{ nextcloud_php_ver }}"
+nextcloud_php_memory_limit: 512M
+
+# [REDIS]
+nextcloud_redis_host: "/var/run/redis/redis.sock"
+nextcloud_redis_port: 0
+nextcloud_redis_settings:
+  - { name: "redis host", value: "{{ nextcloud_redis_host }}" }
+  - { name: "redis port", value: "{{ nextcloud_redis_port }}" }
+  - { name: "memcache.locking", value: '\OC\Memcache\Redis' }
+
+# Custom Nextcloud settings
+
+nextcloud_background_cron: true
+
+# https://docs.nextcloud.com/server/latest/admin_manual/configuration_server/config_sample_php_parameters.html
+nextcloud_config_settings:
+  - { name: "default_phone_region", value: "FR" }
+  - { name: "overwriteprotocol", value: "https" }
+  - { name: "overwritehost", value: "{{ nextcloud_host }}" }
+  - { name: "overwrite.cli.url", value: "https://{{ nextcloud_trusted_domain | first }}" }
+  - { name: "memcache.local", value: '\OC\Memcache\APCu' }
+  - { name: "updater.release.channel", value: "production" }
+
+# [APPS]
+nextcloud_apps:
+  - user_oidc
+  - tasks
+  - calendar
+  - dav_push
+  - circles
+
+nextcloud_disable_apps:
+  - dashboard
+  - nextcloud_announcements
+  - activity
+  - photos
+
+# [OIDC] (Zitadel SSO via user_oidc)
+nextcloud_oidc_provider_name: "Zitadel"
+nextcloud_oidc_discovery_uri: "https://sso.rezoleo.fr/.well-known/openid-configuration"
+nextcloud_oidc_scope: "openid email profile"
+# Determines if unique user ids shall be used or not. 1 to enable, 0 to disable
+nextcloud_oidc_unique_uid: 0
+# Determines if ID token should be included as a parameter to the end_session_endpoint URL when using unified logout. 1 to enable, 0 to disable
+nextcloud_oidc_send_id_token_hint: 1
+nextcloud_oidc_mapping_uid: "preferred_username"
+nextcloud_oidc_mapping_display_name: "name"
+nextcloud_oidc_mapping_email: "email"
+
+# [DATABASE] (external PostgreSQL VM)
+nextcloud_vault_db_path: databases/nextcloud@pg.rezoleo.fr
+nextcloud_db_backend: pgsql
+nextcloud_db_host: pg.rezoleo.fr
+nextcloud_db_name: nextcloud
+nextcloud_db_admin: nextcloud
+
+# [SMTP]
+nextcloud_smtp_host: mail.rezoleo.fr
+nextcloud_smtp_port: 25
+nextcloud_smtp_secure: "" # "" (none), "ssl" or "tls"
+nextcloud_smtp_authtype: PLAIN
+
+# [OBJECT STORAGE] (Garage S3)
+nextcloud_vault_garage_path: buckets/nextcloud
+nextcloud_object_bucket: nextcloud
+# Garage's default region is garage
+nextcloud_object_region: garage
+# For Garage we must set it to true
+nextcloud_object_usepath_style: "true"
+# Garage does not support autocreate
+nextcloud_object_autocreate: "false"
+nextcloud_object_host: s3.rezoleo.fr
+# The buckets are behind a reverse proxy
+nextcloud_object_port: 443
+nextcloud_object_use_ssl: "true"

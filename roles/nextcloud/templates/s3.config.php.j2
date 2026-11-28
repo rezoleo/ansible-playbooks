@@ -1,0 +1,21 @@
+<?php
+// Official references:
+// - Nextcloud Docker image template: https://github.com/nextcloud/docker/blob/master/.config/s3.config.php
+// - Nextcloud Primary Object Storage docs: https://docs.nextcloud.com/server/latest/admin_manual/configuration_files/primary_storage.html
+// - Nextcloud config.sample.php: https://github.com/nextcloud/server/blob/master/config/config.sample.php
+$CONFIG = array (
+  'objectstore' => array (
+    'class' => '\\OC\\Files\\ObjectStore\\S3',
+    'arguments' => array (
+      'bucket' => '{{ nextcloud_object_bucket }}',
+      'region' => '{{ nextcloud_object_region }}',
+      'hostname' => '{{ nextcloud_object_host }}',
+      'port' => {{ nextcloud_object_port }},
+      'use_ssl' => {{ nextcloud_object_use_ssl }},
+      'use_path_style' => {{ nextcloud_object_usepath_style }},
+      'autocreate' => {{ nextcloud_object_autocreate }},
+      'key' => '{{ nextcloud_object_key }}',
+      'secret' => '{{ nextcloud_object_secret }}',
+    ),
+  ),
+);

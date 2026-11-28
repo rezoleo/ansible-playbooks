@@ -1,0 +1,49 @@
+- name: Get bucket current details
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v2/GetBucketInfo?globalAlias={{ garage_bucket.name }}"
+    return_content: true
+    headers:
+      Authorization: "Bearer {{ garage_admin_token }}"
+    status_code:
+      - 200
+      - 404
+  register: garage_bucket_details
+
+- name: Create Garage bucket
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v2/CreateBucket"
+    return_content: true
+    headers:
+      Authorization: "Bearer {{ garage_admin_token }}"
+      Content-Type: application/json
+    method: POST
+    body:
+      globalAlias: "{{ garage_bucket.name }}"
+    body_format: json
+  register: garage_bucket_details_new
+  when: garage_bucket_details.status == 404
+  changed_when: true
+
+- name: Choose what details to use
+  ansible.builtin.set_fact:
+    garage_bucket_details: "{{ garage_bucket_details_new if garage_bucket_details.status == 404 else garage_bucket_details }}"
+
+- name: Create quota object
+  ansible.builtin.set_fact:
+    garage_bucket_desired_quotas:
+      maxSize: "{{ (garage_bucket.quotas | default({})).maxSize | default(none) }}"
+      maxObjects: "{{ (garage_bucket.quotas | default({})).maxObjects | default(none) }}"
+
+- name: Update Garage bucket
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ garage_admin_api_port }}/v2/UpdateBucket?id={{ garage_bucket_details.json.id }}"
+    return_content: true
+    headers:
+      Authorization: "Bearer {{ garage_admin_token }}"
+      Content-Type: application/json
+    method: POST
+    body_format: json
+    body:
+      quotas: "{{ garage_bucket_desired_quotas }}"
+  when: garage_bucket_details.json.quotas != garage_bucket_desired_quotas
+  changed_when: true

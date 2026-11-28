@@ -1,0 +1,125 @@
+---
+# Adapted for Debian from:
+# https://github.com/nextcloud/ansible-collection-nextcloud-admin/blob/main/roles/install_nextcloud/tasks/main.yml
+# https://github.com/nextcloud/ansible-collection-nextcloud-admin/blob/main/roles/install_nextcloud/tasks/setup_env.yml
+
+- name: Retrieve Nextcloud secrets from Vault
+  community.hashi_vault.vault_kv2_get:
+    path: "{{ nextcloud_vault_secret_path }}"
+  register:
+    nextcloud_admin_username: _task.result.secret.admin_username
+    nextcloud_admin_password: _task.result.secret.admin_password
+    nextcloud_smtp_password: _task.result.secret.smtp_password
+    nextcloud_smtp_mail_address: _task.result.secret.smtp_mail_address
+    nextcloud_oidc_client_id: _task.result.secret.sso_id
+  run_once: true
+  delegate_to: localhost
+
+- name: Retrieve S3 secrets from Vault
+  community.hashi_vault.vault_kv2_get:
+    path: "{{ nextcloud_vault_garage_path }}"
+  register:
+    nextcloud_object_key: _task.result.secret.id
+    nextcloud_object_secret: _task.result.secret.secret
+  run_once: true
+  delegate_to: localhost
+
+- name: Retrieve database secrets from Vault
+  community.hashi_vault.vault_kv2_get:
+    path: "{{ nextcloud_vault_db_path }}"
+  register:
+    nextcloud_db_password: _task.result.secret.nextcloud
+  run_once: true
+  delegate_to: localhost
+
+- name: Install base Debian prerequisites
+  ansible.builtin.apt:
+    name:
+      - acl
+      - ca-certificates
+    state: present
+    update_cache: true
+    cache_valid_time: 86400
+  become: true
+
+- name: Install PHP packages
+  ansible.builtin.include_tasks:
+    file: php.yaml
+
+- name: Install and configure Apache web server
+  ansible.builtin.include_tasks:
+    file: apache.yaml
+
+- name: Configure Redis server
+  ansible.builtin.include_tasks:
+    file: redis.yaml
+
+- name: Check if Nextcloud is already downloaded
+  ansible.builtin.stat:
+    path: "{{ nextcloud_webroot }}/index.php"
+  register: nextcloud_installed
+  become: true
+
+- name: Download Nextcloud
+  ansible.builtin.include_tasks:
+    file: nc_download.yaml
+  when: not nextcloud_installed.stat.exists
+
+- name: Configure Nextcloud SMTP settings
+  ansible.builtin.template:
+    src: smtp.config.php.j2
+    dest: "{{ nextcloud_webroot }}/config/smtp.config.php"
+    owner: "{{ nextcloud_websrv_user }}"
+    group: "{{ nextcloud_websrv_group }}"
+    mode: "0640"
+  become: true
+  no_log: true
+
+# Placed before nc_install.yaml so Nextcloud initializes directly with Garage S3 primary storage
+- name: Configure Garage S3 primary object storage
+  ansible.builtin.template:
+    src: s3.config.php.j2
+    dest: "{{ nextcloud_webroot }}/config/s3.config.php"
+    owner: "{{ nextcloud_websrv_user }}"
+    group: "{{ nextcloud_websrv_group }}"
+    mode: "0640"
+  become: true
+  no_log: true
+
+- name: Check if Nextcloud config.php exists
+  ansible.builtin.stat:
+    path: "{{ nextcloud_webroot }}/config/config.php"
+  register: nextcloud_conf
+  become: true
+
+- name: Check if Nextcloud is installed
+  ansible.builtin.command:
+    cmd: "grep -q \"'installed' => true\" {{ nextcloud_webroot }}/config/config.php"
+  failed_when: false
+  changed_when: false
+  register: nextcloud_configured
+  when: nextcloud_conf.stat.exists
+  become: true
+
+- name: Run Nextcloud installation and configuration
+  ansible.builtin.include_tasks:
+    file: nc_install.yaml
+
+- name: Manage Nextcloud apps
+  ansible.builtin.include_tasks:
+    file: nc_apps.yaml
+  when: (nextcloud_apps | default([]) | length > 0) or (nextcloud_disable_apps | default([]) | length > 0)
+
+- name: Add firewall rules for Nextcloud
+  ansible.builtin.import_role:
+    name: firewall
+    tasks_from: create_rule.yml
+  vars:
+    firewall_rules:
+      050-equestria:
+        - rule_name: "Allow traffic from Equestria to port 80"
+          chain: INPUT
+          protocol: tcp
+          source: "{{ reverse_proxy_address }}"
+          destination_port: 80
+          target: ACCEPT
