@@ -6,7 +6,7 @@
 # - db_password
 # - admin_username and admin_password
 # - smtp_password and smtp_mail_address
-# - sso_id and sso_secret (OIDC client credentials)
+# - sso_id
 # - object_key and object_secret
 
 # [NEXTCLOUD CONFIG]
@@ -27,7 +27,8 @@ nextcloud_data_dir: "/var/ncdata"
 nextcloud_max_upload_size: 512m
 
 # [DOWNLOAD]
-nextcloud_archive_url: "https://download.nextcloud.com/server/releases/latest.tar.bz2"
+nextcloud_version: "35.0.3"
+nextcloud_archive_url: "https://download.nextcloud.com/server/releases/nextcloud-{{ nextcloud_version }}.tar.bz2"
 
 # [PHP CONFIG AND EXTENSIONS]
 nextcloud_php_ver: "8.4"

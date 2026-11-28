@@ -12,7 +12,6 @@
     nextcloud_smtp_password: _task.result.secret.smtp_password
     nextcloud_smtp_mail_address: _task.result.secret.smtp_mail_address
     nextcloud_oidc_client_id: _task.result.secret.sso_id
-    nextcloud_oidc_client_secret: _task.result.secret.sso_secret
   run_once: true
   delegate_to: localhost
 

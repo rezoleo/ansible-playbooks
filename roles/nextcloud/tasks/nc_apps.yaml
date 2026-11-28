@@ -53,7 +53,6 @@
       - user_oidc:provider
       - "{{ nextcloud_oidc_provider_name }}"
       - "--clientid={{ nextcloud_oidc_client_id }}"
-      - "--clientsecret-env=OIDC_CLIENT_SECRET"
       - "--discoveryuri={{ nextcloud_oidc_discovery_uri }}"
       - "--postlogouturi=https://{{ nextcloud_host }}"
       - "--scope={{ nextcloud_oidc_scope }}"
@@ -62,8 +61,6 @@
       - "--mapping-uid={{ nextcloud_oidc_mapping_uid }}"
       - "--mapping-display-name={{ nextcloud_oidc_mapping_display_name }}"
       - "--mapping-email={{ nextcloud_oidc_mapping_email }}"
-  environment:
-    OIDC_CLIENT_SECRET: "{{ nextcloud_oidc_client_secret }}"
   when: "'user_oidc' in (nextcloud_apps | default([]))"
   become: true
   become_user: "{{ nextcloud_websrv_user }}"
