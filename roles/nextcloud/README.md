@@ -8,6 +8,6 @@ The documentation is on the [poly](https://poly.rezoleo.fr/doku.php?id=private:p
 
 ## Structure
 
-This role deploys Nextcloud and a local Redis instance using the official [`nextcloud.admin` Ansible collection](https://github.com/nextcloud/ansible-collection-nextcloud-admin).
+This role performs a Debian-only installation of Nextcloud (Apache2 + `mod_php`, APCu, and Redis), inspired by the official [`nextcloud.admin` Ansible collection](https://github.com/nextcloud/ansible-collection-nextcloud-admin).
 
 It relies on an existing mail server, reverse proxy, IdP, database (PostgreSQL), and S3 object storage (Garage).

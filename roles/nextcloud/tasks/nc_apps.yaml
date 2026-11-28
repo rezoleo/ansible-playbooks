@@ -1,0 +1,71 @@
+---
+# See https://docs.nextcloud.com/server/latest/admin_manual/occ_command.html#apps-commands
+# OIDC reference: https://github.com/nextcloud/user_oidc#occ-command
+
+- name: List available apps in the Nextcloud instance
+  ansible.builtin.command:
+    cmd: "php {{ nextcloud_webroot }}/occ app:list --no-interaction --no-ansi --output=json"
+  become: true
+  become_user: "{{ nextcloud_websrv_user }}"
+  changed_when: false
+  register: nextcloud_apps_list
+
+- name: Parse available apps JSON
+  ansible.builtin.set_fact:
+    nextcloud_available_apps: "{{ nextcloud_apps_list.stdout | from_json }}"
+
+- name: Install missing Nextcloud apps from the official app store
+  ansible.builtin.command:
+    cmd: "php {{ nextcloud_webroot }}/occ app:install {{ item }} --no-ansi --no-interaction"
+  loop: "{{ nextcloud_apps | default([]) }}"
+  when:
+    - item not in nextcloud_available_apps.enabled
+    - item not in nextcloud_available_apps.disabled
+  become: true
+  become_user: "{{ nextcloud_websrv_user }}"
+  changed_when: true
+
+- name: Enable pre-installed disabled Nextcloud apps
+  ansible.builtin.command:
+    cmd: "php {{ nextcloud_webroot }}/occ app:enable {{ item }} --no-ansi --no-interaction"
+  loop: "{{ nextcloud_apps | default([]) }}"
+  when: item in nextcloud_available_apps.disabled
+  become: true
+  become_user: "{{ nextcloud_websrv_user }}"
+  changed_when: true
+
+- name: Disable unwanted Nextcloud apps
+  ansible.builtin.command:
+    cmd: "php {{ nextcloud_webroot }}/occ app:disable {{ item }} --no-ansi --no-interaction"
+  loop: "{{ nextcloud_disable_apps | default([]) }}"
+  when: item in nextcloud_available_apps.enabled
+  become: true
+  become_user: "{{ nextcloud_websrv_user }}"
+  changed_when: true
+
+- name: Configure OIDC provider
+  ansible.builtin.command:
+    argv:
+      - php
+      - "{{ nextcloud_webroot }}/occ"
+      - --no-ansi
+      - --no-interaction
+      - user_oidc:provider
+      - "{{ nextcloud_oidc_provider_name }}"
+      - "--clientid={{ nextcloud_oidc_client_id }}"
+      - "--clientsecret-env=OIDC_CLIENT_SECRET"
+      - "--discoveryuri={{ nextcloud_oidc_discovery_uri }}"
+      - "--postlogouturi=https://{{ nextcloud_host }}"
+      - "--scope={{ nextcloud_oidc_scope }}"
+      - "--unique-uid={{ nextcloud_oidc_unique_uid }}"
+      - "--send-id-token-hint={{ nextcloud_oidc_send_id_token_hint }}"
+      - "--mapping-uid={{ nextcloud_oidc_mapping_uid }}"
+      - "--mapping-display-name={{ nextcloud_oidc_mapping_display_name }}"
+      - "--mapping-email={{ nextcloud_oidc_mapping_email }}"
+  environment:
+    OIDC_CLIENT_SECRET: "{{ nextcloud_oidc_client_secret }}"
+  when: "'user_oidc' in (nextcloud_apps | default([]))"
+  become: true
+  become_user: "{{ nextcloud_websrv_user }}"
+  no_log: true
+  changed_when: true

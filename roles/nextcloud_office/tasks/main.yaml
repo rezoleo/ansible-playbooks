@@ -1,0 +1,18 @@
+---
+# See https://euro-office.github.io/documentation/installation/debian/ for reference
+
+# The ttf-mscorefonts-installer package required by Euro-Office comes from Debian's contrib,
+# which is not enabled by default.
+- name: Enable the contrib component
+  ansible.builtin.apt_repository:
+    repo:
+    state: present
+  loop: # TODO : use version slug from host
+    - deb http://deb.debian.org/debian bookworm main contrib
+    - deb http://deb.debian.org/debian bookworm-updates main contrib
+    - deb http://deb.debian.org/debian-security/ bookworm-security main contrib
+
+- name: Add specified repository into sources list
+  ansible.builtin.apt_repository:
+    repo: deb http://archive.canonical.com/ubuntu hardy partner
+    state: present

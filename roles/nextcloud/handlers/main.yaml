@@ -1,0 +1,33 @@
+---
+# Adapted for Debian from:
+# https://github.com/nextcloud/ansible-collection-nextcloud-admin/blob/main/roles/install_nextcloud/handlers/main.yml
+
+- name: Start http
+  ansible.builtin.service:
+    name: apache2
+    state: started
+  become: true
+
+- name: Restart http
+  ansible.builtin.service:
+    name: apache2
+    state: restarted
+  become: true
+
+- name: Reload http
+  ansible.builtin.service:
+    name: apache2
+    state: reloaded
+  become: true
+
+- name: Start redis
+  ansible.builtin.service:
+    name: redis-server
+    state: started
+  become: true
+
+- name: Restart redis
+  ansible.builtin.service:
+    name: redis-server
+    state: restarted
+  become: true

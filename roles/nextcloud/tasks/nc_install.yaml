@@ -1,0 +1,144 @@
+---
+# Adapted from https://github.com/nextcloud/ansible-collection-nextcloud-admin/blob/main/roles/install_nextcloud/tasks/nc_installation.yml
+
+- name: Trigger all pending handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Run Nextcloud first-time setup
+  when: (not nextcloud_conf.stat.exists) or (nextcloud_configured.rc is defined and nextcloud_configured.rc != 0)
+  become: true
+  block:
+    - name: Set directory ownership and permissions for the data folder
+      ansible.builtin.file:
+        path: "{{ nextcloud_data_dir }}"
+        mode: "u=rwX,g=rX,o-rwx"
+        recurse: true
+        state: directory
+        owner: "{{ nextcloud_websrv_user }}"
+        group: "{{ nextcloud_websrv_group }}"
+
+    - name: Set temporary permissions for command line installation
+      ansible.builtin.file:
+        path: "{{ nextcloud_webroot }}"
+        state: directory
+        recurse: true
+        owner: "{{ nextcloud_websrv_user }}"
+        group: "{{ nextcloud_websrv_group }}"
+
+    - name: Run Nextcloud CLI installation
+      block:
+        - name: Remove possibly old or incomplete config.php
+          ansible.builtin.file:
+            path: "{{ nextcloud_webroot }}/config/config.php"
+            state: absent
+
+        - name: Execute Nextcloud maintenance:install
+          ansible.builtin.command:
+            argv:
+              - php
+              - "{{ nextcloud_webroot }}/occ"
+              - --no-ansi
+              - --no-interaction
+              - maintenance:install
+              - --no-warnings
+              - "--database={{ nextcloud_db_backend }}"
+              - "--database-host={{ nextcloud_db_host }}"
+              - "--database-name={{ nextcloud_db_name }}"
+              - "--database-user={{ nextcloud_db_admin }}"
+              - "--database-pass={{ nextcloud_db_password }}"
+              - "--admin-user={{ nextcloud_admin_username }}"
+              - "--admin-pass={{ nextcloud_admin_password }}"
+              - "--data-dir={{ nextcloud_data_dir }}"
+          become: true
+          become_user: "{{ nextcloud_websrv_user }}"
+          changed_when: true
+          no_log: true
+          notify: Reload http
+      rescue:
+        - name: Remove config.php when occ fails
+          ansible.builtin.file:
+            path: "{{ nextcloud_webroot }}/config/config.php"
+            state: absent
+          failed_when: true
+
+- name: Set Trusted Domains
+  ansible.builtin.command:
+    cmd: "php {{ nextcloud_webroot }}/occ --no-ansi --no-interaction config:system:set trusted_domains {{ idx }} --value={{ item | quote }}"
+  loop: "{{ nextcloud_trusted_domain }}"
+  loop_control:
+    index_var: idx
+  become: true
+  become_user: "{{ nextcloud_websrv_user }}"
+  changed_when: true
+
+- name: Set Trusted Proxies
+  ansible.builtin.command:
+    cmd: "php {{ nextcloud_webroot }}/occ --no-ansi --no-interaction config:system:set trusted_proxies {{ idx }} --value={{ item | quote }}"
+  loop: "{{ nextcloud_trusted_proxies }}"
+  loop_control:
+    index_var: idx
+  become: true
+  become_user: "{{ nextcloud_websrv_user }}"
+  changed_when: true
+
+- name: Set Nextcloud settings in config.php
+  ansible.builtin.command:
+    cmd: >-
+      php {{ nextcloud_webroot }}/occ --no-ansi --no-interaction
+      config:system:set {{ item.name }}
+      --value={{ item.value | string | quote }}
+      {{ '--type=boolean' if item.value is boolean else '' }}
+  loop: "{{ nextcloud_config_settings }}"
+  become: true
+  become_user: "{{ nextcloud_websrv_user }}"
+  changed_when: true
+
+- name: Set Redis server settings in config.php
+  ansible.builtin.command:
+    cmd: >-
+      php {{ nextcloud_webroot }}/occ --no-ansi --no-interaction
+      config:system:set {{ item.name }}
+      --value={{ item.value | string | quote }}
+      {{ '--type=boolean' if item.value is boolean else '' }}
+  loop: "{{ nextcloud_redis_settings }}"
+  become: true
+  become_user: "{{ nextcloud_websrv_user }}"
+  changed_when: true
+
+- name: Configure Cron
+  when: nextcloud_background_cron | bool
+  become: true
+  block:
+    - name: Install cron package
+      ansible.builtin.apt:
+        name: cron
+        state: present
+
+    - name: Install Nextcloud cronjob
+      ansible.builtin.cron:
+        name: "Nextcloud Cronjob"
+        minute: "*/5"
+        user: "{{ nextcloud_websrv_user }}"
+        job: "php -f {{ nextcloud_webroot }}/cron.php"
+        cron_file: "nextcloud"
+
+    - name: Set background job mode to cron
+      ansible.builtin.command:
+        cmd: "php {{ nextcloud_webroot }}/occ --no-ansi --no-interaction background:cron"
+      become: true
+      become_user: "{{ nextcloud_websrv_user }}"
+      changed_when: true
+
+- name: Set stronger directory ownership on Nextcloud writable directories
+  ansible.builtin.file:
+    path: "{{ nextcloud_webroot }}/{{ item }}/"
+    recurse: true
+    owner: "{{ nextcloud_websrv_user }}"
+    group: "{{ nextcloud_websrv_group }}"
+    state: directory
+  loop:
+    - apps
+    - config
+    - themes
+    - updater
+  become: true

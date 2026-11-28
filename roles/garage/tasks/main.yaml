@@ -70,9 +70,15 @@
   vars:
     firewall_rules:
       050-equestria:
-        - rule_name: "Allow traffic from Equestria to port 3000"
+        - rule_name: "Allow traffic from Equestria to S3 port"
           chain: INPUT
           protocol: tcp
           source: "{{ reverse_proxy_address }}"
-          destination_port: 3900
+          destination_port: "{{ garage_s3_port }}"
+          target: ACCEPT
+        - rule_name: "Allow traffic from Equestria to admin port"
+          chain: INPUT
+          protocol: tcp
+          source: "{{ reverse_proxy_address }}"
+          destination_port: "{{ garage_admin_api_port }}"
           target: ACCEPT

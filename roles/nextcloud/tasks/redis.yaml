@@ -1,0 +1,33 @@
+---
+# Adapted from:
+# https://github.com/nextcloud/ansible-collection-nextcloud-admin/blob/main/roles/install_nextcloud/tasks/redis_server.yml
+
+- name: Install redis server packages
+  ansible.builtin.apt:
+    name:
+      - redis-server
+      - "php{{ nextcloud_php_ver }}-redis"
+    state: present
+  become: true
+  notify: Start redis
+
+- name: Add web server user to redis group
+  ansible.builtin.user:
+    name: "{{ nextcloud_websrv_user }}"
+    groups: redis
+    append: true
+  become: true
+  notify: Restart http
+
+- name: Configure redis server socket and port
+  ansible.builtin.lineinfile:
+    dest: /etc/redis/redis.conf
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+  loop:
+    - { regexp: '^#?\s*port\s+', line: "port {{ nextcloud_redis_port }}" }
+    - { regexp: '^#?\s*unixsocket\s+', line: "unixsocket {{ nextcloud_redis_host }}" }
+    - { regexp: '^#?\s*unixsocketperm\s+', line: "unixsocketperm 770" }
+  become: true
+  notify: Restart redis

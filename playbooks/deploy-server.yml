@@ -25,6 +25,11 @@
   roles:
     - nextcloud
 
+- name: Deploy Nextcloud Office
+  hosts: nextcloud_office
+  roles:
+    - nextcloud_office
+
 - name: Deploy Garage
   hosts: garage
   roles:

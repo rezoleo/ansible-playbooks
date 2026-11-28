@@ -1,0 +1,36 @@
+---
+# Adapted from https://github.com/nextcloud/ansible-collection-nextcloud-admin/blob/main/roles/install_nextcloud/tasks/nc_download.yml
+
+- name: Install bzip2 package
+  ansible.builtin.apt:
+    name: bzip2
+    state: present
+  become: true
+
+- name: Create Nextcloud webroot directory
+  ansible.builtin.file:
+    path: "{{ nextcloud_webroot }}"
+    state: directory
+    owner: "{{ nextcloud_websrv_user }}"
+    group: "{{ nextcloud_websrv_group }}"
+    mode: "0750"
+  become: true
+
+- name: Download and extract Nextcloud to webroot
+  ansible.builtin.unarchive:
+    remote_src: true
+    src: "{{ nextcloud_archive_url }}"
+    dest: "{{ nextcloud_webroot }}"
+    extra_opts:
+      - "--strip-components=1"
+  become: true
+
+- name: Set directory ownership and permissions for webroot
+  ansible.builtin.file:
+    path: "{{ nextcloud_webroot }}"
+    mode: "u=rwX,g=rX,o-rwx"
+    recurse: true
+    state: directory
+    owner: "{{ nextcloud_websrv_user }}"
+    group: "{{ nextcloud_websrv_group }}"
+  become: true

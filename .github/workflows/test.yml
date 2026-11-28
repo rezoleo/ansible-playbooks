@@ -27,9 +27,6 @@ jobs:
       - name: Install the project
         run: uv sync --locked --no-python-downloads
 
-      - name: Install Ansible Galaxy collections
-        run: uv run ansible-galaxy collection install --requirements-file requirements.yml
-
       - name: Run ruff
         id: ruff
         continue-on-error: true # Allow other tasks to continue if ruff fails
