@@ -10,20 +10,22 @@
   community.hashi_vault.vault_kv2_get:
     path: services/snmp
   register:
-    monitoring_snmp_authpass: _task.result.secret.authpass
-    monitoring_snmp_cryptopass: _task.result.secret.cryptopass
-    monitoring_snmp_user: _task.result.secret.user
+    monitoring_snmp_authpass: _task.result.secret.authpass | register_secret
+    monitoring_snmp_cryptopass: _task.result.secret.cryptopass | register_secret
+    monitoring_snmp_user: _task.result.secret.user | register_secret
   run_once: true
   delegate_to: localhost
+  no_log: true
   become: false
 
 - name: Retrieve librenms api token from Vault
   community.hashi_vault.vault_kv2_get:
     path: services/librenms
   register:
-    monitoring_librenms_api_token: _task.result.secret.api_token
+    monitoring_librenms_api_token: _task.result.secret.api_token | register_secret
   run_once: true
   delegate_to: localhost
+  no_log: true
   become: false
 
 - name: Gather facts using SNMP version 3
