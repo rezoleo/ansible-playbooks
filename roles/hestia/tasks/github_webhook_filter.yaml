@@ -5,10 +5,7 @@
     hestia_github_webhook_filter_url: _task.result.secret.url | register_secret
   run_once: true
   delegate_to: localhost
-  become: false
   no_log: true
-  vars:
-    ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
 - name: Create github webhook filter directory
   ansible.builtin.file:

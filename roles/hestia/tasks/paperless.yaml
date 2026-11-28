@@ -8,11 +8,8 @@
     hestia_paperless_sso_client_id: _task.result.secret.sso_id | register_secret
     hestia_paperless_sso_client_secret: _task.result.secret.sso_secret | register_secret
   run_once: true
-  delegate_to: localhost
   no_log: true
-  become: false
-  vars:
-    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  delegate_to: localhost
 
 - name: Retrieve database secrets from Vault
   community.hashi_vault.vault_kv2_get:
@@ -22,9 +19,6 @@
   run_once: true
   delegate_to: localhost
   no_log: true
-  become: false
-  vars:
-    ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
 - name: Create paperless directory
   ansible.builtin.file:

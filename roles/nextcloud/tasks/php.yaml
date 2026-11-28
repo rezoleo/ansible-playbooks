@@ -1,0 +1,30 @@
+---
+# Adapted https://github.com/nextcloud/ansible-collection-nextcloud-admin/blob/main/roles/install_nextcloud/tasks/php_install.yml
+
+- name: Install required PHP packages for Nextcloud
+  ansible.builtin.apt:
+    name:
+      - imagemagick
+      - libmagickcore-*-extra
+      - smbclient
+      - "php{{ nextcloud_php_ver }}-gd"
+      - "php{{ nextcloud_php_ver }}-ldap"
+      - "php{{ nextcloud_php_ver }}-curl"
+      - "php{{ nextcloud_php_ver }}-intl"
+      - "php{{ nextcloud_php_ver }}-bz2"
+      - "php{{ nextcloud_php_ver }}-bcmath"
+      - "php{{ nextcloud_php_ver }}-gmp"
+      - "php{{ nextcloud_php_ver }}-imagick"
+      - "php{{ nextcloud_php_ver }}-mbstring"
+      - "php{{ nextcloud_php_ver }}-xml"
+      - "php{{ nextcloud_php_ver }}-zip"
+    state: present
+  become: true
+
+- name: Install PHP PostgreSQL driver and APCu package
+  ansible.builtin.apt:
+    name:
+      - "php{{ nextcloud_php_ver }}-{{ nextcloud_db_backend }}"
+      - "php{{ nextcloud_php_ver }}-apcu"
+    state: present
+  become: true
